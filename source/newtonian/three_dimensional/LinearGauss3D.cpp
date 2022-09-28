@@ -54,6 +54,8 @@ namespace
 			size_t other_cell = (tess.GetFaceNeighbors(faces[i]).first == cell_index) ?
 				tess.GetFaceNeighbors(faces[i]).second : tess.GetFaceNeighbors(faces[i]).first;
 			ReplaceComputationalCell(res[i], cells[other_cell]);
+			if(!std::isfinite(cells[other_cell].density))
+				throw UniversalError("Bad density getneighborcell");
 		}
 	}
 
@@ -577,42 +579,6 @@ namespace
 		}
 	}
 
-	void GetBoundarySlope(ComputationalCell3D const& cell, Vector3D const& cell_cm,
-		vector<ComputationalCell3D> const& neighbors,
-		vector<Vector3D> const& neigh_cm,
-		Slope3D &res)
-	{
-		size_t Nneigh = neigh_cm.size();
-		ComputationalCell3D PhiSy, PhiSx, PhiSz;
-		//		PhiSy.tracers.resize(cell.tracers.size(), 0);
-			//	PhiSx.tracers.resize(cell.tracers.size(), 0);
-				//PhiSz.tracers.resize(cell.tracers.size(), 0);
-		double SxSy(0), Sy2(0), Sx2(0), SxSz(0), Sz2(0), SzSy(0);
-		for (size_t i = 0; i < Nneigh; ++i)
-		{
-			PhiSy += (neighbors[i] - cell)*(neigh_cm[i].y - cell_cm.y);
-			PhiSx += (neighbors[i] - cell)*(neigh_cm[i].x - cell_cm.x);
-			PhiSz += (neighbors[i] - cell)*(neigh_cm[i].z - cell_cm.z);
-			SxSy += (neigh_cm[i].y - cell_cm.y)*(neigh_cm[i].x - cell_cm.x);
-			Sx2 += (neigh_cm[i].x - cell_cm.x)*(neigh_cm[i].x - cell_cm.x);
-			Sy2 += (neigh_cm[i].y - cell_cm.y)*(neigh_cm[i].y - cell_cm.y);
-			SxSz += (neigh_cm[i].z - cell_cm.z)*(neigh_cm[i].x - cell_cm.x);
-			SzSy += (neigh_cm[i].z - cell_cm.z)*(neigh_cm[i].y - cell_cm.y);
-			Sz2 += (neigh_cm[i].z - cell_cm.z)*(neigh_cm[i].z - cell_cm.z);
-		}
-		double bottom = 1.0 / SxSz * SxSz*Sy2 + SxSy * SxSy*Sz2 - Sx2 * Sy2*Sz2 - 2 * SxSy*SxSz*SzSy + Sx2 * SzSy*Sz2;
-		res.xderivative = (PhiSz*SxSz*Sy2 + PhiSy * SxSy*Sz2 - PhiSx * Sy2*Sz2 - PhiSz * SxSy*SzSy - PhiSy * SxSz*SzSy +
-			PhiSx * SzSy*SzSy)*bottom;
-		res.yderivative = (PhiSz*SzSy*Sx2 + PhiSy * SxSz*SxSz - PhiSx * SxSz*SzSy - PhiSz * SxSy*SxSz - PhiSy * Sx2*Sz2 +
-			PhiSx * SxSy*Sz2)*bottom;
-		res.zderivative = (PhiSz*SxSy*SxSy - PhiSy * SxSy*SxSz - PhiSz * Sy2*Sx2 + PhiSx * SxSz*Sy2 + PhiSy * Sx2*SzSy -
-			PhiSx * SxSy*SzSy) *bottom;
-		res.xderivative.stickers = cell.stickers;
-		res.yderivative.stickers = cell.stickers;
-		res.zderivative.stickers = cell.stickers;
-	}
-
-
 	void calc_slope(Tessellation3D const& tess, vector<ComputationalCell3D> const& cells, size_t cell_index, bool slf,
 		double shockratio, double diffusecoeff, double pressure_ratio, EquationOfState const& eos,
 		const vector<string>& calc_tracers, Slope3D &naive_slope_, Slope3D & res, Slope3D &temp1, ComputationalCell3D &temp2,
@@ -635,13 +601,15 @@ namespace
 				boundary_slope = true;
 				break;
 			}
-		if (boundary_slope)
-			GetBoundarySlope(cell, tess.GetCellCM(cell_index), neighbor_list, neighbor_cm_list, res);
-		else
-			calc_naive_slope(cell, tess.GetMeshPoint(cell_index), tess.GetCellCM(cell_index),
-				tess.GetVolume(cell_index), neighbor_list, neighbor_mesh_list, neighbor_cm_list, tess, res, temp1,
-				cell_index, faces, c_ij);
-
+		calc_naive_slope(cell, tess.GetMeshPoint(cell_index), tess.GetCellCM(cell_index),
+			tess.GetVolume(cell_index), neighbor_list, neighbor_mesh_list, neighbor_cm_list, tess, res, temp1,
+			cell_index, faces, c_ij);
+		if(!std::isfinite( res.xderivative.density))
+		{
+			UniversalError eo("Bad slope");
+			eo.addEntry("boundary_slope", boundary_slope);
+			throw eo;
+		}
 		naive_slope_ = res;
 
 		for (size_t i = 0; i < ComputationalCell3D::tracerNames.size(); ++i)
@@ -653,7 +621,12 @@ namespace
 				res.zderivative.tracers[i] = 0;
 			}
 		}
-
+		res.xderivative.Erad = 0;
+		res.yderivative.Erad = 0;
+		res.zderivative.Erad = 0;
+		res.xderivative.temperature = 0;
+		res.yderivative.temperature = 0;
+		res.zderivative.temperature = 0;
 		if (slf)
 		{
 #ifdef RICH_DEBUG
@@ -670,6 +643,12 @@ namespace
 				{
 					shocked_slope_limit(cell, tess.GetCellCM(cell_index), neighbor_list, res, diffusecoeff,
 						skip_key, tess, cell_index, faces, eos);
+				}
+				if(!std::isfinite( res.xderivative.density))
+				{
+					UniversalError eo("Bad slope limited");
+					eo.addEntry("boundary_slope", boundary_slope);
+					throw eo;
 				}
 #ifdef RICH_DEBUG
 			}
@@ -836,6 +815,9 @@ void LinearGauss3D::operator()(const Tessellation3D& tess, const vector<Computat
 				}
 				catch (UniversalError &eo)
 				{
+					eo.addEntry("dslope_x",  rslopes_[i].xderivative.density);
+					eo.addEntry("dslope_y",  rslopes_[i].yderivative.density);
+					eo.addEntry("dslope_z",  rslopes_[i].zderivative.density);
 					eo.addEntry("Old density", new_cells[i].density);
 					eo.addEntry("Old internal energy", new_cells[i].internal_energy);
 					eo.addEntry("Face", static_cast<double>(faces[j]));
@@ -873,6 +855,9 @@ void LinearGauss3D::operator()(const Tessellation3D& tess, const vector<Computat
 				}
 				catch (UniversalError &eo)
 				{
+					eo.addEntry("dslope_x1",  rslopes_[i].xderivative.density);
+					eo.addEntry("dslope_y1",  rslopes_[i].yderivative.density);
+					eo.addEntry("dslope_z1",  rslopes_[i].zderivative.density);
 					eo.addEntry("Old density", new_cells[i].density);
 					eo.addEntry("Old internal energy", new_cells[i].internal_energy);
 					eo.addEntry("Face", static_cast<double>(faces[j]));

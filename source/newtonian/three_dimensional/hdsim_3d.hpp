@@ -12,6 +12,7 @@
 #include "extensive_updater3d.hpp"
 #include "../../mpi/ProcessorUpdate3D.hpp"
 #include "SourceTerm3D.hpp"
+#include "source/Radiation/conj_grad_solve.hpp"
 
 //! \brief Three dimensional simulation
 class HDSim3D
@@ -61,7 +62,7 @@ public:
     \param cu Cell updater
     \param eu Extensive updater
     \param source Source term
-    \param tsn The names of the stickers and tracers
+    \param tsn The names of the tracers and stickers, first is the tracers and second is stickers
     \param proc_update How to load balance
     \param SR Special relativity flag
     \param new_start Rerun indication
@@ -175,6 +176,10 @@ public:
   */
   size_t & GetMaxID(void);
 
+  double RadiationTimeStep(double const dt, CG::MatrixBuilder const& matrix_builder, bool const nohydro = false);
+
+  double getTimeStep(void) const {return dt_;}
+
 private:
   Tessellation3D& tess_;
 #ifdef RICH_MPI
@@ -197,6 +202,7 @@ private:
 #ifdef RICH_MPI
   const double maxload_;
 #endif // RICH_MPI
+  double dt_;
 };
 
 #endif // HDSIM_3D_HPP

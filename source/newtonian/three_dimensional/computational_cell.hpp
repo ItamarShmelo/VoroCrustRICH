@@ -27,11 +27,17 @@ public:
 	//! \brief Internal energy
 	double internal_energy;
 
+	//! \brief Temperature
+	double temperature;
+
 	//! \brief Unique ID
 	size_t ID;
 
 	//! \brief Velocity
 	Vector3D velocity;
+
+	//! \brief Radiation enregy per unit mass
+	double Erad;
 
   static vector<string> tracerNames;
   static vector<string> stickerNames;

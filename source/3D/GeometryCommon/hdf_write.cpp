@@ -95,6 +95,18 @@ void WriteVoronoi(Voronoi3D const& tri, std::string const& filename)
   write_std_vector_to_hdf5(file, x, "mesh_point_x");
   write_std_vector_to_hdf5(file, y, "mesh_point_y");
   write_std_vector_to_hdf5(file, z, "mesh_point_z");
+  x.clear();
+  y.clear();
+  z.clear();
+  for (size_t i = 0; i < tri.GetTotalPointNumber(); ++i)
+    {
+      x.push_back(tri.GetMeshPoint(i).x);
+      y.push_back(tri.GetMeshPoint(i).y);
+      z.push_back(tri.GetMeshPoint(i).z);
+    }
+  write_std_vector_to_hdf5(file, x, "all_mesh_point_x");
+  write_std_vector_to_hdf5(file, y, "all_mesh_point_y");
+  write_std_vector_to_hdf5(file, z, "all_mesh_point_z");
   for (size_t i = 0; i < Npoints; ++i)
     {
       Nfaces.push_back(tri.GetCellFaces(i).size());
@@ -268,6 +280,10 @@ void WriteSnapshot3D(HDSim3D const& sim, std::string const& filename,
     temp[i] = cells[i].velocity.z;
   write_std_vector_to_hdf5(writegroup, temp, "Vz");
 
+  for (size_t i = 0; i < Ncells; ++i)
+    temp[i] = cells[i].temperature;
+  write_std_vector_to_hdf5(writegroup, temp, "Temperature");
+
   Group tracers, stickers;
 #ifdef RICH_MPI
   if (mpi_write)
@@ -337,6 +353,20 @@ void WriteSnapshot3D(HDSim3D const& sim, std::string const& filename,
 #endif
 }
 
+std::vector<Vector3D> ReadVoronoiPoints(std::string const& filename)
+{
+  std::vector<Vector3D> res;
+  H5File file(filename, H5F_ACC_RDONLY);
+  Group read_location = file.openGroup("/");
+  const vector<double> x = read_double_vector_from_hdf5(read_location, "mesh_point_x");
+  const vector<double> y = read_double_vector_from_hdf5(read_location, "mesh_point_y");
+  const vector<double> z = read_double_vector_from_hdf5(read_location, "mesh_point_z");
+  size_t const N = x.size();
+  for(size_t i = 0; i < N; ++i)
+    res.push_back(Vector3D(x[i], y[i], z[i]));
+  return res;
+}
+
 Snapshot3D ReadSnapshot3D(const string& fname
 #ifdef RICH_MPI
 			  , bool mpi_write,int fake_rank
@@ -382,6 +412,7 @@ Snapshot3D ReadSnapshot3D(const string& fname
   // Hydrodynamic
   {
     const vector<double> density = read_double_vector_from_hdf5(read_location, "Density");
+    const vector<double> temperature = read_double_vector_from_hdf5(read_location, "Temperature");
     const vector<double> pressure = read_double_vector_from_hdf5(read_location, "Pressure");
     const vector<double> energy = read_double_vector_from_hdf5(read_location, "InternalEnergy");
     vector<size_t> IDs(density.size(), 0);
@@ -421,6 +452,7 @@ Snapshot3D ReadSnapshot3D(const string& fname
     for (size_t i = 0; i < res.cells.size(); ++i)
       {
 	res.cells.at(i).density = density.at(i);
+  res.cells.at(i).temperature = temperature.at(i);
 	res.cells.at(i).pressure = pressure.at(i);
 	res.cells.at(i).internal_energy = energy.at(i);
 	res.cells.at(i).ID = IDs[i];

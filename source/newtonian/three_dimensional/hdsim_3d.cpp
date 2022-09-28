@@ -5,6 +5,35 @@
 #ifdef RICH_MPI
 #include "../../mpi/mpi_commands.hpp"
 #endif
+#include <chrono>
+
+namespace
+{
+	#ifdef RICH_MPI
+	double get_time()
+	{
+		return MPI_Wtime();
+	}
+	#else
+	std::chrono::time_point<std::chrono::high_resolution_clock> get_time()
+	{
+		return std::chrono::high_resolution_clock::now();
+	}
+	#endif
+
+	template <class T>
+	void DisplayTime(T const& t1, T const& t2, std::string const& msg)
+	{
+		#ifdef RICH_MPI
+			int rank = -1;
+			MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+			if(rank == 0)
+				std::cout<<msg<<" "<<t2 - t1<<" seconds"<<std::endl;
+		#else
+			std::cout<<msg<< std::chrono::duration_cast<std::chrono::seconds>(t2 - t1).count()<<" seconds"<<std::endl;
+		#endif
+	}
+}
 
 Tessellation3D& HDSim3D::getTesselation(void)
 {
@@ -97,6 +126,7 @@ HDSim3D::HDSim3D(Tessellation3D& tess,
 #ifdef RICH_MPI
 	, maxload_(maxload)
 #endif // RICH_MPI
+	, dt_(0)
 {
 #ifdef RICH_MPI
 	int ws = 0, rank = 0;
@@ -105,8 +135,8 @@ HDSim3D::HDSim3D(Tessellation3D& tess,
 #endif
 	const bool validity_check = tess.GetPointNo() == cells.size();
 	assert(validity_check);
-	assert(tsn.first.size() <= MAX_STICKERS);
-	assert(tsn.second.size() <= MAX_TRACERS);
+	assert(tsn.second.size() <= MAX_STICKERS);
+	assert(tsn.first.size() <= MAX_TRACERS);
 	// sort tracers and stickers
 	size_t N = tess.GetPointNo();
 	vector<size_t> tindex = sort_index(tsn.first);
@@ -192,6 +222,14 @@ namespace
 		}
 	}
 
+	void MovePoints(Tessellation3D& tess, std::vector<Vector3D> const& point_vel, double const dt)
+	{
+		size_t const N = tess.GetPointNo();
+		std::vector<Vector3D>& points = tess.accessMeshPoints();
+		for(size_t i = 0; i < N; ++i)
+			points[i] += point_vel[i] * dt;
+	}
+
 	void UpdateTessellation(Tessellation3D& tess, const vector<Vector3D>& point_vel, double dt
 #ifdef RICH_MPI
 		, Tessellation3D const& tproc
@@ -204,9 +242,12 @@ namespace
 		else
 			points = *orgpoints;
 		points.resize(tess.GetPointNo());
-		size_t N = points.size();
-		for (size_t i = 0; i < N; ++i)
-			points[i] += point_vel[i] * dt;
+		if(orgpoints != nullptr)
+		{
+			size_t const N = points.size();
+			for (size_t i = 0; i < N; ++i)
+				points[i] += point_vel[i] * dt;
+		}
 		tess.Build(points
 #ifdef RICH_MPI
 			, tproc
@@ -244,6 +285,7 @@ void HDSim3D::timeAdvance2(void)
 #endif
 	CalcFaceVelocities(tess_, point_vel, face_vel);
 	dt = tsc_(tess_, cells_, eos_, face_vel, pt_.getTime());
+	dt_ = dt;
 	vector<Conserved3D> fluxes;
 	std::vector<std::pair<ComputationalCell3D, ComputationalCell3D> > face_values = 
 		fc_(fluxes, tess_, face_vel, cells_, extensive_, eos_, pt_.getTime(), dt);
@@ -262,10 +304,10 @@ void HDSim3D::timeAdvance2(void)
 		cells_ = VectorValues(cells_, order);
 		point_vel = VectorValues(point_vel, order);
 	}
-
+	MovePoints(tess_, point_vel, dt);
 #ifdef RICH_MPI
 	int ntotal = 0;
-	double load = 6.0;
+	double load = 226.0;
 	ComputationalCell3D cdummy;
 	Conserved3D edummy;
 	while (load > maxload_)
@@ -279,10 +321,14 @@ void HDSim3D::timeAdvance2(void)
 			vector<vector<size_t> > sentpoints;
 			vector<int> sentproc;
 			MPI_Barrier(MPI_COMM_WORLD);
+			if(rank==0)
+				std::cout<<"Starting load move"<<std::endl;
 			proc_update_->Update(tproc_, tess_);
+			if(rank==0)
+				std::cout<<"Done load move"<<std::endl;
 			std::vector<Vector3D> &oldpoints = tess_.accessMeshPoints();
 			oldpoints.resize(tess_.GetPointNo());
-			std::vector<Vector3D> newpoints = tess_.UpdateMPIPoints(tproc_, rank,oldpoints, selfindex, sentproc, sentpoints);
+			std::vector<Vector3D> newpoints = tess_.UpdateMPIPoints(tproc_, rank, oldpoints, selfindex, sentproc, sentpoints);
 			MPI_Barrier(MPI_COMM_WORLD);
 			tess_.GetPointNo() = newpoints.size();
 			tess_.GetSentPoints() = sentpoints;
@@ -295,16 +341,27 @@ void HDSim3D::timeAdvance2(void)
 			MPI_exchange_data(tess_, cells_, false, &cdummy);
 			MPI_exchange_data(tess_, point_vel, false, &vdummy);
 			load = proc_update_->GetLoadImbalance(tess_, ntotal);
+			int negative_number = tess_.GetPointNo() > 0 ? 0 : 1;
+			MPI_Allreduce(MPI_IN_PLACE, &negative_number, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+			if(negative_number > 0)
+			{
+				load = maxload_ + 1;
+				if(rank == 0)
+					std::cout<<"CPU with zero points, redoing load balance"<<std::endl;
+			}
 		}
 		else
 			load = 0.0;
 	}
 #endif
+	auto t1 = get_time();
 	UpdateTessellation(tess_, point_vel, dt
 #ifdef RICH_MPI
 		, tproc_
 #endif
 	);
+	auto t2 = get_time();
+	DisplayTime(t1, t2, "Voronoi build time");
 #ifdef RICH_MPI
 	// Keep relevant points
 	MPI_exchange_data(tess_, mid_extensives, false, &edummy);
@@ -342,6 +399,7 @@ void HDSim3D::timeAdvance(void)
 #endif
 	CalcFaceVelocities(tess_, point_vel, face_vel);
 	const double dt = tsc_(tess_, cells_, eos_, face_vel, pt_.getTime());
+	dt_ = dt;
 	pm_.ApplyFix(tess_, cells_, pt_.getTime(), dt, point_vel);
 #ifdef RICH_MPI
 	MPI_exchange_data(tess_, point_vel, true, &vdummy);
@@ -352,6 +410,7 @@ void HDSim3D::timeAdvance(void)
 		fc_(fluxes, tess_, face_vel, cells_, extensive_, eos_, pt_.getTime(), dt);
 	source_(tess_, cells_, fluxes, point_vel, pt_.getTime(), dt, extensive_);
 	eu_(fluxes, tess_, dt, cells_, extensive_, pt_.getTime(), face_vel, face_values);
+	MovePoints(tess_, point_vel, dt);
 	UpdateTessellation(tess_, point_vel, dt
 #ifdef RICH_MPI
 		, tproc_
@@ -389,6 +448,7 @@ void HDSim3D::timeAdvance3(void)
 #endif
 	CalcFaceVelocities(tess_, point_vel, face_vel);
 	dt = tsc_(tess_, cells_, eos_, face_vel, pt_.getTime());
+	dt_ = dt;
 	vector<Conserved3D> fluxes;
 	std::vector<std::pair<ComputationalCell3D, ComputationalCell3D> > face_values = 
 		fc_(fluxes, tess_, face_vel, cells_, extensive_, eos_, pt_.getTime(), 0.5 * dt);
@@ -410,6 +470,7 @@ void HDSim3D::timeAdvance3(void)
 	}
 	std::vector<Vector3D> oldpoints = tess_.accessMeshPoints();
 	oldpoints.resize(tess_.GetPointNo());
+	MovePoints(tess_, point_vel, dt * 0.5);
 #ifdef RICH_MPI
 	if (proc_update_ != 0)
 		proc_update_->Update(tproc_, tess_);
@@ -496,6 +557,7 @@ void HDSim3D::timeAdvance33(void)
 #endif
 	CalcFaceVelocities(tess_, point_vel, face_vel);
 	dt = tsc_(tess_, cells_, eos_, face_vel, pt_.getTime());
+	dt_ = dt;
 	vector<Conserved3D> fluxes;
 	std::vector<std::pair<ComputationalCell3D, ComputationalCell3D> > face_values = 
 		fc_(fluxes, tess_, face_vel, cells_, extensive_, eos_, pt_.getTime(), dt);
@@ -516,6 +578,7 @@ void HDSim3D::timeAdvance33(void)
 	}
 	std::vector<Vector3D> oldpoints = tess_.accessMeshPoints();
 	oldpoints.resize(tess_.GetPointNo());
+	MovePoints(tess_, point_vel, dt);
 #ifdef RICH_MPI
 	if (proc_update_ != 0)
 		proc_update_->Update(tproc_, tess_);
@@ -610,6 +673,7 @@ void HDSim3D::timeAdvance32(void)
 #endif
 	CalcFaceVelocities(tess_, point_vel, face_vel);
 	dt = tsc_(tess_, cells_, eos_, face_vel, pt_.getTime());
+	dt_ = dt;
 	vector<Conserved3D> fluxes;
 	std::vector<std::pair<ComputationalCell3D, ComputationalCell3D> > face_values =
 		fc_(fluxes, tess_, face_vel, cells_, extensive_, eos_, pt_.getTime(), 0.5 * dt);
@@ -628,6 +692,7 @@ void HDSim3D::timeAdvance32(void)
 		cells_ = VectorValues(cells_, order);
 		point_vel = VectorValues(point_vel, order);
 	}
+	MovePoints(tess_, point_vel, dt);
 #ifdef RICH_MPI
 	if (proc_update_ != 0)
 		proc_update_->Update(tproc_, tess_);
@@ -692,6 +757,7 @@ void HDSim3D::timeAdvance4(void)
 #endif
 	CalcFaceVelocities(tess_, point_vel, face_vel);
 	dt = tsc_(tess_, cells_, eos_, face_vel, pt_.getTime());
+	dt_ = dt;
 	vector<Conserved3D> fluxes;
 	std::vector<std::pair<ComputationalCell3D, ComputationalCell3D> > face_values =
 		fc_(fluxes, tess_, face_vel, cells_, extensive_, eos_, pt_.getTime(), 0.5 * dt);
@@ -713,6 +779,7 @@ void HDSim3D::timeAdvance4(void)
 	}
 	std::vector<Vector3D> oldpoints = tess_.accessMeshPoints();
 	oldpoints.resize(tess_.GetPointNo());
+	MovePoints(tess_, point_vel, dt * 0.5);
 #ifdef RICH_MPI
 	if (proc_update_ != 0)
 		proc_update_->Update(tproc_, tess_);
@@ -826,4 +893,64 @@ void HDSim3D::SetTime(double t)
 size_t& HDSim3D::GetMaxID(void)
 {
 	return Max_ID_;
+}
+
+double HDSim3D::RadiationTimeStep(double const dt, CG::MatrixBuilder const& matrix_builder, bool const no_hydro)
+{
+	int total_iters = 0;
+	double const CG_eps = 1e-10;
+	size_t const N = tess_.GetPointNo();
+	if(N == 0)
+		std::cout<<"Zero cells in RadiationTimeStep"<<std::endl;
+	std::vector<double> old_Er(N, 0);
+	std::vector<double> new_Er = CG::conj_grad_solver(CG_eps, total_iters, tess_, cells_ , dt, matrix_builder, pt_.getTime());
+	double max_Er = *std::max_element(new_Er.begin(), new_Er.end());
+#ifdef RICH_MPI
+	MPI_Allreduce(MPI_IN_PLACE, &max_Er, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+#endif	
+	size_t const Nzero = matrix_builder.zero_cells_.size();
+	std::vector<size_t> zero_indeces;
+	for(size_t i = 0; i < Nzero; ++i)
+		zero_indeces.push_back(binary_index_find(ComputationalCell3D::stickerNames, matrix_builder.zero_cells_[i]));
+
+	matrix_builder.PostCG(tess_, extensive_, dt, cells_, new_Er);
+
+	double max_diff = std::numeric_limits<double>::min() * 100;
+	int max_loc = 0;
+	for(size_t i = 0; i < N; ++i)
+	{
+		bool to_calc = true;
+		for(size_t j = 0; j < Nzero; ++j)
+			if(cells_[i].stickers[zero_indeces[j]])
+				to_calc = false;
+		if(not to_calc)
+			continue;
+		double const equlibrium_factor = std::abs(cells_[i].temperature - std::pow(new_Er[i] / CG::radiation_constant, 0.25)) / 
+			cells_[i].temperature < 0.1 ? 0.1 : 1;
+		double const diff = equlibrium_factor * std::abs(new_Er[i] - old_Er[i]) / (new_Er[i] + 0.002 * max_Er);
+		if(diff > max_diff)
+		{
+			max_diff = diff;
+			max_loc = i;
+		}
+	}
+#ifdef RICH_MPI
+	int rank = -1;
+	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+	std::pair<double, int> max_data(max_diff, rank);
+	MPI_Allreduce(MPI_IN_PLACE, &max_data, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_WORLD);
+	max_diff = max_data.first;
+	if(rank == max_data.second)
+		std::cout<<"Radiation time step ID "<<cells_[max_loc].ID<<" old Er "<<old_Er[max_loc]<<" new Er "<<new_Er[max_loc]<<
+		" diff "<<max_diff<<" Tgas "<<cells_[max_loc].temperature<<" Trad "<<std::pow(new_Er[max_loc] / CG::radiation_constant, 0.25)<<std::endl;
+	ComputationalCell3D cdummy;
+	MPI_exchange_data(tess_, cells_, true, &cdummy);
+	
+#endif
+	if(no_hydro)
+	{
+		pt_.updateTime(dt);
+		pt_.updateCycle();
+	}
+	return dt * std::min(0.05 / max_diff, 1.1);
 }
