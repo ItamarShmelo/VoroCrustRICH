@@ -30,6 +30,10 @@
 #include "source/newtonian/two_dimensional/simple_cell_updater.hpp"
 #include "source/newtonian/two_dimensional/simple_extensive_updater.hpp"
 #include "source/newtonian/two_dimensional/stationary_box.hpp"
+#ifdef RICH_MPI
+#include "source/mpi/MeshPointsMPI.hpp"
+#include "source/mpi/ConstNumberPerProc.hpp"
+#endif
 
 #define cylindar_run 1
 
@@ -50,13 +54,31 @@ int main(void)
     Vector2D lower_left(0, 0), upper_right(1, 1);
     SquareBox outer_boundary(lower_left, upper_right);
     
+
+#ifdef RICH_MPI
+    //Create domain decomposition
+    std::vector<Vector2D> cpu_points = RandSquare(ws, lower_left.x, upper_right.x, lower_left.y, upper_right.y);
+    VoronoiMesh cpu_tess;
+    cpu_tess.Initialise(cpu_points, outer_boundary);
+    // Create initial random mesh
+    std::vector<Vector2D> mesh_points = RandSquare(Np * Np, cpu_tess, lower_left, upper_right);
+#else
     // Create initial random mesh
     std::vector<Vector2D> mesh_points = RandSquare(Np * Np, lower_left.x, upper_right.x, lower_left.y, upper_right.y);
+#endif
     // Make mesh nice and round
+#ifdef RICH_MPI
+    mesh_points = RoundGridV(mesh_points, outer_boundary, cpu_tess);
+#else
     mesh_points = RoundGridV(mesh_points, outer_boundary);
+#endif
     // Create voronoi mesh
     VoronoiMesh tess;
+#ifdef RICH_MPI
+    tess.Initialise(mesh_points, cpu_tess, outer_boundary);
+#else
     tess.Initialise(mesh_points, outer_boundary);
+#endif
     // Choose geometry
 #ifdef cylindar_run 
     CylindricalSymmetry geometry(Vector2D(0, 0), Vector2D(0, 1));
@@ -109,7 +131,14 @@ int main(void)
         cells[i].pressure = abs(tess.GetMeshPoint(i)) < 0.1 ? pressure_ratio : 1;
     }
     // Create main sim class
+#ifdef RICH_MPI
+    // Create load balance scheme
+    ConstNumberPerProc cpu_move(outer_boundary);
+    hdsim sim(cpu_tess, tess, outer_boundary, geometry, cells, eos, point_motion, interface_velocity_calc, source, time_step, flux_calc, extensive_update, 
+        cell_update, std::pair<std::vector<std::string>, std::vector<std::string> > (), &cpu_move);
+#else
     hdsim sim(tess, outer_boundary, geometry, cells, eos, point_motion, interface_velocity_calc, source, time_step, flux_calc, extensive_update, cell_update);
+#endif
     // Main loop
     while(sim.getTime() < tend)
     {
@@ -125,9 +154,11 @@ int main(void)
             throw;
         }  
     }
-    write_snapshot_to_hdf5(sim, "sedov.h5");
 #ifdef RICH_MPI
-  MPI_Finalize();
+    write_snapshot_to_hdf5(sim, "sedov_rank" + std::to_string(rank) + ".h5");
+    MPI_Finalize();
+#else
+    write_snapshot_to_hdf5(sim, "sedov.h5");
 #endif
     return 0;
 }
