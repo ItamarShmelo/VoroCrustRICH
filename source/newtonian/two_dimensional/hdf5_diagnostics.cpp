@@ -1,6 +1,10 @@
 #include "hdf5_diagnostics.hpp"
 #include "../../misc/hdf5_utils.hpp"
 #include "../../misc/lazy_list.hpp"
+
+#include "write_vtk.hpp"
+#include "write_vtu.hpp"
+
 #ifdef RICH_MPI
 #include "../../tessellation/VoronoiMesh.hpp"
 #endif
@@ -225,7 +229,8 @@ namespace {
 }
 
 void write_snapshot_to_hdf5(hdsim const& sim, string const& fname,
-	const vector<DiagnosticAppendix*>& appendices)
+	const vector<DiagnosticAppendix*>& appendices,
+	bool const write_vtk, bool const write_vtu)
 {
 	ConvexHullData chd(sim.getTessellation());
 	H5File file(H5std_string(fname), H5F_ACC_TRUNC);
@@ -331,6 +336,64 @@ void write_snapshot_to_hdf5(hdsim const& sim, string const& fname,
 		(gappendices,
 			(*(appendices.at(i)))(sim),
 			appendices.at(i)->getName());
+
+	//////////////// write vtk/vtu files
+	if(write_vtk or write_vtu){
+		std::string const file_name_base = "sedov_"+std::to_string(sim.getCycle());
+		// make sure this does not create deep copies 
+		std::vector<double> const& density = serial_generate(CellsPropertyExtractor(sim, ThermalPropertyExtractor(&ComputationalCell::density)));
+		std::vector<double> const& pressure = serial_generate(CellsPropertyExtractor(sim, ThermalPropertyExtractor(&ComputationalCell::pressure)));
+		
+		std::vector<double> const& velocity_x = serial_generate(CellsPropertyExtractor(sim, CellVelocityComponentExtractor(&Vector2D::x)));
+		std::vector<double> const& velocity_y = serial_generate(CellsPropertyExtractor(sim, CellVelocityComponentExtractor(&Vector2D::y)));
+		
+		std::vector<std::string> const cell_variable_names = {"density", "pressure"};
+		// NOTE! this list probably define deep copies - which is a stupid duplication of memory
+		std::vector<std::vector<double>> const cell_variables = {density, pressure};
+		
+		std::vector<std::string> const cell_vectors_names = {"velocity"};
+		// NOTE! this list probably define deep copies - which is a stupid duplication of memory
+		std::vector<std::vector<double>> const cell_vectors_x = {velocity_x};
+		std::vector<std::vector<double>> const cell_vectors_y = {velocity_y};
+		
+		std::vector<std::size_t> cells_num_vertices(chd.nvert.size());
+		for (size_t cell = 0; cell < chd.nvert.size(); ++cell){
+			std::size_t const num_vertices = static_cast<std::size_t>(chd.nvert[cell]);
+			assert(num_vertices == chd.nvert[cell]); //make sure it is an integer and no overflow from double->integer
+			cells_num_vertices[cell] = num_vertices;
+		}
+
+		if(write_vtk){
+			write_vtk::write_vtk(
+				file_name_base,
+				chd.xvert,
+				chd.yvert,
+				cells_num_vertices,
+				cell_variable_names,
+				cell_variables,
+				sim.getTime(), 
+				sim.getCycle()
+			);
+		}
+		
+		if(write_vtu){
+			write_vtu::write_vtu(
+				file_name_base,
+				chd.xvert,
+				chd.yvert,
+				cells_num_vertices,
+				cell_variable_names,
+				cell_variables,
+
+				cell_vectors_names,
+				cell_vectors_x,
+				cell_vectors_y,
+
+				sim.getTime(), 
+				sim.getCycle()
+			);
+		}
+	}
 }
 
 Snapshot read_hdf5_snapshot

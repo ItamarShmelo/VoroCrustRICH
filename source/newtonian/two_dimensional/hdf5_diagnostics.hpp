@@ -84,9 +84,13 @@ public:
 \param sim The hdsim class of the simulation
 \param fname The name of the output file
 \param appendices Additional data to be written to snapshot
+\param write_vtk write a vtk file (ascii file)
+\param write_vtuwrite a vtu file (binary file. In parallel adds a summary pvtu file)
 */
 void write_snapshot_to_hdf5(hdsim const& sim,string const& fname,
-			    const vector<DiagnosticAppendix*>& appendices=vector<DiagnosticAppendix*>());
+			    const vector<DiagnosticAppendix*>& appendices=vector<DiagnosticAppendix*>(),
+          bool const write_vtk=false,
+          bool const write_vtu=false);
 /*!
 \brief Reads an HDF5 snapshot file in order to restart the simulation
 \param dump The dump data structure, should be when passed
