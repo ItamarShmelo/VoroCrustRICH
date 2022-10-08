@@ -68,12 +68,32 @@ where `sedov2d_test` represents the subdirectory `runs/sedov2d_test` which conta
 
 For other compilation configurations, replace `gnuReleaseMPI` with one of:
 ```shell
- intelReleaseMPI
- intelDebugMPI
- intelRelease
- intelDebug
- gnuReleaseMPI
- gnuDebugMPI
- gnuRelease
- gnuDebug
+gnuReleaseMPI
+gnuReleaseMPIProf
+gnuReleaseProf
+gnuRelease
+gnuDebugMPI
+gnuDebugMPIProf
+gnuDebugProf
+gnuDebug
+
+intelReleaseMPI
+intelReleaseMPIProf
+intelRelease
+intelReleaseProf
+intelDebugMPI
+intelDebugMPIProf
+intelDebugProf
+intelDebug
 ```
+
+
+## Profiling
+
+To run the `gprof` profiler (for compilation configs with `Prof`), after a simulation run is finished, a `gmon.out` file will be generated in the run directory. This file contains profiling information and can be processed into a nice PDF (`gprof.pdf`) via:
+
+```shell
+gprof RICH_EXE_PATH gmon.out | gprof2dot -s -w --show-samples | dot -Tpdf -o gprof.pdf
+```
+
+where `RICH_EXE_PATH` is a path to the `rich` binary that was used in this simulation.

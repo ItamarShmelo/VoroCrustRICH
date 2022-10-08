@@ -1,9 +1,2 @@
 [
-    "slurm/_21.08.6",
-    "cmake/3.20.2",
-    "hdf5/1.12.1/Intel",
-    "openmpi/4.1.4/Intel/OneApi-2022.2.0",
-    "Intel/OneApi/2022.2.0/compiler/2022.1.0",
-    "boost/1.74.0",
-    "gcc/11.1.0",
 ]
