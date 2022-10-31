@@ -1,6 +1,7 @@
 #include "hdf_write.hpp"
 #include "../../misc/hdf5_utils.hpp"
 #include "../../misc/int2str.hpp"
+#include "write_vtu_3d.hpp"
 
 using namespace H5;
 
@@ -143,6 +144,7 @@ void WriteSnapshot3D(HDSim3D const& sim, std::string const& filename,
 #ifdef RICH_MPI
 		     ,bool mpi_write
 #endif // RICH_MPI
+, bool const write_vtu
 		     )
 {
 #ifdef RICH_MPI
@@ -165,6 +167,12 @@ void WriteSnapshot3D(HDSim3D const& sim, std::string const& filename,
 #ifdef RICH_MPI
     }
 #endif // RICH_MPI
+  std::vector<std::vector<double> > vtu_cell_variables;
+  std::vector<std::string> vtu_cell_variable_names;
+  
+  std::vector<std::string> vtu_cell_vectors_names;
+	std::vector<std::vector<Vector3D> > vtu_cell_vectors;
+  Tessellation3D const& tess = sim.getTesselation();
   Group writegroup;
 #ifdef RICH_MPI
   if (mpi_write)
@@ -186,7 +194,6 @@ void WriteSnapshot3D(HDSim3D const& sim, std::string const& filename,
 #endif
 	
   vector<ComputationalCell3D> const& cells = sim.getCells();
-  Tessellation3D const& tess = sim.getTesselation();
 
   size_t Ncells = tess.GetPointNo();
 
@@ -249,19 +256,35 @@ void WriteSnapshot3D(HDSim3D const& sim, std::string const& filename,
       mpi.close();
     }
 #endif
+
   Ncells = tess.GetPointNo();
   temp.resize(Ncells);
   for (size_t i = 0; i < Ncells; ++i)
     temp[i] = cells[i].density;
   write_std_vector_to_hdf5(writegroup, temp, "Density");
+  if(write_vtu)
+  {
+    vtu_cell_variables.push_back(temp);
+    vtu_cell_variable_names.push_back("Density");
+  }
 
   for (size_t i = 0; i < Ncells; ++i)
     temp[i] = cells[i].pressure;
   write_std_vector_to_hdf5(writegroup, temp, "Pressure");
+  if(write_vtu)
+  {
+    vtu_cell_variables.push_back(temp);
+    vtu_cell_variable_names.push_back("Pressure");
+  }
 
   for (size_t i = 0; i < Ncells; ++i)
     temp[i] = cells[i].internal_energy;
   write_std_vector_to_hdf5(writegroup, temp, "InternalEnergy");
+  if(write_vtu)
+  {
+    vtu_cell_variables.push_back(temp);
+    vtu_cell_variable_names.push_back("InternalEnergy");
+  }
 
   std::vector<size_t> ids(Ncells);
   for (size_t i = 0; i < Ncells; ++i)
@@ -280,9 +303,23 @@ void WriteSnapshot3D(HDSim3D const& sim, std::string const& filename,
     temp[i] = cells[i].velocity.z;
   write_std_vector_to_hdf5(writegroup, temp, "Vz");
 
+  if(write_vtu)
+  {
+    vtu_cell_vectors_names.push_back("Velocity");
+    std::vector<Vector3D> vel(Ncells);
+    for (size_t i = 0; i < Ncells; ++i)
+      vel[i] = cells[i].velocity;
+    vtu_cell_vectors.push_back(vel);
+  }
+
   for (size_t i = 0; i < Ncells; ++i)
     temp[i] = cells[i].temperature;
   write_std_vector_to_hdf5(writegroup, temp, "Temperature");
+  if(write_vtu)
+  {
+    vtu_cell_variables.push_back(temp);
+    vtu_cell_variable_names.push_back("Temperature");
+  }
 
   Group tracers, stickers;
 #ifdef RICH_MPI
@@ -303,8 +340,13 @@ void WriteSnapshot3D(HDSim3D const& sim, std::string const& filename,
   for (size_t j = 0; j < ComputationalCell3D::tracerNames.size(); ++j)
     {
       for (size_t i = 0; i < Ncells; ++i)
-	temp[i] = cells[i].tracers[j];
+	      temp[i] = cells[i].tracers[j];
       write_std_vector_to_hdf5(tracers, temp, ComputationalCell3D::tracerNames[j]);
+      if(write_vtu)
+      {
+        vtu_cell_variables.push_back(temp);
+        vtu_cell_variable_names.push_back(ComputationalCell3D::tracerNames[j]);
+      }
     }
 
   for (size_t j = 0; j <ComputationalCell3D::stickerNames.size(); ++j)
@@ -351,6 +393,13 @@ void WriteSnapshot3D(HDSim3D const& sim, std::string const& filename,
 #else
   file.close();
 #endif
+  if(write_vtu)
+  {
+    std::string vtu_name(filename);
+    for(size_t i = 0; i < 3; ++i)
+      vtu_name.pop_back();
+    write_vtu3d::write_vtu_3d(vtu_name, vtu_cell_variable_names, vtu_cell_variables, vtu_cell_vectors_names, vtu_cell_vectors, sim.getTime(), sim.getCycle(), tess);
+  }
 }
 
 std::vector<Vector3D> ReadVoronoiPoints(std::string const& filename)
