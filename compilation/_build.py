@@ -24,6 +24,7 @@ def _run_cmake(*, build_dir, exe_name, config, SysLibsDict, test_dir, definition
 
     hdf5_lib_dir = SysLibsDict["hdf5_lib_dir"]
     hdf5_include_dir = SysLibsDict["hdf5_include"]
+    vtk_dir = SysLibsDict["vtk"]
 
     if config.startswith("gnu"):
         fortran_compiler = SysLibsDict["gfortran"]
@@ -58,6 +59,7 @@ def _run_cmake(*, build_dir, exe_name, config, SysLibsDict, test_dir, definition
         logger.error(f"no known compiler was given at head of {config}")
     
     if "MPI" in config:
+        mpi = "on"
         common_cxx_flags += " -DRICH_MPI "
         if "gnu" in config:
             c_compiler = SysLibsDict["mpicc_gcc"]
@@ -65,13 +67,19 @@ def _run_cmake(*, build_dir, exe_name, config, SysLibsDict, test_dir, definition
         else:
             c_compiler = SysLibsDict["mpicc"]
             cxx_compiler = SysLibsDict["mpic++"]
-
+    else:
+        mpi = "off"
+    
     if "Release" in config:
         build_type = "Release"
     if "Debug" in config:
         build_type = "Debug"
     
+    prof = "on" if "Prof" in config else "off"
+    
     cmd = ['cmake',
+            f'-DMPI={mpi}',
+            f'-DPROF={prof}',
             f'-DCMAKE_Fortran_COMPILER={fortran_compiler}',
             f'-DCMAKE_C_COMPILER={c_compiler}',
             f'-DCMAKE_CXX_COMPILER={cxx_compiler}',
@@ -86,6 +94,7 @@ def _run_cmake(*, build_dir, exe_name, config, SysLibsDict, test_dir, definition
             f'-DEXE_NAME={exe_name}',
             f'-DHDF5_LIB_DIRECTORY={hdf5_lib_dir}',
             f'-DHDF5_INCLUDE={hdf5_include_dir}',
+            f'-DVTK_DIRECTORY={vtk_dir}',
             f'-DTEST_DIR={test_dir}',
             '-DCMAKE_VERBOSE_MAKEFILE=on',
             f'-DPROJECT_ROOT_DIR={root_dir}',
