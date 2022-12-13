@@ -29,7 +29,7 @@
 
 namespace write_vtu3d{
 
-void write_vtu_3d(std::string const& file_name,
+void write_vtu_3d(std::filesystem::path const& file_name,
             std::vector<std::string> const& cell_variable_names,
 			   std::vector<std::vector<double>> const& cell_variables,
 			   std::vector<std::string> const& cell_vectors_names,
@@ -46,9 +46,6 @@ void write_vtu_3d(std::string const& file_name,
 		int mpi_size;
 		MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
 		MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
-		auto const file_vtu = file_name + "_" + std::to_string(mpi_rank) + ".vtu";
-	#else
-		auto const file_vtu = file_name + ".vtu";
 	#endif
 	
 	vtkNew<vtkUnstructuredGrid> ugrid;
@@ -151,7 +148,8 @@ void write_vtu_3d(std::string const& file_name,
 
 	// ------------ write the vtu file to disk
     vtkNew<vtkXMLUnstructuredGridWriter> writer;
-    writer->SetFileName(file_vtu.c_str());
+	writer->SetCompressionLevel(9);
+    writer->SetFileName(file_name.c_str());
     writer->SetInputData(ugrid);
   	writer->Write();
 
@@ -193,11 +191,13 @@ void write_vtu_3d(std::string const& file_name,
 		pwriter->SetNumberOfPieces(mpi_size);
 		pwriter->SetStartPiece(mpi_rank);
 		pwriter->SetEndPiece(mpi_rank);
+		pwriter->SetUseSubdirectory(true);
 
 		// ----- write file to disk
-		auto const file_pvtu = file_name + ".pvtu";
+		std::filesystem::path pname(file_name);
+		pname.replace_extension("pvtu");
 		//printf("%d/%d writing vtu file '%s'\n", mpi_rank+1, mpi_size, file_pvtu.c_str());
-		pwriter->SetFileName(file_pvtu.c_str());
+		pwriter->SetFileName(pname.c_str());
 		pwriter->SetInputData(ugrid);
 		pwriter->Write();
 	#endif

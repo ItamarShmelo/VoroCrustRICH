@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include "Tessellation3D.hpp"
+#include <filesystem>
 #include "../../newtonian/three_dimensional/hdsim_3d.hpp"
 
 namespace write_vtu3d{
@@ -19,7 +20,7 @@ namespace write_vtu3d{
  * @param time 
  * @param cycle 
  */
-void write_vtu_3d(std::string const& file_name,
+void write_vtu_3d(std::filesystem::path const& file_name,
 			   std::vector<std::string> const& cell_variable_names,
 			   std::vector<std::vector<double>> const& cell_variables,
 			   std::vector<std::string> const& cell_vectors_names,

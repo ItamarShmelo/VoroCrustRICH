@@ -1,4 +1,5 @@
 #include "hdf_write.hpp"
+#include <filesystem>
 #include "../../misc/hdf5_utils.hpp"
 #include "../../misc/int2str.hpp"
 #include "write_vtu_3d.hpp"
@@ -395,9 +396,8 @@ void WriteSnapshot3D(HDSim3D const& sim, std::string const& filename,
 #endif
   if(write_vtu)
   {
-    std::string vtu_name(filename);
-    for(size_t i = 0; i < 3; ++i)
-      vtu_name.pop_back();
+    std::filesystem::path vtu_name(filename);
+    vtu_name.replace_extension("vtu");
     write_vtu3d::write_vtu_3d(vtu_name, vtu_cell_variable_names, vtu_cell_variables, vtu_cell_vectors_names, vtu_cell_vectors, sim.getTime(), sim.getCycle(), tess);
   }
 }
