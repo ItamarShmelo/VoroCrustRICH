@@ -93,6 +93,8 @@ double OndrejEOS::InterpData2(double density, double other, std::vector<double> 
             eo.addEntry("other", other);
             eo.addEntry("First other", otherv[0]);
             eo.addEntry("First data", data[0]);
+            eo.addEntry("Data begin",*(data.begin() + Nt_ * (d_index + i)));
+            eo.addEntry("other begin",*(otherv.begin() + Nt_ * (d_index + i)));
             throw eo;
         }
     }
@@ -121,6 +123,8 @@ double OndrejEOS::dp2e(double d, double p, tvector const &tracers, vector<string
 {
     double d_cgs = d * mscale_ / (lscale_ * lscale_ * lscale_);
     double p_cgs = p * mscale_ / (tscale_ * tscale_ * lscale_);
+    if(p_cgs < d_cgs * 1e8)
+        p_cgs = d_cgs * 1e8;
     if (p_cgs > 1e16 * d_cgs)
         return tscale_ * tscale_ * 1.5 * p_cgs / (d_cgs * lscale_ * lscale_);
     else
@@ -171,6 +175,8 @@ double OndrejEOS::dp2c(double d, double p, tvector const &tracers, vector<string
 {
     double d_cgs = d * mscale_ / (lscale_ * lscale_ * lscale_);
     double p_cgs = p * mscale_ / (tscale_ * tscale_ * lscale_);
+    if(p_cgs < d_cgs * 1e8)
+        p_cgs = d_cgs * 1e8;
     if (p_cgs > 1e16 * d_cgs)
         return tscale_ * std::sqrt(5 * p_cgs / (3 * d_cgs)) / lscale_;
     else
@@ -198,6 +204,8 @@ double OndrejEOS::dp2s(double d, double p, tvector const &tracers, vector<string
 {
     double d_cgs = d * mscale_ / (lscale_ * lscale_ * lscale_);
     double p_cgs = p * mscale_ / (tscale_ * tscale_ * lscale_);
+    if(p_cgs < 0)
+        throw UniversalError("Negative Pressure in dp2s");
     if (p_cgs > 1e16 * d_cgs)
         return tscale_ * tscale_ * std::pow(10.0, (8.128 + std::log10(-38.43 + std::log(std::pow(p_cgs, 1.5) * std::pow(d_cgs, -2.5))))) / (lscale_ * lscale_);
     return tscale_ * tscale_ * std::pow(10.0, InterpData2(std::log10(d_cgs), std::log10(p_cgs), P_, S_)) / (lscale_ * lscale_);
@@ -208,6 +216,8 @@ double OndrejEOS::sd2p(double s, double d, tvector const &tracers, vector<string
     double smax = dp2s(d, 5.2 * d, tracers, tracernames);
     double d_cgs = d * mscale_ / (lscale_ * lscale_ * lscale_);
     double s_cgs = s * lscale_ * lscale_ / (tscale_ * tscale_);
+    if(s_cgs < 0)
+        throw UniversalError("Negative Entropy in sd2p");
     if (s > smax)
         return tscale_ * tscale_ * lscale_ * std::pow(std::pow(d_cgs, 2.5) * std::exp(s_cgs * std::pow(10.0, -8.128) + 38.43), 0.666666666) / mscale_;
     else
