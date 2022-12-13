@@ -36,7 +36,7 @@ def _run_cmake(*, build_dir, exe_name, config, SysLibsDict, test_dir, definition
         c_compiler = SysLibsDict["gcc"]
         cxx_compiler = SysLibsDict["g++"]
 
-        cmake_cxx_standard = "14"
+        cmake_cxx_standard = "17"
         cmake_cxx_flags = " -Wdouble-promotion -fstrict-aliasing -Wno-deprecated-copy "
         cmake_cxx_flags_debug = " -D_GLIBCXX_DEBUG "
         cmake_cxx_flags_release = " "
@@ -51,7 +51,7 @@ def _run_cmake(*, build_dir, exe_name, config, SysLibsDict, test_dir, definition
         cxx_compiler = SysLibsDict["icpc"]
        
         common_cxx_flags += " -diag-remark=13397,13401,15552 -pedantic-errors -Wall "
-        cmake_cxx_standard = "14"
+        cmake_cxx_standard = "17"
         cmake_cxx_flags = " -ansi-alias -fimf-arch-consistency=true "
         cmake_cxx_flags_debug = " -fp-model consistent -diag-disable=openmp -Wno-unknown-pragmas "
         cmake_cxx_flags_release = " -fp-model precise -march=core-avx2 -qopenmp "
