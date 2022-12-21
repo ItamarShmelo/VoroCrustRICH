@@ -12,7 +12,7 @@
 class SimpleCFL: public TimeStepFunction
 {
 public:
-
+    double min_dt;
   /*! \brief Class constructor
     \param cfl CFL number
    */
