@@ -123,7 +123,7 @@ namespace
 
 	bool SmallThermalEnergy(Extensive const& cell)
 	{
-		if (0.51*ScalarProd(cell.momentum, cell.momentum) > cell.energy*cell.mass)
+		if (0.5 * ScalarProd(cell.momentum, cell.momentum) > (1- 1e-3) * cell.energy*cell.mass)
 			return true;
 		else
 			return false;
@@ -133,8 +133,17 @@ namespace
 	{
 		const double Ek = ScalarProd(extensive.momentum, extensive.momentum) / (2 * extensive.mass);
 		const double density = extensive.mass / vol;
-		extensive.energy = Ek + eos.dp2e(density, eos.sd2p(extensive.tracers[entropy_index] / extensive.mass, density))
-			*extensive.mass;
+		try
+		{					
+			extensive.energy = Ek + eos.dp2e(density, eos.sd2p(extensive.tracers[entropy_index] / extensive.mass, density))
+				*extensive.mass;
+		}
+		catch(UniversalError &  e)
+		{
+			e.addEntry("Thrown in EntropyFix, entropy ",extensive.tracers[entropy_index] / extensive.mass);
+			throw e;
+		}
+
 	}
 
 	/*bool EntropyIncrease(ComputationalCell const& oldcell, size_t entropyindex, double new_entropy)
@@ -222,14 +231,17 @@ void ColdFlowsUpdate::operator()
 	
 	size_t e_index = static_cast<size_t>(entropy_index_);
 	assert(entropy_index_<static_cast<int>(extensive.tracers.size())&&entropy_index_>=0);
-	
+	double const Ethermal = extensive.energy - ScalarProd(extensive.momentum, extensive.momentum)*0.5 / extensive.mass;
+	if(Ethermal < extensive.mass * 1e-7)
+		extensive.energy += 1e-6 * extensive.mass - Ethermal;
+	// if(Ethermal < 0 || (Ethermal < eos_.dp2e(cells[index].density, cells[index].pressure) * 0.9 * extensive.mass))
+	// {
+	// 	EntropyFix(extensive, cd.volumes[index], eos_, e_index);
+	// 	return;
+	// }
 	double new_d=extensive.mass/cd.volumes[index];
 	double new_entropy=eos_.dp2s(new_d,NewPressure(extensive, eos_, new_d));
-	if(new_entropy*extensive.mass<extensive.tracers[e_index])
-		EntropyFix(extensive, cd.volumes[index], eos_, e_index);
-	/*else
-		return;
-	*/
+
 	Vector2D Tgrad = GetTemperatureGrad(index, interp_, cells[index]);
 	if ((!BigJump(Tgrad,index,tess,cells,ghost_cells_)&&!NegativeVelocityDivergence(index,interp_,eos_.dp2c(cells[index].density,cells[index].pressure),tess.GetWidth(static_cast<int>(index))))
 		||NegativeThermalEnergy(extensive))
