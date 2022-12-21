@@ -9,7 +9,7 @@ namespace
 	void EntropyFix(EquationOfState const& eos, ComputationalCell3D &res, size_t entropy_index, double &energy,
 		Conserved3D &extensive)
 	{
-	  double new_pressure = eos.sd2p(res.tracers[entropy_index], res.density, res.tracers, ComputationalCell3D::tracerNames);
+	  	double new_pressure = eos.sd2p(res.tracers[entropy_index], res.density, res.tracers, ComputationalCell3D::tracerNames);
 		res.pressure = new_pressure;
 		double de = eos.dp2e(res.density, res.pressure) - energy;
 		energy += de;
