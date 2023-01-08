@@ -11,6 +11,16 @@ namespace CG
             return 1 - R * R / 15 + 2 * R * R * R * R /315;
         return 3 * (1.0 / std::tanh(R) - 1.0 / R) / R;
     }
+
+    double FleckFactor(double const dt, double const beta, double const sigma_a)
+    {
+        return 1.0 / (1 + beta * dt * sigma_a * CG::speed_of_light);
+    }
+
+    double FleckFactorCompton(double const dt, double const beta, double const sigma_a, double const sigma_s, double const Erad, double const Cv)
+    {
+        return 1.0 / (1 + beta * dt * sigma_a * CG::speed_of_light + 16 * sigma_s * CG::boltzmann_constant * Erad / (CG::electron_mass * CG::speed_of_light * Cv));
+    }
 }
 
 void Diffusion::BuildMatrix(Tessellation3D const& tess, mat& A, size_t_mat& A_indeces, std::vector<ComputationalCell3D> const& cells,
@@ -22,6 +32,7 @@ void Diffusion::BuildMatrix(Tessellation3D const& tess, mat& A, size_t_mat& A_in
     D.resize(Nlocal);
     fleck_factor.resize(Nlocal);
     sigma_planck.resize(Nlocal);
+    sigma_s.resize(Nlocal);
     std::vector<size_t> neighbors;
     face_vec faces;
     std::vector<size_t> zero_indeces;
@@ -33,17 +44,20 @@ void Diffusion::BuildMatrix(Tessellation3D const& tess, mat& A, size_t_mat& A_in
     for(size_t i = 0; i < Nlocal; ++i)
     {
         double const volume = tess.GetVolume(i);
-        D[i] = D_coefficient_calcualtor.CalcDiffusionCoefficient(cells[i]);
-        double const T = cells[i].temperature;
-        sigma_planck[i] = D_coefficient_calcualtor.CalcPlanckOpacity(cells[i]);
-        double const beta = 4 * CG::radiation_constant * T * T * T / (cells[i].density * eos_.dT2cv(cells[i].density, T, cells[i].tracers, ComputationalCell3D::tracerNames));
-        fleck_factor[i] = 1.0 / (1 + sigma_planck[i] * CG::speed_of_light * dt * beta);
         bool set_to_zero = false;
         for(size_t j = 0; j < Nzero; ++j)
             if(cells[i].stickers[zero_indeces[j]])
                 set_to_zero = true;
         double const Er = cells[i].Erad * cells[i].density * (set_to_zero ? zero_value : 1);
         new_Er[i] = cells[i].Erad * cells[i].density;
+
+        D[i] = D_coefficient_calcualtor.CalcDiffusionCoefficient(cells[i]);
+        double const T = cells[i].temperature;
+        sigma_planck[i] = D_coefficient_calcualtor.CalcPlanckOpacity(cells[i]);
+        sigma_s[i] = D_coefficient_calcualtor.CalcScatteringOpacity(cells[i]);
+        double const Cv = cells[i].density * eos_.dT2cv(cells[i].density, T, cells[i].tracers, ComputationalCell3D::tracerNames);
+        double const beta = 4 * CG::radiation_constant * T * T * T / Cv;
+        fleck_factor[i] = compton_on_ ? FleckFactorCompton(dt, beta, sigma_planck[i], sigma_s[i], Er, Cv) : FleckFactor(dt, beta, sigma_planck[i]);
         b[i] = Er * volume;
         x0[i] = Er;       
         b[i] += volume * fleck_factor[i] * dt * CG::speed_of_light * sigma_planck[i] * T * T * T * T * CG::radiation_constant;
@@ -72,8 +86,11 @@ void Diffusion::BuildMatrix(Tessellation3D const& tess, mat& A, size_t_mat& A_in
         double const volume = tess.GetVolume(i);
         double const T = cells[i].temperature;
         A[i].push_back(volume * (1 + fleck_factor[i] * dt * CG::speed_of_light * sigma_planck[i]));
+        if(compton_on_)
+            A[i][0] += volume * sigma_s[i] *  fleck_factor[i] * dt * 4 * CG::boltzmann_constant * (std::pow(new_Er[i] / CG::radiation_constant, 0.25) - T) / (CG::electron_mass * CG::speed_of_light);
     }
     Vector3D dummy_v;
+    std::vector<Vector3D> gradE(Nlocal);
     for(size_t i = 0; i < Nlocal; ++i)
     {
         double const volume = tess.GetVolume(i);
@@ -82,7 +99,7 @@ void Diffusion::BuildMatrix(Tessellation3D const& tess, mat& A, size_t_mat& A_in
         size_t const Nneigh = neighbors.size();
         Vector3D const CM = tess.GetCellCM(i);
         Vector3D const point = tess.GetMeshPoint(i);
-        Vector3D  gradE(0, 0, 0) ;
+        gradE[i] = Vector3D(0, 0, 0) ;
         double const Dcell = D[i];
         double const Er = cells[i].Erad * cells[i].density;
         bool self_zero = false;
@@ -136,12 +153,21 @@ void Diffusion::BuildMatrix(Tessellation3D const& tess, mat& A, size_t_mat& A_in
                     boundary_calc_.SetBoundaryValues(tess, i, neighbor_j, dt, cells, tess.GetArea(faces[j]), A[i][0], b[i], faces[j]);
                 boundary_calc_.GetOutSideValues(tess, cells, i, neighbor_j, new_Er, Er_j, dummy_v);
             }
-            gradE += r_ij * (tess.GetArea(faces[j]) * 0.5 * (Er + Er_j));
+            gradE[i] += r_ij * (tess.GetArea(faces[j]) * 0.5 * (Er + Er_j));
         }
-        gradE *= -1.0 / volume;
-        double const flux_limiter = flux_limiter_ ? CalcSingleFluxLimiter(gradE, Dcell, Er) : 1;
+    }
+    for(size_t i = 0; i < Nlocal; ++i)
+    {
+        double const volume = tess.GetVolume(i);
+        gradE[i] *= -1.0 / volume;
+        faces = tess.GetCellFaces(i);
+        tess.GetNeighbors(i, neighbors);
+        size_t const Nneigh = neighbors.size();
+        Vector3D const point = tess.GetMeshPoint(i);
+        double const Dcell = D[i];
+        double const Er = cells[i].Erad * cells[i].density;     
+        double const flux_limiter = flux_limiter_ ? CalcSingleFluxLimiter(gradE[i], Dcell, Er) : 1;
         cell_flux_limiter[i] = flux_limiter;
-        size_t neigh_counter = 1;
         for(size_t j = 0; j < Nneigh; ++j)
         {
             size_t const neighbor_j = neighbors[j];
@@ -153,6 +179,12 @@ void Diffusion::BuildMatrix(Tessellation3D const& tess, mat& A, size_t_mat& A_in
             A[i][0] += momentum_relativity_term;
             if(!tess.IsPointOutsideBox(neighbor_j))
             {
+                auto it = std::find(A_indeces[i].begin(), A_indeces[i].end(), neighbor_j);
+                if(it == A_indeces[i].end() )
+                    throw UniversalError("Key not equal in diffusion");
+                size_t const neigh_counter = static_cast<size_t>(it - A_indeces[i].begin());
+                if(A[i][neigh_counter] != neighbor_j)
+                    throw UniversalError("Key not equal value in diffusion");
                 A[i][neigh_counter] +=momentum_relativity_term;
                 ++neigh_counter;
             }
@@ -163,7 +195,7 @@ void Diffusion::BuildMatrix(Tessellation3D const& tess, mat& A, size_t_mat& A_in
                 b[i] -= momentum_relativity_term * Er_j;
             }
         }
-        R2[i] = flux_limiter_ ? flux_limiter / 3 + boost::math::pow<2>(flux_limiter * abs(gradE) * Dcell / (CG::speed_of_light * Er)) : 1.0 / 3.0;
+        R2[i] = flux_limiter_ ? flux_limiter / 3 + boost::math::pow<2>(flux_limiter * abs(gradE[i]) * Dcell / (CG::speed_of_light * Er)) : 1.0 / 3.0;
         A[i][0] -= volume * fleck_factor[i] * dt * 0.5 * (3 - R2[i]) * sigma_planck[i] * ScalarProd(cells[i].velocity, cells[i].velocity) / CG::speed_of_light;
     }
     for(size_t i = 0; i < Nlocal; ++i)
@@ -191,15 +223,17 @@ void Diffusion::PostCG(Tessellation3D const& tess, std::vector<Conserved3D>& ext
   
     for(size_t i = 0; i < N; ++i)
     {
-        bool self_zero = false;
-        for(size_t j = 0; j < Nzero; ++j)
-            if(cells[i].stickers[zero_indeces[j]])
-                self_zero = true;
         double const volume = tess.GetVolume(i);
         extensives[i].Erad = CG_result[i] * volume;
         double const T = cells[i].temperature;
-        double const dE = fleck_factor[i] * CG::speed_of_light * dt * sigma_planck[i] * (CG_result[i] - T * T * T * T * CG::radiation_constant
+        double dE = fleck_factor[i] * CG::speed_of_light * dt * sigma_planck[i] * (CG_result[i] - T * T * T * T * CG::radiation_constant
             -0.5 * (3 - R2[i]) * ScalarProd(cells[i].velocity, cells[i].velocity) * CG_result[i] / (CG::speed_of_light * CG::speed_of_light)) * volume;
+        if(compton_on_)
+        {
+            double const old_Tr = std::pow(cells[i].Erad * cells[i].density / CG::radiation_constant, 0.25);
+            dE += volume * sigma_s[i] *  fleck_factor[i] * dt * 4 * CG::boltzmann_constant * (old_Tr - T) / (CG::electron_mass * CG::speed_of_light);
+        }
+
         extensives[i].energy += dE;
         extensives[i].internal_energy += dE;
         cells[i].Erad = extensives[i].Erad / extensives[i].mass;
