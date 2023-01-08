@@ -13,6 +13,8 @@ namespace CG
 
         size_t const sub_num_rows = sub_A_values.size();
         size_t const sub_num_cols = sub_A_values[0].size();
+        if(sub_num_rows == 0)
+            return;
         result.resize(sub_num_rows, 0);
         double dot_prod;
         for (size_t i = 0; i < sub_num_rows; i++) {
@@ -72,6 +74,8 @@ namespace CG
     {
         size_t const sub_num_rows = sub_A_values.size();
         size_t const sub_num_cols = sub_A_values[0].size();
+        if(sub_num_rows == 0)
+            return;
         M.resize(sub_num_rows);
         for (size_t i = 0; i < sub_num_rows; i++) {
             for (size_t j = 0; j < sub_num_cols; j++) {
