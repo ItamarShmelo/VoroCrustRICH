@@ -12,3 +12,12 @@ VoroCrustAlgorithm::VoroCrustAlgorithm( PL_Complex const& plc_,
 void VoroCrustAlgorithm::run() {
 
 }
+
+std::string VoroCrustAlgorithm::repr() const {
+    std::ostringstream s;
+    
+    s << "VoroCrustAlgorithm : \n--------------------------------\n\n";
+    s << "PLC : \n------------\n" << plc.repr() << std::endl;
+
+    return s.str();
+}

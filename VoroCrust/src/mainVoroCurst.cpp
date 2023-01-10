@@ -1,4 +1,5 @@
 #include "PL_Complex.hpp"
+#include "VoroCrustAlgorithm.hpp"
 #include <iostream>
 
 int main(int argc, char *argv[]){
@@ -10,10 +11,16 @@ int main(int argc, char *argv[]){
 
     std::cout << plc.repr() << std::endl;
 
-    std::cout << "change one vertex" << std::endl;
+    std::cout << "\n\nchange one vertex" << std::endl;
     plc.vertices[2]->vertex.x = 2;
     std::cout << plc.repr() << std::endl;
 
+    std::cout << "\n\nCheck VoroCrustAlgorithm " << std::endl;
+    std::cout << "--------------------------------------------" << std::endl;
+
+    VoroCrustAlgorithm alg(plc, 15., 20., 1.);
+
+    std::cout << alg.repr() << std::endl;
 
     return 0;
 }

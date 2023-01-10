@@ -2,6 +2,7 @@
 #define VOROCRUST_ALGORITHM
 
 #include "PL_Complex.hpp"
+#include <sstream>
 
 class VoroCrustAlgorithm {
     public:
@@ -17,7 +18,9 @@ class VoroCrustAlgorithm {
                             double const maxRadius_);
 
         void run();
-}
+
+        std::string repr() const;
+};
 
 
 #endif /* VOROCRUST_ALGORITHM */
