@@ -7,8 +7,16 @@ class VoroCrustAlgorithm {
     public:
         PL_Complex plc;
 
-        VoroCrustAlgorithm(PL_Complex const& plc_);
+        double const sharpTheta;
+        double const flatTheta;
+        double const maxRadius;
 
+        VoroCrustAlgorithm( PL_Complex const& plc_,
+                            double const sharpTheta_,
+                            double const flatTheta_,
+                            double const maxRadius_);
+
+        void run();
 }
 
 
