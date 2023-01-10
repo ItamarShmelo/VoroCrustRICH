@@ -5,3 +5,9 @@ build
 *.pyc
 __pycache__
 runs/
+
+VoroCrust/CMakeFiles
+VoroCrust/cmake_install.cmake
+VoroCrust/CMakeCache.txt
+VoroCrust/VoroCrust.out
+VoroCrust/Makefile
