@@ -13,7 +13,7 @@ class VoroCrustFace
     public:
         std::vector<std::shared_ptr<VoroCrustVertex>> vertices;
         
-        VoroCrustFace(std::vector<std::shared_ptr<VoroCrustVertex>> const& vertices_);
+        ~VoroCrustFace() = default;
 
         std::string repr() const;
 

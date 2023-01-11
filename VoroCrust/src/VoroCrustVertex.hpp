@@ -17,6 +17,7 @@ class VoroCrustVertex
 
         VoroCrustVertex(Vector3D const& vertex_, std::size_t const index_);
 
+        ~VoroCrustVertex() = default;
         void addFace(std::shared_ptr<VoroCrustFace> new_face);
         
         std::string repr() const;

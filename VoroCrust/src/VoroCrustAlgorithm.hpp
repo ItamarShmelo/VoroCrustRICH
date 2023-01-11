@@ -17,6 +17,8 @@ class VoroCrustAlgorithm {
                             double const flatTheta_,
                             double const maxRadius_);
 
+        ~VoroCrustAlgorithm() = default;
+
         void run();
 
         std::string repr() const;
