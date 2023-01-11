@@ -8,6 +8,22 @@ PL_Complex::PL_Complex(std::vector<Vector3D> const& vertices_) : vertices(), fac
     }
 }
 
+std::shared_ptr<VoroCrustEdge> PL_Complex::addEdge(std::shared_ptr<VoroCrustVertex> const& v1, std::shared_ptr<VoroCrustVertex> const& v2){
+    for (auto& edge : edges){
+        if (edge->checkIfEqual(v1, v2)){
+            return edge;
+        }
+    }
+
+    auto new_edge_ptr = std::make_shared<VoroCrustEdge>(v1, v2, edges.size());
+    
+    new_edge_ptr->vertex1->addEdge(new_edge_ptr);
+    new_edge_ptr->vertex2->addEdge(new_edge_ptr);
+
+    edges.push_back(new_edge_ptr);
+    return new_edge_ptr;
+}
+
 void PL_Complex::addFace(std::vector<unsigned int> const& indices){
 
     std::vector<std::shared_ptr<VoroCrustVertex>> face_vertices = std::vector<std::shared_ptr<VoroCrustVertex>>();

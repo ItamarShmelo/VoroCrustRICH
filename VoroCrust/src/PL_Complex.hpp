@@ -6,6 +6,7 @@
 #include <vector>
 #include <memory>
 #include "VoroCrustVertex.hpp"
+#include "VoroCrustEdge.hpp"
 #include "VoroCrustFace.hpp"
 
 class PL_Complex // Piecewise Linear Complex
@@ -18,6 +19,9 @@ class PL_Complex // Piecewise Linear Complex
 
         PL_Complex(std::vector<Vector3D> const& vertices);
         ~PL_Complex() = default;
+
+        std::shared_ptr<VoroCrustEdge> addEdge(std::shared_ptr<VoroCrustVertex> const& v1, std::shared_ptr<VoroCrustVertex> const& v2);
+        
         void addFace(std::vector<unsigned int> const& indices);
 
         std::string repr() const;
