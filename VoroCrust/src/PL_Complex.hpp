@@ -16,7 +16,7 @@ class PL_Complex // Piecewise Linear Complex
         std::vector<std::shared_ptr<VoroCrustFace>> faces;
 
         PL_Complex(std::vector<Vector3D> const& vertices);
-
+        ~PL_Complex() = default;
         void addFace(std::vector<unsigned int> const& indices);
 
         std::string repr() const;
