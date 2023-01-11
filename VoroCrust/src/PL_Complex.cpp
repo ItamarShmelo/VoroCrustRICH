@@ -58,6 +58,15 @@ void PL_Complex::addFace(std::vector<unsigned int> const& indices){
     faces.push_back(new_face_ptr);
 }
 
+bool PL_Complex::checkAllVerticesAreOnFace(){
+    for (auto& vertex : vertices)
+        if (vertex->faces.size() == 0){
+            std::cout << "ERROR: vertex " << vertex->index << " is not part of a face!!";
+            return false;
+        }
+
+    return true;
+}
 std::string PL_Complex::repr() const{
     std::ostringstream s;
 
