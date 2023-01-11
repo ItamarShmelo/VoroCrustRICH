@@ -45,7 +45,7 @@ public:
   pair<Vector2D,Vector2D> getBoundary(void) const;
 
   ~SquareBox(void) override;
-private:
+
   double _left,_right,_up,_down;
 };
 

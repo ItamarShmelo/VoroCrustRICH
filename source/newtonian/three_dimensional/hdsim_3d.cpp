@@ -925,28 +925,32 @@ double HDSim3D::RadiationTimeStep(double const dt, CG::MatrixBuilder const& matr
 				to_calc = false;
 		if(not to_calc)
 			continue;
-		double const equlibrium_factor = std::abs(cells_[i].temperature - std::pow(new_Er[i] / CG::radiation_constant, 0.25)) / 
-			cells_[i].temperature < 0.1 ? 0.1 : 1;
-		double const diff = equlibrium_factor * std::abs(new_Er[i] - old_Er[i]) / (new_Er[i] + 0.002 * max_Er);
+		double const equlibrium_factor = std::abs(cells_[i].temperature - std::pow(new_Er[i] / CG::radiation_constant, 0.25)) > 0.01 * cells_[i].temperature ? 0.2 : 1;
+		double const diff = equlibrium_factor * std::abs(new_Er[i] - old_Er[i]) / (new_Er[i] + 0.005 * max_Er);
 		if(diff > max_diff)
 		{
 			max_diff = diff;
 			max_loc = i;
 		}
 	}
+	int rank = 0;
+	struct
+    {
+        double val;
+        int mpi_id;
+    }max_data;
+    max_data.mpi_id = rank;
+    max_data.val = max_diff;
 #ifdef RICH_MPI
-	int rank = -1;
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-	std::pair<double, int> max_data(max_diff, rank);
 	MPI_Allreduce(MPI_IN_PLACE, &max_data, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_WORLD);
-	max_diff = max_data.first;
-	if(rank == max_data.second)
+	max_diff = max_data.val;
+	ComputationalCell3D cdummy;
+	MPI_exchange_data(tess_, cells_, true, &cdummy);	
+#endif
+	if(rank == max_data.mpi_id)
 		std::cout<<"Radiation time step ID "<<cells_[max_loc].ID<<" old Er "<<old_Er[max_loc]<<" new Er "<<new_Er[max_loc]<<
 		" diff "<<max_diff<<" Tgas "<<cells_[max_loc].temperature<<" Trad "<<std::pow(new_Er[max_loc] / CG::radiation_constant, 0.25)<<std::endl;
-	ComputationalCell3D cdummy;
-	MPI_exchange_data(tess_, cells_, true, &cdummy);
-	
-#endif
 	if(no_hydro)
 	{
 		pt_.updateTime(dt);

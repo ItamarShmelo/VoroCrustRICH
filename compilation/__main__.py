@@ -8,7 +8,18 @@ parser.add_argument("--test_name", default="", help="The name of the test to com
 
 parser.add_argument("--make_dir", default=root_dir, help="The relative path to the build directory")
 
-configurations = {"intelRelease", "intelDebug", "intelReleaseMPI", "intelDebugMPI", "gnuRelease", "gnuDebug", "gnuReleaseMPI", "gnuDebugMPI"}
+# possible configurations
+config_params = [
+    ["intel", "gnu"],
+    ["Release", "Debug"],
+    ["", "MPI"],
+    ["", "Prof"],
+]
+from itertools import product
+configurations = []
+for p in product(*config_params):
+    configurations.append("".join(p))
+configurations = set(configurations)
 
 def allowed_configuration(string):
     if "all_configurations" == string:

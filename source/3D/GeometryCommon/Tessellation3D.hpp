@@ -114,6 +114,12 @@ public:
    */
   virtual vector<face_vec >& GetAllCellFaces(void) = 0;
 
+  
+  /*! \brief Get all cell faces
+    \return List of all cell faces
+   */
+  virtual vector<face_vec >const& GetAllCellFaces(void)const = 0;
+
   /*!
     \brief Returns a reference to the point vector
     \returns The reference
@@ -149,6 +155,11 @@ public:
     \return List to all points in face
    */
   virtual vector<point_vec > & GetAllPointsInFace(void) = 0;
+
+    /*! \brief Get a list of all points in face
+    \return List to all points in face
+   */
+  virtual vector<point_vec > const& GetAllPointsInFace(void) const = 0;
 
   /*!
     \brief Returns a list of the neighbors of a cell

@@ -4,6 +4,7 @@
 #include "conj_grad_solve.hpp"
 #include "source/newtonian/common/equation_of_state.hpp"
 
+
 using namespace CG;
 
 namespace CG
@@ -27,6 +28,8 @@ virtual double CalcDiffusionCoefficient(ComputationalCell3D const& cell) const =
     \return The planck opacity (default units are 1/cm)
 */
 virtual double CalcPlanckOpacity(ComputationalCell3D const& cell) const = 0;
+
+virtual double CalcScatteringOpacity(ComputationalCell3D const& cell) const = 0;
 };
 
 //! \brief Class for assigning boundary conditions for diffusion
@@ -102,8 +105,8 @@ public:
 \param boundary_calc Class to calcualte the values for the boundary conditions
 */
     Diffusion(DiffusionCoefficientCalculator const& D_coefficient_calc, DiffusionBoundaryCalculator const& boundary_calc,
-        EquationOfState const& eos, std::vector<std::string> const zero_cells = std::vector<std::string> (), bool const flux_limiter = true) : D_coefficient_calcualtor(D_coefficient_calc),
-        boundary_calc_(boundary_calc), eos_(eos), flux_limiter_(flux_limiter), sigma_planck(), fleck_factor(), CG::MatrixBuilder(zero_cells) {}
+        EquationOfState const& eos, std::vector<std::string> const zero_cells = std::vector<std::string> (), bool const flux_limiter = true, bool const hydro_on = true, bool const compton_on = true) : D_coefficient_calcualtor(D_coefficient_calc),
+        boundary_calc_(boundary_calc), eos_(eos), flux_limiter_(flux_limiter), hydro_on_(hydro_on), compton_on_(compton_on), sigma_planck(), sigma_s(), fleck_factor(), CG::MatrixBuilder(zero_cells) {}
 
     void BuildMatrix(Tessellation3D const& tess, mat& A, size_t_mat& A_indeces, std::vector<ComputationalCell3D> const& cells, 
             double const dt, std::vector<double>& b, std::vector<double>& x0, double const current_time) const override;
@@ -112,9 +115,11 @@ public:
         std::vector<double>const& CG_result)const override;
 
     DiffusionCoefficientCalculator const& D_coefficient_calcualtor;
-    mutable std::vector<double> sigma_planck, fleck_factor, D;
+    mutable std::vector<double> sigma_planck, sigma_s, fleck_factor, D, R2, cell_flux_limiter;
     DiffusionBoundaryCalculator const& boundary_calc_;
     bool const flux_limiter_;
+    bool const hydro_on_;
+    bool const compton_on_;
 private:  
     EquationOfState const& eos_;   
 };

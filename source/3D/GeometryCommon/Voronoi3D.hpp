@@ -288,6 +288,8 @@ public:
 
   vector<face_vec >& GetAllCellFaces(void) override;
 
+  vector<face_vec >const& GetAllCellFaces(void) const override;
+
   /*! \brief Get the points in face
     \param index Face index
     \return Indices of points in face
@@ -358,6 +360,8 @@ public:
     \return List of all points in face
    */
   vector<point_vec > & GetAllPointsInFace(void) override;
+
+  vector<point_vec > const& GetAllPointsInFace(void) const override;
 
   /*! \brief Get the number of points
     \return The number of points

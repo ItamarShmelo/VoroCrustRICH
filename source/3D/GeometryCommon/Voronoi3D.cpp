@@ -2557,6 +2557,11 @@ vector<boost::container::small_vector<size_t, 8>> &Voronoi3D::GetAllPointsInFace
   return PointsInFace_;
 }
 
+vector<boost::container::small_vector<size_t, 8>> const& Voronoi3D::GetAllPointsInFace(void)const
+{
+  return PointsInFace_;
+}
+
 size_t &Voronoi3D::GetPointNo(void)
 {
   return Norg_;
@@ -2664,6 +2669,11 @@ vector<Vector3D> &Voronoi3D::GetAllFaceCM(void)
 }
 
 vector<face_vec> &Voronoi3D::GetAllCellFaces(void)
+{
+  return FacesInCell_;
+}
+
+vector<face_vec> const& Voronoi3D::GetAllCellFaces(void)const
 {
   return FacesInCell_;
 }

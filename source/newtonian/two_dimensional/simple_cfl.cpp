@@ -5,7 +5,7 @@
 #include <mpi.h>
 #endif
 
-SimpleCFL::SimpleCFL(const double cfl): cfl_(cfl) {}
+SimpleCFL::SimpleCFL(const double cfl): cfl_(cfl), min_dt(-1) {}
 
 namespace {
   class TimeStepCalculator: public LazyList<double>
@@ -63,5 +63,7 @@ double SimpleCFL::operator()(const Tessellation& tess,
 #ifdef RICH_MPI
   MPI_Allreduce(&res, &res, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
 #endif
+  if(min_dt > 0)
+    res = std::min(res, min_dt);
   return res;
 }
