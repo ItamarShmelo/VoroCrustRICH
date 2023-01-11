@@ -26,10 +26,10 @@ void PL_Complex::addFace(std::vector<unsigned int> const& indices){
 
 std::string PL_Complex::repr() const{
     std::ostringstream s;
-    int face_index = 0;
+
+
     for(auto& face : faces){
-        face_index++;
-        s << "face " << face_index << ": " << face->repr() << "\n";
+        s << "Face " << face->index << ": \n" << face->repr() << "\n";
     }
 
     return s.str();

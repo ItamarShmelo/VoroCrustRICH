@@ -5,10 +5,9 @@ VoroCrustFace::VoroCrustFace(std::vector<std::shared_ptr<VoroCrustVertex>> const
 
 std::string VoroCrustFace::repr() const {
     std::ostringstream s;
-    int i = 0;
-    for (auto& vertex : vertices){
-        i++;
-        s << "Vertex " << i << ": " << vertex->repr() << ", ";
+    s << "\tEdges: ";
+    for (auto& edge : edges){
+        s << "\n\t\tedge " << edge->index << ": " << edge->repr() << ", ";
     }
 
     return s.str();
