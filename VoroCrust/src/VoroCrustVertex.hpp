@@ -13,8 +13,9 @@ class VoroCrustVertex
     public:
         Vector3D vertex;
         std::vector<std::shared_ptr<VoroCrustFace>> faces;
+        std::size_t index;
 
-        VoroCrustVertex(Vector3D const& vertex_);
+        VoroCrustVertex(Vector3D const& vertex_, std::size_t const index_);
 
         void addFace(std::shared_ptr<VoroCrustFace> new_face);
         
