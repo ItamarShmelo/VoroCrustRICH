@@ -20,6 +20,8 @@ class VoroCrustFace
         
         ~VoroCrustFace() = default;
 
+        void addEdge(std::shared_ptr<VoroCrustEdge> edge) {edges.push_back(edge);};
+
         std::string repr() const;
 
 };
