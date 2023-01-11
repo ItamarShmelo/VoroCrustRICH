@@ -1,6 +1,7 @@
 #include "VoroCrustFace.hpp"
 
-VoroCrustFace::VoroCrustFace(std::vector<std::shared_ptr<VoroCrustVertex>> const& vertices_) : vertices(vertices_) {}
+VoroCrustFace::VoroCrustFace(std::vector<std::shared_ptr<VoroCrustVertex>> const& vertices_, 
+                             std::size_t const index_) : vertices(vertices_), index(index_) {}
 
 std::string VoroCrustFace::repr() const {
     std::ostringstream s;

@@ -12,6 +12,9 @@ class VoroCrustFace
 {
     public:
         std::vector<std::shared_ptr<VoroCrustVertex>> vertices;
+        std::size_t index;
+        
+        VoroCrustFace(std::vector<std::shared_ptr<VoroCrustVertex>> const& vertices_, std::size_t const index_);
         
         ~VoroCrustFace() = default;
 
