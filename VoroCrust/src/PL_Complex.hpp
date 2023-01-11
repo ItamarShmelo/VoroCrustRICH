@@ -24,6 +24,12 @@ class PL_Complex // Piecewise Linear Complex
         
         void addFace(std::vector<unsigned int> const& indices);
 
+        /*! \brief Checks if all the vertices are assigned at least on face.*/
+        bool checkAllVerticesAreOnFace();
+
+        /*! \brief Checks if all defined faces are on planes */
+        bool checkIfALLFacesAreFlat();
+
         std::string repr() const;
 
 };
