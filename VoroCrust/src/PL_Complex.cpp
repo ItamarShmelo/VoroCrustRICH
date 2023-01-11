@@ -1,4 +1,6 @@
 #include "PL_Complex.hpp"
+#include <iostream>
+#include "../../source/misc/utils.hpp"
 
 PL_Complex::PL_Complex(std::vector<Vector3D> const& vertices_) : vertices(), faces(){
     std::size_t index = 0;
@@ -26,12 +28,22 @@ std::shared_ptr<VoroCrustEdge> PL_Complex::addEdge(std::shared_ptr<VoroCrustVert
 
 void PL_Complex::addFace(std::vector<unsigned int> const& indices){
 
+    if (indices.size() != unique(indices).size()){
+        std::cout << "ERROR: Repeated indices in PL_Complex::addFace!" << std::endl;
+        exit(1);
+    }
+
+    if(indices.size() < 3){
+        std::cout << "ERROR: Face has to have at least three vertices!" << std::endl;
+        exit(1);
+    }
+
     std::vector<std::shared_ptr<VoroCrustVertex>> face_vertices = std::vector<std::shared_ptr<VoroCrustVertex>>();
 
     for(auto& index : indices)
         face_vertices.push_back(vertices[index]);
 
-    std::shared_ptr<VoroCrustFace> new_face_ptr = std::make_shared<VoroCrustFace>(VoroCrustFace(face_vertices));
+    std::shared_ptr<VoroCrustFace> new_face_ptr = std::make_shared<VoroCrustFace>(face_vertices, faces.size());
 
     for (std::shared_ptr<VoroCrustVertex> vertex_ptr : face_vertices){
         vertex_ptr->addFace(new_face_ptr);
