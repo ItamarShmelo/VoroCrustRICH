@@ -23,9 +23,30 @@ file(GLOB_RECURSE SRC_CPP "src/*.cpp")
 file(GLOB R3D "../source/3D/GeometryCommon/Vector3D.cpp")
 file(GLOB MISC "../source/misc/utils.cpp" "../source/misc/serializable.cpp" "../source/misc/universal_error.cpp")
 
+find_package(VTK COMPONENTS 
+    CommonCore 
+    IOXML 
+    IOParallelXML 
+    ParallelMPI 
+    NO_MODULE 
+    PATHS ${VTK_DIRECTORY} NO_DEFAULT_PATH
+)
+if (NOT VTK_FOUND)
+    message(FATAL_ERROR "NO VTK")
+endif()
+
 include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${BOOST_INCLUDE})
 
 message("proj_dir ${proj_dir}")
 
-add_executable("VoroCrust.out" ${SRC_CPP} ${R3D} ${MISC})
+set(EXE_NAME "VoroCrust.out")
+message("executable name ${EXE_NAME}")
+
+add_executable(${EXE_NAME} ${SRC_CPP} ${R3D} ${MISC})
+target_link_libraries(${EXE_NAME} PRIVATE ${VTK_LIBRARIES})
+
+vtk_module_autoinit(
+  TARGETS ${EXE_NAME}
+  MODULES ${VTK_LIBRARIES}
+)
