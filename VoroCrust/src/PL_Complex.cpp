@@ -49,6 +49,12 @@ void PL_Complex::addFace(std::vector<unsigned int> const& indices){
         vertex_ptr->addFace(new_face_ptr);
     }
 
+    for (std::size_t i = 0; i < new_face_ptr->vertices.size(); ++i){
+        auto new_edge_ptr = this->addEdge(new_face_ptr->vertices[i], new_face_ptr->vertices[ (i+1) % (new_face_ptr->vertices.size())]);
+        new_edge_ptr->addFace(new_face_ptr);
+        new_face_ptr->addEdge(new_edge_ptr);
+    }
+
     faces.push_back(new_face_ptr);
 }
 
