@@ -7,11 +7,13 @@
 #include "../../source/3D/GeometryCommon/Vector3D.hpp"
 #include "VoroCrustVertex.hpp"
 class VoroCrustVertex;
+class VoroCrustEdge;
 
 class VoroCrustFace
 {
     public:
         std::vector<std::shared_ptr<VoroCrustVertex>> vertices;
+        std::vector<std::shared_ptr<VoroCrustEdge>> edges;
         std::size_t index;
         
         VoroCrustFace(std::vector<std::shared_ptr<VoroCrustVertex>> const& vertices_, std::size_t const index_);
