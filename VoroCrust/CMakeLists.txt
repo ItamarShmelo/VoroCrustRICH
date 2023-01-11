@@ -3,6 +3,7 @@ project(VoroCrustImplementation)
 enable_language(CXX)
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 message("CXX Compiler: " ${CMAKE_CXX_COMPILER})
 message("C Compiler: " ${CMAKE_C_COMPILER})
 message("Fortran Compiler: " ${CMAKE_Fortran_COMPILER})
@@ -37,6 +38,8 @@ endif()
 
 include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${BOOST_INCLUDE})
+
+message("Boost Path ${BOOST_INCLUDE}")
 
 message("proj_dir ${proj_dir}")
 
