@@ -23,7 +23,7 @@ class VoroCrustFace
         
         ~VoroCrustFace() = default;
 
-        void addEdge(std::shared_ptr<VoroCrustEdge> edge) {edges.push_back(edge);};
+        void addEdge(std::shared_ptr<VoroCrustEdge> edge);
 
         /*! \brief calculate the normal to the surface defined by the vectors `vertices[2] - vertices[1]`, `vertices[1]-vertices[0]`*/
         Vector3D calcNormal();
