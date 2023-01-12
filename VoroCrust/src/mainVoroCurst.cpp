@@ -27,7 +27,8 @@ int main(int argc, char *argv[]){
     std::cout << "\n\nWrite VTK File for PLC\n-------------------------" << std::endl;
     
     vorocrust_vtk::write_vtu_PL_Complex("plc.vtu", plc);
-
+    alg.run();
+    
     std::cout << "\n\nFINISH\n" << std::endl;
     return 0;
 }
