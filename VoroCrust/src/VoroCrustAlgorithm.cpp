@@ -10,6 +10,11 @@ VoroCrustAlgorithm::VoroCrustAlgorithm( PL_Complex const& plc_,
                                                                     {}
 
 void VoroCrustAlgorithm::run() {
+    
+    if(not plc.checkAllVerticesAreOnFace()) exit(1);
+
+    if(not plc.checkIfALLFacesAreFlat()) exit(1);
+
 
 }
 
