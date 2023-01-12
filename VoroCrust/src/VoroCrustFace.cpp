@@ -8,7 +8,7 @@ Vector3D VoroCrustFace::calcNormal(){
     Vector3D const& v1 = vertices[1]->vertex - vertices[0]->vertex;
     Vector3D const& v2 = vertices[2]->vertex - vertices[1]->vertex;
 
-    Vector3D const& cross_product = CrossProduct(v1, v2);
+    Vector3D const& cross_product = CrossProduct(v2, v1);
     current_normal = cross_product / abs(cross_product); 
     
     return current_normal;
