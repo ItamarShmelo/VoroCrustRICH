@@ -1,7 +1,7 @@
 #include "VoroCrustFace.hpp"
 
 VoroCrustFace::VoroCrustFace(std::vector<std::shared_ptr<VoroCrustVertex>> const& vertices_, 
-                             std::size_t const index_) : vertices(vertices_), index(index_) {}
+                             std::size_t const index_) : vertices(vertices_), edges(), neighbors(), index(index_), current_normal(), orientationFixed(false){}
 
 
 Vector3D VoroCrustFace::calcNormal(){

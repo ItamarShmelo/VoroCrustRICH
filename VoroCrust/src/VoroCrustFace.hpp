@@ -14,6 +14,7 @@ class VoroCrustFace
     public:
         std::vector<std::shared_ptr<VoroCrustVertex>> vertices;
         std::vector<std::shared_ptr<VoroCrustEdge>> edges;
+        std::vector<std::shared_ptr<VoroCrustFace>> neighbors;
         
         std::size_t index;
         Vector3D current_normal;
