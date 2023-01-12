@@ -67,6 +67,39 @@ bool PL_Complex::checkAllVerticesAreOnFace(){
 
     return true;
 }
+
+bool PL_Complex::checkIfALLFacesAreFlat(){
+    for (auto& face : faces){
+        // if face is a triangle hence flat by definition cycle
+        if(face->vertices.size() == 3) continue;
+
+        // span{v1, v2} define the plane the face is assumed to be on. v2 is orthogonal to v1.
+        Vector3D const& v1 = face->vertices[1]->vertex - face->vertices[0]->vertex;
+        Vector3D const& v_temp = face->vertices[2]->vertex - face->vertices[1]->vertex;
+        Vector3D const& v2 = v_temp - (ScalarProd(v1, v_temp)/ScalarProd(v1, v1))*v1;
+
+        std::cout << "ScalarProduct(v1, v2) = " << ScalarProd(v2, v1) << std::endl;
+        
+        for(std::size_t i=2; i<face->vertices.size(); ++i){
+            Vector3D const& v = face->vertices[(i+1)%face->vertices.size()]->vertex - face->vertices[i]->vertex;
+            Vector3D const& v_perp = v - ((ScalarProd(v,v1) / ScalarProd(v1,v1)) * v1 + (ScalarProd(v,v2) / ScalarProd(v2,v2)) * v2);
+
+            std::cout << "Edge: " << i+1 << " size of perp : " << ScalarProd(v_perp, v_perp) << std::endl;
+
+            if(ScalarProd(v_perp, v_perp) > 1e-14){
+                std::cout << "ERROR: face is not flat! Make sure all the vertices of face " << face->index << " are on the same plane!!" << std::endl;
+                std::cout << "Edge: " << i+1 << " size of perp : " << ScalarProd(v_perp, v_perp) << std::endl;
+                std::cout << "v = " << v.x << ", " << v.y << ", " << v.z << ", " << std::endl;
+                std::cout << "v1 = " << v1.x << ", " << v1.y << ", " << v1.z << ", " << std::endl;
+                std::cout << "v2 = " << v2.x << ", " << v2.y << ", " << v2.z << ", " << std::endl;
+                std::cout << ScalarProd(v,v1) << ", " << ScalarProd(v,v2) << ", " << ScalarProd(v1,v1) << ", " << ScalarProd(v2,v2) << std::endl;
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
 std::string PL_Complex::repr() const{
     std::ostringstream s;
 
