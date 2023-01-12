@@ -14,13 +14,18 @@ class VoroCrustFace
     public:
         std::vector<std::shared_ptr<VoroCrustVertex>> vertices;
         std::vector<std::shared_ptr<VoroCrustEdge>> edges;
+        
         std::size_t index;
+        Vector3D current_normal;
         
         VoroCrustFace(std::vector<std::shared_ptr<VoroCrustVertex>> const& vertices_, std::size_t const index_);
         
         ~VoroCrustFace() = default;
 
         void addEdge(std::shared_ptr<VoroCrustEdge> edge) {edges.push_back(edge);};
+
+        /*! \brief calculate the normal to the surface defined by the vectors `vertices[2] - vertices[1]`, `vertices[1]-vertices[0]`*/
+        Vector3D calcNormal();
 
         std::string repr() const;
 
