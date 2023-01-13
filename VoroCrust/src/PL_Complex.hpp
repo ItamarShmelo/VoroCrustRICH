@@ -17,6 +17,9 @@ class PL_Complex // Piecewise Linear Complex
         std::vector<std::shared_ptr<VoroCrustEdge>> edges;
         std::vector<std::shared_ptr<VoroCrustFace>> faces;
 
+        std::vector<std::shared_ptr<VoroCrustEdge>> sharp_edges;
+        std::vector<std::shared_ptr<VoroCrustVertex>> sharp_corners;
+
         PL_Complex(std::vector<Vector3D> const& vertices);
         ~PL_Complex() = default;
 
