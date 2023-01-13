@@ -11,11 +11,13 @@ class VoroCrustAlgorithm {
         double const sharpTheta;
         double const flatTheta;
         double const maxRadius;
+        double const L_Lipschitz;
 
         VoroCrustAlgorithm( PL_Complex const& plc_,
                             double const sharpTheta_,
                             double const flatTheta_,
-                            double const maxRadius_);
+                            double const maxRadius_,
+                            double const L_Lipschitz_);
 
         ~VoroCrustAlgorithm() = default;
 
