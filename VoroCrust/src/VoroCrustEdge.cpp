@@ -1,6 +1,7 @@
 #include "VoroCrustEdge.hpp"
 #include <iostream>
 #include <sstream>
+#include <cmath>
 
 VoroCrustEdge::VoroCrustEdge(std::shared_ptr<VoroCrustVertex> const& v1, 
                              std::shared_ptr<VoroCrustVertex> const& v2, 
@@ -23,6 +24,50 @@ void VoroCrustEdge::addFace(std::shared_ptr<VoroCrustFace> new_face){
     }
 
     faces.push_back(new_face);
+}
+
+
+double VoroCrustEdge::calcDihedralAngle(){
+    if(faces.size() != 2){
+        std::cout << "ERROR: can't calculate dihedral angle if number of faces " << std::endl;
+        exit(1);
+    }
+
+    Vector3D const& b0 = vertex2->vertex - vertex1->vertex;
+    Vector3D b1, b2;
+    for(auto& edge : faces[0]->edges){
+        if(edge->index == index) continue;
+
+        if(edge->vertex1->index == vertex1->index){
+            b1 = edge->vertex2->vertex - edge->vertex1->vertex;
+            break;        
+        }
+
+        if(edge->vertex2->index == vertex1->index){
+            b1 = edge->vertex1->vertex - edge->vertex2->vertex;
+            break;        
+        }
+    }
+
+    for(auto& edge : faces[1]->edges){
+        if(edge->index == index) continue;
+
+        if(edge->vertex1->index == vertex1->index){
+            b2 = edge->vertex2->vertex - edge->vertex1->vertex;
+            break;        
+        }
+
+        if(edge->vertex2->index == vertex1->index){
+            b2 = edge->vertex1->vertex - edge->vertex2->vertex;
+            break;        
+        }
+    }
+
+    Vector3D const& b0_X_b1 = CrossProduct(b0, b1);
+    Vector3D const& b0_X_b2 = CrossProduct(b0, b2);
+    double const cos_phi = ScalarProd(b0_X_b1, b0_X_b2) / (abs(b0_X_b1) * abs(b0_X_b2));
+
+    return std::acos(cos_phi);
 }
 
 std::string VoroCrustEdge::repr() {

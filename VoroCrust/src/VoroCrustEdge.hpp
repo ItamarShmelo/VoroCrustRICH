@@ -27,6 +27,8 @@ public:
 
     void addFace(std::shared_ptr<VoroCrustFace> new_face);
 
+    double calcDihedralAngle();
+
     std::string repr();
 };
 
