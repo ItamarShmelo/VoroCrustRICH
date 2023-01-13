@@ -1,5 +1,6 @@
 #include "PL_Complex.hpp"
 #include <iostream>
+#include <cmath>
 #include "../../source/misc/utils.hpp"
 
 PL_Complex::PL_Complex(std::vector<Vector3D> const& vertices_) : vertices(), faces(){
