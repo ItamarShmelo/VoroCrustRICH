@@ -32,9 +32,13 @@ class PL_Complex // Piecewise Linear Complex
 
         /*! \brief Checks if all defined faces are on planes */
         bool checkIfALLFacesAreFlat();
+        
+        /*! \brief check that all dihedral angles between faces are less than `\pi-sharpTheta` or above `\pi-flatTheta` */
+        void detectFeatures(double const sharpTheta, double const flatTheta);
 
         std::string repr() const;
 
 };
+
 
 #endif /* PL_Complex_HPP */
