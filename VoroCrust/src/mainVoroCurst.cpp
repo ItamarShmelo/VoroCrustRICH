@@ -2,6 +2,7 @@
 #include "VoroCrustAlgorithm.hpp"
 #include "write_vtu_PL_complex.hpp"
 #include <iostream>
+#include <cmath>
 
 int main(int argc, char *argv[]){
     
@@ -19,10 +20,9 @@ int main(int argc, char *argv[]){
     std::cout << "\n\nCheck VoroCrustAlgorithm " << std::endl;
     std::cout << "--------------------------------------------" << std::endl;
 
-    VoroCrustAlgorithm alg(plc, 15., 20., 1.);
+    VoroCrustAlgorithm alg(plc, M_PI/18.0, M_PI_4, 1., 0.8);
 
     std::cout << alg.repr() << std::endl;
-
 
     std::cout << "\n\nWrite VTK File for PLC\n-------------------------" << std::endl;
     
