@@ -2,7 +2,7 @@
 #include <iostream>
 
 VoroCrustFace::VoroCrustFace(std::vector<std::shared_ptr<VoroCrustVertex>> const& vertices_, 
-                             std::size_t const index_) : vertices(vertices_), edges(), neighbors(), index(index_), current_normal(), orientationFixed(false){}
+                             std::size_t const index_) : vertices(vertices_), edges(), neighbors(), index(index_), current_normal() {}
 
 void VoroCrustFace::addEdge(std::shared_ptr<VoroCrustEdge> edge){
     edges.push_back(edge);
