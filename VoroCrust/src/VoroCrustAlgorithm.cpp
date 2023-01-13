@@ -1,13 +1,33 @@
 #include "VoroCrustAlgorithm.hpp"
+#include <cmath>
+#include <iostream>
 
 VoroCrustAlgorithm::VoroCrustAlgorithm( PL_Complex const& plc_, 
                                         double const sharpTheta_, 
                                         double const flatTheta_, 
-                                        double const maxRadius_) :  plc(plc_), 
+                                        double const maxRadius_,
+                                        double const L_Lipschitz_) :  plc(plc_), 
                                                                     sharpTheta(sharpTheta_),
                                                                     flatTheta(flatTheta_),
-                                                                    maxRadius(maxRadius_)
-                                                                    {}
+                                                                    maxRadius(maxRadius_),
+                                                                    L_Lipschitz(L_Lipschitz_){
+
+    if(sharpTheta > M_PI_2){
+        std::cout << "ERROR: sharpTheta > pi/2" << std::endl;
+        exit(1);
+    }           
+
+    if(L_Lipschitz >= 1){
+        std::cout << "ERROR: L_Lipschitz >= 1" << std::endl;
+        exit(1);
+    }
+
+    if(L_Lipschitz <= 0){
+        std::cout << "ERROR: L_Lipschitz <= 0 " << std::endl;
+        exit(1);
+    }
+
+}
 
 void VoroCrustAlgorithm::run() {
     
