@@ -16,7 +16,9 @@ class VoroCrustVertex
         Vector3D vertex;
         std::vector<std::shared_ptr<VoroCrustFace>> faces;
         std::vector<std::shared_ptr<VoroCrustEdge>> edges;
+
         std::size_t index;
+        bool isSharp;
 
         VoroCrustVertex(Vector3D const& vertex_, std::size_t const index_);
 

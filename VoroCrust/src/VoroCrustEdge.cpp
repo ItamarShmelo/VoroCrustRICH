@@ -5,7 +5,11 @@
 
 VoroCrustEdge::VoroCrustEdge(std::shared_ptr<VoroCrustVertex> const& v1, 
                              std::shared_ptr<VoroCrustVertex> const& v2, 
-                             std::size_t const index_) : vertex1(v1), vertex2(v2), faces(), index(index_){}
+                             std::size_t const index_) : vertex1(v1), 
+                                                         vertex2(v2), 
+                                                         faces(), 
+                                                         index(index_),
+                                                         isSharp(false){}
 
 bool VoroCrustEdge::checkIfEqual(std::shared_ptr<VoroCrustVertex> const& v1, std::shared_ptr<VoroCrustVertex> const& v2){
     if (v1->index == vertex1->index && v2->index == vertex2->index)

@@ -18,6 +18,7 @@ public:
     std::vector<std::shared_ptr<VoroCrustFace>> faces;
     
     std::size_t index;
+    bool isSharp;
 
     VoroCrustEdge(std::shared_ptr<VoroCrustVertex> const& v1, std::shared_ptr<VoroCrustVertex> const& v2, std::size_t const index_);
     
