@@ -1,4 +1,5 @@
 #include "VoroCrustVertex.hpp"
+#include <sstream>
 
 VoroCrustVertex::VoroCrustVertex(Vector3D const& vertex_, 
                                  std::size_t const index_) : vertex(vertex_), 

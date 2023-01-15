@@ -1,9 +1,9 @@
 #ifndef VOROCRUST_VERTEX_HPP
 #define VOROCRUST_VERTEX_HPP 1
 
+
 #include <vector>
-#include <sstream>
-#include <memory>
+#include <string>
 #include "../../source/3D/GeometryCommon/Vector3D.hpp"
 
 #include "VoroCrustUsing.hpp"

@@ -2,7 +2,6 @@
 #define VOROCRUST_EDGE
 
 #include <vector>
-#include <memory>
 #include <string>
 
 #include "VoroCrustUsing.hpp"
