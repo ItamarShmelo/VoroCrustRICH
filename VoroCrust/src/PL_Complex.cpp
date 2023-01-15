@@ -108,6 +108,94 @@ bool PL_Complex::checkIfALLFacesAreFlat(){
     return true;
 }
 
+void PL_Complex::detectFeatures(double const sharpTheta, double const flatTheta){
+    /* Detect Sharp Edges */
+    for(auto& edge : edges){
+        if(edge->faces.size() == 1){
+            sharp_edges.push_back(edge);
+            edge->isSharp = true;
+            continue;
+        }
+
+        double const dihedralAngle = edge->calcDihedralAngle();
+
+        std::cout << "Edge " << edge->index << ", dihedral angle = " << dihedralAngle / M_PI << "*pi" << std::endl;
+
+        if(dihedralAngle < (M_PI - sharpTheta)){
+            sharp_edges.push_back(edge);
+            edge->isSharp = true;
+            continue;
+        }
+
+        if(dihedralAngle < (M_PI - flatTheta)){
+            std::cout << "ERROR: dihedral angle of edge" << edge->index << " is not sharp nor flat!!!!!" << std::endl;
+            exit(1);
+        }
+
+        edge->isSharp = false;
+    }
+    std::cout << "Sharp Edges:\n"; 
+
+    for(auto& edge : sharp_edges){
+        std::cout << "Edge: " << edge->index <<"\n"; 
+    }
+    std::cout << std::endl;
+    
+    for(auto& vertex : vertices){
+        std::vector<std::shared_ptr<VoroCrustEdge>> vertex_sharp_edges;
+
+        for(auto& edge : vertex->edges)
+            if(edge->isSharp)
+                vertex_sharp_edges.push_back(edge);
+
+        if(vertex_sharp_edges.size() > 2){
+            sharp_corners.push_back(vertex);
+            vertex->isSharp = true;
+            continue;
+        }
+
+        if(vertex_sharp_edges.size() < 2){
+            std::cout << "ERROR: vertex has less than 2 sharp edges bordering it, vertex:"<< vertex->index << std::endl;
+            exit(1);
+        }
+
+        auto& edge1 = vertex_sharp_edges[0];
+        auto& edge2 = vertex_sharp_edges[1];
+
+        Vector3D v1, v2;
+        
+        v1 = edge1->vertex2->vertex - edge1->vertex1->vertex;
+        v2 = edge2->vertex2->vertex - edge2->vertex1->vertex;
+        
+        if(vertex->index == edge1->vertex2->index){
+            v1 = -1*v1;
+        }
+
+        if(vertex->index == edge2->vertex2->index){
+            v2 = -1*v2;
+        }
+
+        double const angle = std::acos(ScalarProd(v1, v2)/(abs(v1)*abs(v2)));
+
+        std::cout << "vertex " << vertex->index << ", angle between edge " << edge1->index << " and edge " << edge2->index << " = " << angle / M_PI << "*pi" << std::endl;
+
+        if(angle < (M_PI-sharpTheta)){
+            sharp_corners.push_back(vertex);
+            vertex->isSharp = true;
+            continue;
+        }
+
+        vertex->isSharp = false;
+    }
+
+    std::cout << "\n\nSummary Sharp Features";
+    std::cout << "\nSharp Edges:";
+    for(auto& edge : sharp_edges) std::cout << "\n edge " << edge->index;
+    std::cout << "\n\nSharp Corners:";
+    for(auto& corner : sharp_corners) std::cout << "\n vertex " << corner->index;
+    std::cout << std::endl;   
+}
+
 std::string PL_Complex::repr() const{
     std::ostringstream s;
 
