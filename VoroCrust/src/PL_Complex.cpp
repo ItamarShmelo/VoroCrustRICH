@@ -185,6 +185,22 @@ void PL_Complex::detectFeatures(double const sharpTheta, double const flatTheta)
             continue;
         }
 
+        for(auto& edge : vertex->edges){
+            if(edge->faces.size() != 2 || edge->isSharp) continue;
+
+            auto& face1 = edge->faces[0];
+            auto& face2 = edge->faces[1];
+
+            double const dihedralAngle = edge->calcDihedralAngle();
+            double const angleBetweenNormals = M_PI - dihedralAngle;
+
+            if(angleBetweenNormals > sharpTheta){
+                sharp_corners.push_back(vertex);
+                vertex->isSharp = true;
+                continue;
+            }
+        }
+
         vertex->isSharp = false;
     }
 
