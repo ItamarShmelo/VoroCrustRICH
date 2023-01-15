@@ -5,10 +5,11 @@
 #include <sstream>
 #include <memory>
 #include "../../source/3D/GeometryCommon/Vector3D.hpp"
+
+#include "VoroCrustUsing.hpp"
 #include "VoroCrustFace.hpp"
 #include "VoroCrustEdge.hpp"
-class VoroCrustFace;
-class VoroCrustEdge;
+
 
 class VoroCrustVertex
 {

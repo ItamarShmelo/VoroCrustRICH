@@ -2,12 +2,10 @@
 #define VOROCRUST_FACE_HPP 1
 
 #include <vector>
-#include <sstream>
-#include <memory>
 #include "../../source/3D/GeometryCommon/Vector3D.hpp"
+
+#include "VoroCrustUsing.hpp"
 #include "VoroCrustVertex.hpp"
-class VoroCrustVertex;
-class VoroCrustEdge;
 
 class VoroCrustFace
 {

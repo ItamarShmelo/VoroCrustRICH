@@ -4,11 +4,10 @@
 #include <vector>
 #include <memory>
 #include <string>
+
+#include "VoroCrustUsing.hpp"
 #include "VoroCrustVertex.hpp"
 #include "VoroCrustFace.hpp"
-
-class VoroCrustVertex;
-class VoroCrustFace;
 
 class VoroCrustEdge
 {
