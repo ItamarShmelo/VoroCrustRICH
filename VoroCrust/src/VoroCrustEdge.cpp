@@ -11,7 +11,7 @@ VoroCrustEdge::VoroCrustEdge(Vertex const& v1,
                                                          index(index_),
                                                          isSharp(false){}
 
-bool VoroCrustEdge::checkIfEqual(std::shared_ptr<VoroCrustVertex> const& v1, std::shared_ptr<VoroCrustVertex> const& v2){
+bool VoroCrustEdge::checkIfEqual(Vertex const& v1, Vertex const& v2){
     if (v1->index == vertex1->index && v2->index == vertex2->index)
         return true;
 
