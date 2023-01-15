@@ -3,7 +3,12 @@
 #include <cmath>
 #include "../../source/misc/utils.hpp"
 
-PL_Complex::PL_Complex(std::vector<Vector3D> const& vertices_) : vertices(), faces(){
+PL_Complex::PL_Complex(std::vector<Vector3D> const& vertices_) : vertices(), 
+                                                                 edges(),
+                                                                 faces(),
+                                                                 sharp_edges(),
+                                                                 sharp_corners(),
+                                                                 creases() {
     std::size_t index = 0;
     for(auto& vertex : vertices_) {
         vertices.push_back(std::make_shared<VoroCrustVertex>(vertex, index));
