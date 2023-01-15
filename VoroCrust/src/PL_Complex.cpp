@@ -193,7 +193,7 @@ void PL_Complex::detectFeatures(double const sharpTheta, double const flatTheta)
     for(auto& edge : sharp_edges) std::cout << "\n edge " << edge->index;
     std::cout << "\n\nSharp Corners:";
     for(auto& corner : sharp_corners) std::cout << "\n vertex " << corner->index;
-    std::cout << std::endl;   
+    std::cout << std::endl;
 }
 
 std::string PL_Complex::repr() const{
