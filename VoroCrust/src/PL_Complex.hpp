@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+
 #include "VoroCrustVertex.hpp"
 #include "VoroCrustEdge.hpp"
 #include "VoroCrustFace.hpp"
@@ -38,6 +39,9 @@ class PL_Complex // Piecewise Linear Complex
         
         /*! \brief check that all dihedral angles between faces are less than `\pi-sharpTheta` or above `\pi-flatTheta` */
         void detectFeatures(double const sharpTheta, double const flatTheta);
+
+        /*! \brief builds a crease starting at `edge */
+        Crease createCrease(Edge const& edge);
 
         std::string repr() const;
 
