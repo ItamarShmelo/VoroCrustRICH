@@ -216,6 +216,10 @@ void PL_Complex::detectFeatures(double const sharpTheta, double const flatTheta)
     std::cout << "\n\nSharp Corners:";
     for(auto& corner : sharp_corners) std::cout << "\n vertex " << corner->index;
     std::cout << std::endl;
+
+    buildCreases();
+}
+
 void PL_Complex::buildCreases(){
     /* Build the Creases using the flood fill algorithm */
     
