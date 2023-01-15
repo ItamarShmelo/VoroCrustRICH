@@ -9,6 +9,7 @@
 #include "VoroCrustEdge.hpp"
 #include "VoroCrustFace.hpp"
 
+using Crease = std::vector<Edge>;
 class PL_Complex // Piecewise Linear Complex
 {
     public:
@@ -19,6 +20,8 @@ class PL_Complex // Piecewise Linear Complex
 
         std::vector<Edge> sharp_edges;
         std::vector<Vertex> sharp_corners;
+
+        std::vector<Crease> creases;
 
         PL_Complex(std::vector<Vector3D> const& vertices);
         ~PL_Complex() = default;
