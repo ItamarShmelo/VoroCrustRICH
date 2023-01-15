@@ -6,7 +6,7 @@ VoroCrustVertex::VoroCrustVertex(Vector3D const& vertex_,
                                                              index(index_),
                                                              isSharp(false){}
 
-void VoroCrustVertex::addFace(std::shared_ptr<VoroCrustFace> new_face){
+void VoroCrustVertex::addFace(Face new_face){
     faces.push_back(new_face);
 }
 

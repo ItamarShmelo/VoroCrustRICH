@@ -3,8 +3,8 @@
 #include <sstream>
 #include <cmath>
 
-VoroCrustEdge::VoroCrustEdge(std::shared_ptr<VoroCrustVertex> const& v1, 
-                             std::shared_ptr<VoroCrustVertex> const& v2, 
+VoroCrustEdge::VoroCrustEdge(Vertex const& v1, 
+                             Vertex const& v2, 
                              std::size_t const index_) : vertex1(v1), 
                                                          vertex2(v2), 
                                                          faces(), 
@@ -21,7 +21,7 @@ bool VoroCrustEdge::checkIfEqual(std::shared_ptr<VoroCrustVertex> const& v1, std
     return false;
 }
 
-void VoroCrustEdge::addFace(std::shared_ptr<VoroCrustFace> new_face){
+void VoroCrustEdge::addFace(Face new_face){
     if(faces.size() == 2){
         std::cout << "ERROR : can't have more than 2 faces sharing an edge" << std::endl;
         exit(1);

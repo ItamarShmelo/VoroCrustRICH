@@ -1,10 +1,10 @@
 #include "VoroCrustFace.hpp"
 #include <iostream>
 
-VoroCrustFace::VoroCrustFace(std::vector<std::shared_ptr<VoroCrustVertex>> const& vertices_, 
+VoroCrustFace::VoroCrustFace(std::vector<Vertex> const& vertices_, 
                              std::size_t const index_) : vertices(vertices_), edges(), neighbors(), index(index_), current_normal() {}
 
-void VoroCrustFace::addEdge(std::shared_ptr<VoroCrustEdge> edge){
+void VoroCrustFace::addEdge(Edge edge){
     edges.push_back(edge);
 }
 

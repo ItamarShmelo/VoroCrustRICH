@@ -13,19 +13,20 @@ class VoroCrustEdge
 {
 
 public:
-    std::shared_ptr<VoroCrustVertex> vertex1, vertex2;
-    std::vector<std::shared_ptr<VoroCrustFace>> faces;
+    Vertex vertex1, vertex2;
+    std::vector<Face> faces;
     
     std::size_t index;
     bool isSharp;
+    bool isCreased;
 
-    VoroCrustEdge(std::shared_ptr<VoroCrustVertex> const& v1, std::shared_ptr<VoroCrustVertex> const& v2, std::size_t const index_);
+    VoroCrustEdge(Vertex const& v1, Vertex const& v2, std::size_t const index_);
     
     ~VoroCrustEdge() = default;
 
-    bool checkIfEqual(std::shared_ptr<VoroCrustVertex> const& v1, std::shared_ptr<VoroCrustVertex> const& v2);
+    bool checkIfEqual(Vertex const& v1, Vertex const& v2);
 
-    void addFace(std::shared_ptr<VoroCrustFace> new_face);
+    void addFace(Face new_face);
 
     double calcDihedralAngle();
 

@@ -11,7 +11,7 @@ PL_Complex::PL_Complex(std::vector<Vector3D> const& vertices_) : vertices(), fac
     }
 }
 
-std::shared_ptr<VoroCrustEdge> PL_Complex::addEdge(std::shared_ptr<VoroCrustVertex> const& v1, std::shared_ptr<VoroCrustVertex> const& v2){
+Edge PL_Complex::addEdge(Vertex const& v1, Vertex const& v2){
     for (auto& edge : edges){
         if (edge->checkIfEqual(v1, v2)){
             return edge;
@@ -39,14 +39,14 @@ void PL_Complex::addFace(std::vector<unsigned int> const& indices){
         exit(1);
     }
 
-    std::vector<std::shared_ptr<VoroCrustVertex>> face_vertices = std::vector<std::shared_ptr<VoroCrustVertex>>();
+    std::vector<Vertex> face_vertices = std::vector<Vertex>();
 
     for(auto& index : indices)
         face_vertices.push_back(vertices[index]);
 
-    std::shared_ptr<VoroCrustFace> new_face_ptr = std::make_shared<VoroCrustFace>(face_vertices, faces.size());
+    Face new_face_ptr = std::make_shared<VoroCrustFace>(face_vertices, faces.size());
 
-    for (std::shared_ptr<VoroCrustVertex> vertex_ptr : face_vertices){
+    for (Vertex vertex_ptr : face_vertices){
         vertex_ptr->addFace(new_face_ptr);
     }
 
@@ -142,7 +142,7 @@ void PL_Complex::detectFeatures(double const sharpTheta, double const flatTheta)
     std::cout << std::endl;
     
     for(auto& vertex : vertices){
-        std::vector<std::shared_ptr<VoroCrustEdge>> vertex_sharp_edges;
+        std::vector<Edge> vertex_sharp_edges;
 
         for(auto& edge : vertex->edges)
             if(edge->isSharp)

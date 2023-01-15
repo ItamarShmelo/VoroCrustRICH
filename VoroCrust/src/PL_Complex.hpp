@@ -13,17 +13,17 @@ class PL_Complex // Piecewise Linear Complex
 {
     public:
 
-        std::vector<std::shared_ptr<VoroCrustVertex>> vertices;
-        std::vector<std::shared_ptr<VoroCrustEdge>> edges;
-        std::vector<std::shared_ptr<VoroCrustFace>> faces;
+        std::vector<Vertex> vertices;
+        std::vector<Edge> edges;
+        std::vector<Face> faces;
 
-        std::vector<std::shared_ptr<VoroCrustEdge>> sharp_edges;
-        std::vector<std::shared_ptr<VoroCrustVertex>> sharp_corners;
+        std::vector<Edge> sharp_edges;
+        std::vector<Vertex> sharp_corners;
 
         PL_Complex(std::vector<Vector3D> const& vertices);
         ~PL_Complex() = default;
 
-        std::shared_ptr<VoroCrustEdge> addEdge(std::shared_ptr<VoroCrustVertex> const& v1, std::shared_ptr<VoroCrustVertex> const& v2);
+        Edge addEdge(Vertex const& v1, Vertex const& v2);
         
         void addFace(std::vector<unsigned int> const& indices);
 

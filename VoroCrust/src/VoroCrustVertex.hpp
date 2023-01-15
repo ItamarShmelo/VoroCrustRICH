@@ -15,8 +15,8 @@ class VoroCrustVertex
 {
     public:
         Vector3D vertex;
-        std::vector<std::shared_ptr<VoroCrustFace>> faces;
-        std::vector<std::shared_ptr<VoroCrustEdge>> edges;
+        std::vector<Face> faces;
+        std::vector<Edge> edges;
 
         std::size_t index;
         bool isSharp;
@@ -25,9 +25,9 @@ class VoroCrustVertex
 
         ~VoroCrustVertex() = default;
         
-        void addFace(std::shared_ptr<VoroCrustFace> new_face);
+        void addFace(Face new_face);
 
-        void addEdge(std::shared_ptr<VoroCrustEdge> const& new_edge) {edges.push_back(new_edge);}
+        void addEdge(Edge const& new_edge) {edges.push_back(new_edge);}
 
         std::string repr() const;
 };
