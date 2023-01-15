@@ -146,6 +146,7 @@ void PL_Complex::detectFeatures(double const sharpTheta, double const flatTheta)
     }
     std::cout << std::endl;
     
+    /* Detect Sharp Corners */
     for(auto& vertex : vertices){
         std::vector<Edge> vertex_sharp_edges;
 
