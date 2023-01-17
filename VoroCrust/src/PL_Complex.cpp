@@ -191,53 +191,58 @@ void PL_Complex::detectFeatures(double const sharpTheta, double const flatTheta)
             continue;
         }
 
-        if(vertex_sharp_edges.size() < 2){
-            std::cout << "ERROR: vertex has less than 2 sharp edges bordering it, vertex:"<< vertex->index << std::endl;
-            exit(1);
-        }
+        if (vertex_sharp_edges.size() == 2)
+        {
 
-        auto& edge1 = vertex_sharp_edges[0];
-        auto& edge2 = vertex_sharp_edges[1];
+            auto &edge1 = vertex_sharp_edges[0];
+            auto &edge2 = vertex_sharp_edges[1];
 
-        Vector3D v1, v2;
-        
-        v1 = edge1->vertex2->vertex - edge1->vertex1->vertex;
-        v2 = edge2->vertex2->vertex - edge2->vertex1->vertex;
-        
-        if(vertex->index == edge1->vertex2->index){
-            v1 = -1*v1;
-        }
+            Vector3D v1, v2;
 
-        if(vertex->index == edge2->vertex2->index){
-            v2 = -1*v2;
-        }
+            v1 = edge1->vertex2->vertex - edge1->vertex1->vertex;
+            v2 = edge2->vertex2->vertex - edge2->vertex1->vertex;
 
-        double const angle = std::acos(ScalarProd(v1, v2)/(abs(v1)*abs(v2)));
+            if (vertex->index == edge1->vertex2->index)
+            {
+                v1 = -1 * v1;
+            }
 
-        std::cout << "vertex " << vertex->index << ", angle between edge " << edge1->index << " and edge " << edge2->index << " = " << angle / M_PI << "*pi" << std::endl;
+            if (vertex->index == edge2->vertex2->index)
+            {
+                v2 = -1 * v2;
+            }
 
-        if(angle < (M_PI-sharpTheta)){
-            sharp_corners.push_back(vertex);
-            vertex->isSharp = true;
-            continue;
-        }
+            double const angle = std::acos(ScalarProd(v1, v2) / (abs(v1) * abs(v2)));
 
-        for(auto& edge : vertex->edges){
-            if(edge->faces.size() != 2 || edge->isSharp) continue;
+            std::cout << "vertex " << vertex->index << ", angle between edge " << edge1->index << " and edge " << edge2->index << " = " << angle / M_PI << "*pi" << std::endl;
 
-            auto& face1 = edge->faces[0];
-            auto& face2 = edge->faces[1];
+            if (angle < (M_PI - sharpTheta))
+            {
+                sharp_corners.push_back(vertex);
+                vertex->isSharp = true;
+                continue;
+            }
+        } 
+
+        for (auto &edge : vertex->edges)
+        {
+            if (edge->faces.size() != 2 || edge->isSharp)
+                continue;
+
+            auto &face1 = edge->faces[0];
+            auto &face2 = edge->faces[1];
 
             double const dihedralAngle = edge->calcDihedralAngle();
             double const angleBetweenNormals = M_PI - dihedralAngle;
 
-            if(angleBetweenNormals > sharpTheta){
+            if (angleBetweenNormals > sharpTheta)
+            {
                 sharp_corners.push_back(vertex);
                 vertex->isSharp = true;
                 continue;
             }
         }
-
+        
         vertex->isSharp = false;
     }
 
