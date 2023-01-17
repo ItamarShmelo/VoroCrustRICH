@@ -248,9 +248,11 @@ void PL_Complex::detectFeatures(double const sharpTheta, double const flatTheta)
 
     std::cout << "\n\nSummary Sharp Features";
     std::cout << "\nSharp Edges:";
-    for(auto& edge : sharp_edges) std::cout << "\n edge " << edge->index;
+    for (auto &edge : sharp_edges)
+        std::cout << "\n edge " << edge->index;
     std::cout << "\n\nSharp Corners:";
-    for(auto& corner : sharp_corners) std::cout << "\n vertex " << corner->index;
+    for (auto &corner : sharp_corners)
+        std::cout << "\n vertex " << corner->index;
     std::cout << std::endl;
 
     buildCreases();
