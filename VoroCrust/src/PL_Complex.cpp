@@ -179,7 +179,10 @@ void PL_Complex::detectFeatures(double const sharpTheta, double const flatTheta)
             if (edge->isSharp)
                 vertex_sharp_edges.push_back(edge);
 
-        if(vertex_sharp_edges.size() > 2){
+        if(vertex_sharp_edges.empty()){
+            vertex->isSharp = false;
+            continue;
+        }
             sharp_corners.push_back(vertex);
             vertex->isSharp = true;
             continue;
