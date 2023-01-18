@@ -11,4 +11,5 @@ VoroCrust/cmake_install.cmake
 VoroCrust/CMakeCache.txt
 VoroCrust/VoroCrust.out
 VoroCrust/Makefile
-VoroCrust/plc.vtu
+VoroCrust/*.vtu
+VoroCrust/output.txt
