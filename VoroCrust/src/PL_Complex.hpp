@@ -11,6 +11,8 @@
 #include "VoroCrustFace.hpp"
 
 using Crease = std::vector<Edge>;
+using SurfacePatch = std::vector<Face>;
+
 class PL_Complex // Piecewise Linear Complex
 {
     public:
@@ -23,6 +25,7 @@ class PL_Complex // Piecewise Linear Complex
         std::vector<Vertex> sharp_corners;
 
         std::vector<Crease> creases;
+        std::vector<SurfacePatch> patches;
 
         PL_Complex(std::vector<Vector3D> const& vertices);
         ~PL_Complex() = default;
