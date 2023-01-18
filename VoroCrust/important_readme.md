@@ -1,0 +1,1 @@
+# Used Pymesh https://pymesh.readthedocs.io/en/latest/ to create the mesh of the cat in data from an obj file.
