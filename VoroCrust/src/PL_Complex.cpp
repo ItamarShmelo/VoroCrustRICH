@@ -256,6 +256,8 @@ void PL_Complex::detectFeatures(double const sharpTheta, double const flatTheta)
     std::cout << std::endl;
 
     buildCreases();
+
+    buildSurfacePatches();
 }
 
 void PL_Complex::buildCreases()
