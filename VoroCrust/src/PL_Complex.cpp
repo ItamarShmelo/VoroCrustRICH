@@ -325,6 +325,10 @@ Crease PL_Complex::createCrease(Edge const &edge)
                 }
             }
         }
+    }
+
+    return crease;
+}
 
     }
 
