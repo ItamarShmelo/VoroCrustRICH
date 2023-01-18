@@ -125,16 +125,12 @@ bool PL_Complex::checkIfALLFacesAreFlat()
             Vector3D const &v = face->vertices[(i + 1) % face->vertices.size()]->vertex - face->vertices[i]->vertex;
             Vector3D const &v_perp = v - ((ScalarProd(v, v1) / ScalarProd(v1, v1)) * v1 + (ScalarProd(v, v2) / ScalarProd(v2, v2)) * v2);
 
-            std::cout << "Edge: " << i + 1 << " size of perp : " << ScalarProd(v_perp, v_perp) << std::endl;
+            std::cout << "Edge: " << i + 1 << " size of perp : " << abs(v_perp) << std::endl;
 
-            if (ScalarProd(v_perp, v_perp) > 1e-14)
+            if (abs(v_perp) > 1e-14)
             {
                 std::cout << "ERROR: face is not flat! Make sure all the vertices of face " << face->index << " are on the same plane!!" << std::endl;
-                std::cout << "Edge: " << i + 1 << " size of perp : " << ScalarProd(v_perp, v_perp) << std::endl;
-                std::cout << "v = " << v.x << ", " << v.y << ", " << v.z << ", " << std::endl;
-                std::cout << "v1 = " << v1.x << ", " << v1.y << ", " << v1.z << ", " << std::endl;
-                std::cout << "v2 = " << v2.x << ", " << v2.y << ", " << v2.z << ", " << std::endl;
-                std::cout << ScalarProd(v, v1) << ", " << ScalarProd(v, v2) << ", " << ScalarProd(v1, v1) << ", " << ScalarProd(v2, v2) << std::endl;
+                std::cout << "Edge: " << i + 1 << " size of perp : " << abs(v_perp) << std::endl;
                 return false;
             }
         }
