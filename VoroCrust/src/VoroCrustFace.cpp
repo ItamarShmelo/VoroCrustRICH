@@ -2,28 +2,36 @@
 #include <iostream>
 #include <sstream>
 
+VoroCrustFace::VoroCrustFace(std::vector<Vertex> const &vertices_,
+                             std::size_t const index_) : vertices(vertices_),
+                                                         edges(),
+                                                         neighbors(),
+                                                         index(index_),
                                                          current_normal(),
                                                          isPatched(false) {}
 
-void VoroCrustFace::addEdge(Edge edge){
+void VoroCrustFace::addEdge(Edge edge)
+{
     edges.push_back(edge);
 }
 
+Vector3D VoroCrustFace::calcNormal()
+{
+    Vector3D const &v1 = vertices[1]->vertex - vertices[0]->vertex;
+    Vector3D const &v2 = vertices[2]->vertex - vertices[1]->vertex;
 
-Vector3D VoroCrustFace::calcNormal(){
-    Vector3D const& v1 = vertices[1]->vertex - vertices[0]->vertex;
-    Vector3D const& v2 = vertices[2]->vertex - vertices[1]->vertex;
+    Vector3D const &cross_product = CrossProduct(v2, v1);
+    current_normal = cross_product / abs(cross_product);
 
-    Vector3D const& cross_product = CrossProduct(v2, v1);
-    current_normal = cross_product / abs(cross_product); 
-    
     return current_normal;
 }
 
-std::string VoroCrustFace::repr() const {
+std::string VoroCrustFace::repr() const
+{
     std::ostringstream s;
     s << "\tEdges: ";
-    for (auto& edge : edges){
+    for (auto &edge : edges)
+    {
         s << "\n\t\tedge " << edge->index << ": " << edge->repr() << ", ";
     }
 
