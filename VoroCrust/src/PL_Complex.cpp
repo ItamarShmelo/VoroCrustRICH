@@ -330,17 +330,45 @@ Crease PL_Complex::createCrease(Edge const &edge)
     return crease;
 }
 
+SurfacePatch PL_Complex::createSurfacePatch(Face const &face)
+{
+    /* Create Surface Patch using the flood fill algorithm */
+    SurfacePatch patch;
+    std::queue<Face> queue;
+
+    queue.push(face);
+
+    while(not queue.empty()){
+        Face const& curr_face = queue.front();
+        queue.pop();
+
+        if(not curr_face->isPatched){
+            patch.push_back(curr_face);
+            curr_face->isPatched = true;
+
+            for(Edge const& edge : curr_face->edges){
+                if(edge->isSharp) continue;
+
+                for(Face const& edge_face : edge->faces){
+                    if(not edge_face->isPatched){
+                        queue.push(edge_face);
+                    }
+                }
+            }
+        }
     }
 
-    return crease;
+    return patch;
 }
 
-std::string PL_Complex::repr() const{
+std::string PL_Complex::repr() const
+{
     std::ostringstream s;
 
-
-    for(auto& face : faces){
-        s << "Face " << face->index << ": \n" << face->repr() << "\n";
+    for (auto &face : faces)
+    {
+        s << "Face " << face->index << ": \n"
+          << face->repr() << "\n";
     }
 
     return s.str();
