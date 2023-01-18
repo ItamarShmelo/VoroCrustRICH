@@ -16,6 +16,8 @@ class VoroCrustFace
         
         std::size_t index;
         Vector3D current_normal;
+
+        bool isPatched;
         
         VoroCrustFace(std::vector<Vertex> const& vertices_, std::size_t const index_);
         
