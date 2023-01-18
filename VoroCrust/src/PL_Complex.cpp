@@ -258,55 +258,67 @@ void PL_Complex::detectFeatures(double const sharpTheta, double const flatTheta)
     buildCreases();
 }
 
-void PL_Complex::buildCreases(){
-    /* Build the Creases using the flood fill algorithm */
+void PL_Complex::buildCreases()
+{
     
-    for(auto& edge : sharp_edges){
-        if(edge->isCreased) continue;
-        
-        Crease const& new_crease = createCrease(edge);
+    for (auto &edge : sharp_edges)
+    {
+        if (edge->isCreased)
+            continue;
+
+        Crease const &new_crease = createCrease(edge);
         creases.push_back(new_crease);
 
         std::cout << "\nCrease number : " << creases.size() << "\n";
         std::cout << "Edges: ";
 
-        for(Edge const& crease_edge : new_crease){
+        for (Edge const &crease_edge : new_crease)
+        {
             std::cout << crease_edge->index << " -> ";
         }
 
         std::cout << new_crease[0]->index << std::endl;
     }
-
 }
 
-Crease PL_Complex::createCrease(Edge const& edge){
+Crease PL_Complex::createCrease(Edge const &edge)
+{
+    /* Creates the Creases using the flood fill algorithm */
+
     Crease crease;
     std::queue<Edge> queue;
 
     queue.push(edge);
-    
-    while(not queue.empty()){
-        Edge const& curr_edge = queue.front();
+
+    while (not queue.empty())
+    {
+        Edge const &curr_edge = queue.front();
         queue.pop();
 
-        if(not curr_edge->isCreased){
+        if (not curr_edge->isCreased)
+        {
             crease.push_back(curr_edge);
             curr_edge->isCreased = true;
 
-            if(not curr_edge->vertex1->isSharp){
+            if (not curr_edge->vertex1->isSharp)
+            {
 
-                for(Edge const& vertex_edge : curr_edge->vertex1->edges){
-                    if(vertex_edge->isSharp && not vertex_edge->isCreased){
+                for (Edge const &vertex_edge : curr_edge->vertex1->edges)
+                {
+                    if (vertex_edge->isSharp && not vertex_edge->isCreased)
+                    {
                         queue.push(vertex_edge);
                         break;
                     }
-
                 }
             }
 
-            if(not curr_edge->vertex2->isSharp){
-                for(Edge const& vertex_edge : curr_edge->vertex2->edges){
-                    if(vertex_edge->isSharp && not vertex_edge->isCreased){
+            if (not curr_edge->vertex2->isSharp)
+            {
+                for (Edge const &vertex_edge : curr_edge->vertex2->edges)
+                {
+                    if (vertex_edge->isSharp && not vertex_edge->isCreased)
+                    {
                         queue.push(vertex_edge);
                         break;
                     }
