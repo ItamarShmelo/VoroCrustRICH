@@ -49,6 +49,10 @@ class PL_Complex // Piecewise Linear Complex
         /*! \brief builds a crease starting at `edge */
         Crease createCrease(Edge const& edge);
 
+        void buildSurfacePatches();
+
+        SurfacePatch createSurfacePatch(Face const& face);
+        
         std::string repr() const;
 
 };
