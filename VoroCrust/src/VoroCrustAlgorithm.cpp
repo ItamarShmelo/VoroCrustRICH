@@ -35,6 +35,7 @@ void VoroCrustAlgorithm::run() {
 
     if(not plc.checkIfALLFacesAreFlat()) exit(1);
 
+    plc.detectFeatures(sharpTheta, flatTheta);
 
 }
 
