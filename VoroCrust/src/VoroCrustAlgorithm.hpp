@@ -1,7 +1,7 @@
 #ifndef VOROCRUST_ALGORITHM
 #define VOROCRUST_ALGORITHM
 
-#include "PL_Complex.hpp"
+#include "PLC/PL_Complex.hpp"
 #include <sstream>
 
 class VoroCrustAlgorithm {
