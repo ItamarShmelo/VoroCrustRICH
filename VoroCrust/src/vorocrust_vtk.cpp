@@ -29,6 +29,7 @@ namespace vorocrust_vtk {
         vtkNew<vtkPoints> points;
         points->SetNumberOfPoints(num_vertices);
 
+        // set Vertices.
         for (std::size_t p = 0; p < num_vertices; ++p){
             points->SetPoint(vertices[p]->index, vertices[p]->vertex.x, vertices[p]->vertex.y, vertices[p]->vertex.z);
         }
@@ -37,6 +38,7 @@ namespace vorocrust_vtk {
         
         ugrid->Allocate(num_faces);
 
+        // define Faces
         std::vector<vtkIdType> point_array_in_cell;
         for(std::size_t face_index=0; face_index < num_faces; ++face_index){
             vtkNew<vtkIdList> faces_vtk;
@@ -59,6 +61,7 @@ namespace vorocrust_vtk {
 
         std::vector<SurfacePatch> patches = plc.patches;
 
+        // set Faces Surface Patch index.
         vtkNew<vtkIntArray> data;
         data->SetName("Patch Index");
         data->SetNumberOfComponents(1);
@@ -68,8 +71,6 @@ namespace vorocrust_vtk {
             Face const& face = faces[face_index];
             data->SetValue(face_index, -2);
         }
-        
-        std::cout << "Yo Yo Patches size " << patches.size() << std::endl;
         
         for(unsigned int p_index=0; p_index < patches.size(); ++p_index){
             SurfacePatch const& patch = patches[p_index];
@@ -81,6 +82,7 @@ namespace vorocrust_vtk {
         ugrid->GetCellData()->AddArray(data);
 
 
+        // write
         vtkNew<vtkXMLUnstructuredGridWriter> writer;
         writer->SetCompressionLevel(1);
         writer->SetFileName(filename.c_str());

@@ -10,8 +10,9 @@ VoroCrustFace::VoroCrustFace(std::vector<Vertex> const &vertices_,
                                                          current_normal(),
                                                          isPatched(false) {}
 
-void VoroCrustFace::addEdge(Edge edge)
+void VoroCrustFace::addEdge(Edge const& edge)
 {
+    //! TODO: CHECK if edge is really on the boundary.
     edges.push_back(edge);
 }
 

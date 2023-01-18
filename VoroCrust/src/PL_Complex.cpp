@@ -22,6 +22,7 @@ PL_Complex::PL_Complex(std::vector<Vector3D> const &vertices_) : vertices(),
 
 Edge PL_Complex::addEdge(Vertex const &v1, Vertex const &v2)
 {
+    // first check if edge was already created by a different face.
     for (auto &edge : edges)
     {
         if (edge->checkIfEqual(v1, v2))
@@ -30,11 +31,14 @@ Edge PL_Complex::addEdge(Vertex const &v1, Vertex const &v2)
         }
     }
 
+    // create new edge starting at v1 and ending at v1
     auto new_edge_ptr = std::make_shared<VoroCrustEdge>(v1, v2, edges.size());
 
+    // add the edge to the vertices constructing it
     new_edge_ptr->vertex1->addEdge(new_edge_ptr);
     new_edge_ptr->vertex2->addEdge(new_edge_ptr);
 
+    // update edges vector
     edges.push_back(new_edge_ptr);
     return new_edge_ptr;
 }
@@ -61,17 +65,20 @@ void PL_Complex::addFace(std::vector<unsigned int> const &indices)
 
     Face new_face_ptr = std::make_shared<VoroCrustFace>(face_vertices, faces.size());
 
+    // add new face to the vertices constucting it
     for (Vertex vertex_ptr : face_vertices)
     {
         vertex_ptr->addFace(new_face_ptr);
     }
 
+    // create new edges and add the to edges of new face
     for (std::size_t i = 0; i < new_face_ptr->vertices.size(); ++i)
     {
         auto new_edge_ptr = this->addEdge(new_face_ptr->vertices[i], new_face_ptr->vertices[(i + 1) % (new_face_ptr->vertices.size())]);
         new_edge_ptr->addFace(new_face_ptr);
         new_face_ptr->addEdge(new_edge_ptr);
 
+        // if edge was already created update the neighbors array of the faces on the sides of the edge
         if (new_edge_ptr->faces.size() == 2)
         {
             new_face_ptr->neighbors.push_back(new_edge_ptr->faces[0]);
@@ -100,17 +107,19 @@ bool PL_Complex::checkIfALLFacesAreFlat()
 {
     for (auto &face : faces)
     {
-        // if face is a triangle hence flat by definition cycle
+        // if Face is a triangle hence flat by definition cycle
         if (face->vertices.size() == 3)
             continue;
 
         // span{v1, v2} define the plane the face is assumed to be on. v2 is orthogonal to v1.
         Vector3D const &v1 = face->vertices[1]->vertex - face->vertices[0]->vertex;
         Vector3D const &v_temp = face->vertices[2]->vertex - face->vertices[1]->vertex;
-        Vector3D const &v2 = v_temp - (ScalarProd(v1, v_temp) / ScalarProd(v1, v1)) * v1;
+        Vector3D const &v2 = v_temp - (ScalarProd(v1, v_temp) / ScalarProd(v1, v1)) * v1; // make v2 orthogonal using Grahm-Shmidt
 
         std::cout << "ScalarProduct(v1, v2) = " << ScalarProd(v2, v1) << std::endl;
 
+        // Calculate the magnitute of ||v_perp||=||v - projection(v)|| and check that it is less then some eps.
+        // projection(v) is the projection on span{v1, v2}
         for (std::size_t i = 2; i < face->vertices.size(); ++i)
         {
             Vector3D const &v = face->vertices[(i + 1) % face->vertices.size()]->vertex - face->vertices[i]->vertex;
@@ -138,6 +147,7 @@ void PL_Complex::detectFeatures(double const sharpTheta, double const flatTheta)
     /* Detect Sharp Edges */
     for (auto &edge : edges)
     {
+        // if Edge is incident to only one face it is sharp.
         if (edge->faces.size() == 1)
         {
             sharp_edges.push_back(edge);
@@ -145,6 +155,7 @@ void PL_Complex::detectFeatures(double const sharpTheta, double const flatTheta)
             continue;
         }
 
+        // if the dihedral angle of an Edge is less than `PI-sharpTheta` it is sharp.
         double const dihedralAngle = edge->calcDihedralAngle();
 
         std::cout << "Edge " << edge->index << ", dihedral angle = " << dihedralAngle / M_PI << "*pi" << std::endl;
@@ -164,6 +175,7 @@ void PL_Complex::detectFeatures(double const sharpTheta, double const flatTheta)
 
         edge->isSharp = false;
     }
+
     std::cout << "Sharp Edges:\n";
 
     for (auto &edge : sharp_edges)
@@ -177,15 +189,18 @@ void PL_Complex::detectFeatures(double const sharpTheta, double const flatTheta)
     {
         std::vector<Edge> vertex_sharp_edges;
 
+        // find sharp Edges incident to Vertex
         for (auto &edge : vertex->edges)
             if (edge->isSharp)
                 vertex_sharp_edges.push_back(edge);
 
+        // if Vertex is shared by 0 sharp Edges it is not a sharp corner.
         if(vertex_sharp_edges.empty()){
             vertex->isSharp = false;
             continue;
         }
 
+        // if a Vertex is shared by more than 2 sharp Edges then it is a sharp corner.
         if (vertex_sharp_edges.size() > 2)
         {
             sharp_corners.push_back(vertex);
@@ -193,17 +208,21 @@ void PL_Complex::detectFeatures(double const sharpTheta, double const flatTheta)
             continue;
         }
 
+        // if Vertex is shared by 2 sharp edges if the angle between them is less than `PI-sharpTheta`
+        // then the vertex is sharp.
         if (vertex_sharp_edges.size() == 2)
         {
-
+            
             auto &edge1 = vertex_sharp_edges[0];
             auto &edge2 = vertex_sharp_edges[1];
 
             Vector3D v1, v2;
 
+            // the vectors representing the edges
             v1 = edge1->vertex2->vertex - edge1->vertex1->vertex;
             v2 = edge2->vertex2->vertex - edge2->vertex1->vertex;
 
+            // gurentee that both v1, v2 start at current Vertex.
             if (vertex->index == edge1->vertex2->index)
             {
                 v1 = -1 * v1;
@@ -224,28 +243,13 @@ void PL_Complex::detectFeatures(double const sharpTheta, double const flatTheta)
                 vertex->isSharp = true;
                 continue;
             }
+
+            vertex->isSharp = false;
+            continue;
         } 
 
-        for (auto &edge : vertex->edges)
-        {
-            if (edge->faces.size() != 2 || edge->isSharp)
-                continue;
-
-            auto &face1 = edge->faces[0];
-            auto &face2 = edge->faces[1];
-
-            double const dihedralAngle = edge->calcDihedralAngle();
-            double const angleBetweenNormals = M_PI - dihedralAngle;
-
-            if (angleBetweenNormals > sharpTheta)
-            {
-                sharp_corners.push_back(vertex);
-                vertex->isSharp = true;
-                continue;
-            }
-        }
-        
-        vertex->isSharp = false;
+        // if Vertex is shared by only one sharp edge then it is sharp.
+        vertex->isSharp = true;
     }
 
     std::cout << "\n\nSummary Sharp Features";
@@ -287,7 +291,7 @@ void PL_Complex::buildCreases()
 
 Crease PL_Complex::createCrease(Edge const &edge)
 {
-    /* Creates the Creases using the flood fill algorithm */
+    /* Creates the Creases using the flood fill algorithm across vertices which are not sharp corners */
 
     Crease crease;
     std::queue<Edge> queue;
@@ -356,7 +360,7 @@ void PL_Complex::buildSurfacePatches()
 
 SurfacePatch PL_Complex::createSurfacePatch(Face const &face)
 {
-    /* Create Surface Patch using the flood fill algorithm */
+    /* Create Surface Patch using the flood fill algorithm across Faces which share a flat Edge */
     SurfacePatch patch;
     std::queue<Face> queue;
 

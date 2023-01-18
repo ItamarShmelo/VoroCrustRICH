@@ -8,6 +8,10 @@
 
 namespace vorocrust_vtk{
 
+/*! \brief writes a PLC as vtu file.
+    \param filename path of output file.
+    \param plc  PL_Complex to be exported as vtu. 
+*/
 void write_vtu_PL_Complex(std::filesystem::path const& filename, PL_Complex const& plc);
 
 } // namespace

@@ -22,7 +22,7 @@ bool VoroCrustEdge::checkIfEqual(Vertex const& v1, Vertex const& v2){
     return false;
 }
 
-void VoroCrustEdge::addFace(Face new_face){
+void VoroCrustEdge::addFace(Face const& new_face){
     if(faces.size() == 2){
         std::cout << "ERROR : can't have more than 2 faces sharing an edge" << std::endl;
         exit(1);
@@ -33,6 +33,9 @@ void VoroCrustEdge::addFace(Face new_face){
 
 
 double VoroCrustEdge::calcDihedralAngle(){
+    /*  Calculates the Dihedral angle using the formula in https://en.wikipedia.org/wiki/Dihedral_angle
+        for the dihedral angle between two half planes.
+    */
     if(faces.size() != 2){
         std::cout << "ERROR: can't calculate dihedral angle if number of faces " << std::endl;
         exit(1);
@@ -40,6 +43,8 @@ double VoroCrustEdge::calcDihedralAngle(){
 
     Vector3D const& b0 = vertex2->vertex - vertex1->vertex;
     Vector3D b1, b2;
+    
+    // finds the edge on the first face starting at vertex1 (and is different the `this Edge`)
     for(auto& edge : faces[0]->edges){
         if(edge->index == index) continue;
 
@@ -54,6 +59,7 @@ double VoroCrustEdge::calcDihedralAngle(){
         }
     }
 
+    // finds the edge on the second face starting at vertex1 (and is different the `this Edge`)
     for(auto& edge : faces[1]->edges){
         if(edge->index == index) continue;
 
@@ -68,6 +74,7 @@ double VoroCrustEdge::calcDihedralAngle(){
         }
     }
 
+    // Formula for the dihedral angle between two half planes https://en.wikipedia.org/wiki/Dihedral_angle
     Vector3D const& b0_X_b1 = CrossProduct(b0, b1);
     Vector3D const& b0_X_b2 = CrossProduct(b0, b2);
     double const cos_phi = ScalarProd(b0_X_b1, b0_X_b2) / (abs(b0_X_b1) * abs(b0_X_b2));
