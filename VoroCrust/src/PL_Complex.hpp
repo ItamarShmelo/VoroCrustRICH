@@ -63,7 +63,7 @@ class PL_Complex
         /*! \brief Checks if all defined faces are on planes */
         bool checkIfALLFacesAreFlat();
         
-        /*! \brief check that all dihedral angles between faces are less than `\pi-sharpTheta` or above `\pi-flatTheta` 
+        /*! \brief Determines the sharp features of the PLC (sharp_edges, sharp_corners) and using them build the Creases and Surface Patches.
             \param sharpTheta determins the sharp features.
             \param flatTheta constraint on the flatness of the non-sharp features.
         */
