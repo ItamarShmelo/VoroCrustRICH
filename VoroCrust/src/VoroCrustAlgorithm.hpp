@@ -2,11 +2,13 @@
 #define VOROCRUST_ALGORITHM
 
 #include "PLC/PL_Complex.hpp"
+#include "trees.hpp"
 #include <sstream>
 
 class VoroCrustAlgorithm {
     public:
         PL_Complex plc;
+        Trees trees;
 
         double const sharpTheta;
         double const flatTheta;

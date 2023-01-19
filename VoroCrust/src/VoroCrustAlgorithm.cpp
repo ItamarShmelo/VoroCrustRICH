@@ -6,11 +6,12 @@ VoroCrustAlgorithm::VoroCrustAlgorithm( PL_Complex const& plc_,
                                         double const sharpTheta_, 
                                         double const flatTheta_, 
                                         double const maxRadius_,
-                                        double const L_Lipschitz_) :  plc(plc_), 
+                                        double const L_Lipschitz_): plc(plc_), 
                                                                     sharpTheta(sharpTheta_),
                                                                     flatTheta(flatTheta_),
                                                                     maxRadius(maxRadius_),
-                                                                    L_Lipschitz(L_Lipschitz_){
+                                                                    L_Lipschitz(L_Lipschitz_),
+                                                                    trees(){
 
     if(sharpTheta > M_PI_2){
         std::cout << "ERROR: sharpTheta > pi/2" << std::endl;
@@ -36,6 +37,9 @@ void VoroCrustAlgorithm::run() {
     if(not plc.checkIfALLFacesAreFlat()) exit(1);
 
     plc.detectFeatures(sharpTheta, flatTheta);
+
+    //! TODO: make sampling size a user input!
+    trees.loadPLC(plc, 1e5, 1e6);
 
 }
 
