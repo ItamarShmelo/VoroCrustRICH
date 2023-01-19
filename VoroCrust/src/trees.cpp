@@ -10,6 +10,22 @@ Trees::Trees(): kd_vertices(nullptr),
                 edges_points(),
                 faces_points() {}
 
+void Trees::loadPLC(PL_Complex const& plc, std::size_t const Nsample_edges, std::size_t const Nsample_faces){
+    
+    std::size_t const Npoints = plc.vertices.size();
+    vertices_points = pointsFromVertices(plc.vertices);
+
+    kd_vertices = std::make_shared<ANNkd_tree>(vertices_points, Npoints, 1, ANN_KD_SUGGEST);
+
+    edges_points = superSampleEdges(plc.edges, Nsample_edges);
+
+    kd_edges = std::make_shared<ANNkd_tree>(edges_points, Nsample_edges, 1, ANN_KD_SUGGEST);
+
+    faces_points = superSampleFaces(plc.faces, Nsample_faces);
+
+    kd_faces = std::make_shared<ANNkd_tree>(faces_points, Nsample_faces, 1, ANN_KD_SUGGEST);    
+}
+
 ANNpointArray Trees::pointsFromVertices(std::vector<Vertex> const& vertices){
     std::size_t const Npoints = vertices.size();
     ANNpointArray points = annAllocPts(Npoints, 3);
