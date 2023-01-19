@@ -36,6 +36,10 @@ class VoroCrustFace
         /*! \brief calculate the normal to the surface defined by the vectors `vertices[2] - vertices[1]` X `vertices[1]-vertices[0]`*/
         Vector3D calcNormal();
 
+        double calcSignedArea();
+
+        double calcArea();
+
         std::string repr() const;
 
 };

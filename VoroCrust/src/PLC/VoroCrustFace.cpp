@@ -27,6 +27,24 @@ Vector3D VoroCrustFace::calcNormal()
     return current_normal;
 }
 
+double VoroCrustFace::calcSignedArea(){
+    Vector3D const& v = vertices[0]->vertex;
+
+    double signed_area = 0;
+    for (unsigned int i=1; i<vertices.size()-1; ++i){
+        Vector3D const& v1 = vertices[i]->vertex - v;
+        Vector3D const& v2 = vertices[i+1]->vertex - v;
+
+        signed_area += abs(CrossProduct(v1, v2));
+    }
+
+    return 0.5*signed_area;
+}
+
+double VoroCrustFace::calcArea(){
+    return std::abs(calcSignedArea());
+}
+
 std::string VoroCrustFace::repr() const
 {
     std::ostringstream s;
