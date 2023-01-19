@@ -12,37 +12,37 @@ std::vector<std::vector<unsigned int>> read_faces(std::string filename);
 
 int main(int argc, char *argv[]){
     
-    std::vector<Vector3D> vertices{ Vector3D(0, 0, 0), 
-                                    Vector3D(1, 0, 0), 
-                                    Vector3D(1, 1, 0), 
-                                    Vector3D(0, 1, 0), 
-                                    Vector3D(0, 2, 0),
-                                    Vector3D(1, 2, 0)};
+    // std::vector<Vector3D> vertices{ Vector3D(0, 0, 0), 
+    //                                 Vector3D(1, 0, 0), 
+    //                                 Vector3D(1, 1, 0), 
+    //                                 Vector3D(0, 1, 0), 
+    //                                 Vector3D(0, 2, 0),
+    //                                 Vector3D(1, 2, 0)};
 
-    PL_Complex plc = PL_Complex(vertices);
-    plc.addFace(std::vector<unsigned int>{0,1,2,3});
-    plc.addFace(std::vector<unsigned int>{2,3,4,5});
+    // PL_Complex plc = PL_Complex(vertices);
+    // plc.addFace(std::vector<unsigned int>{0,1,2,3});
+    // plc.addFace(std::vector<unsigned int>{2,3,4,5});
 
-    std::cout << plc.repr() << std::endl;
+    // std::cout << plc.repr() << std::endl;
 
-    std::cout << "\n\nchange one vertex" << std::endl;
-    plc.vertices[2]->vertex.x = 2;
-    std::cout << plc.repr() << std::endl;
+    // std::cout << "\n\nchange one vertex" << std::endl;
+    // plc.vertices[2]->vertex.x = 2;
+    // std::cout << plc.repr() << std::endl;
 
-    std::cout << "\n\nCheck VoroCrustAlgorithm " << std::endl;
-    std::cout << "--------------------------------------------" << std::endl;
+    // std::cout << "\n\nCheck VoroCrustAlgorithm " << std::endl;
+    // std::cout << "--------------------------------------------" << std::endl;
 
-    plc.vertices[2]->vertex.x = 1;
-    VoroCrustAlgorithm alg(plc, M_PI/10.0, M_PI_4, 1., 0.8);
+    // plc.vertices[2]->vertex.x = 1;
+    // VoroCrustAlgorithm alg(plc, M_PI/10.0, M_PI_4, 1., 0.8);
 
-    std::cout << alg.repr() << std::endl;
+    // std::cout << alg.repr() << std::endl;
 
-    std::cout << "\n\nWrite VTK File for PLC\n-------------------------" << std::endl;
+    // std::cout << "\n\nWrite VTK File for PLC\n-------------------------" << std::endl;
     
-    vorocrust_vtk::write_vtu_PL_Complex("plc.vtu", plc);
-    alg.run();
+    // vorocrust_vtk::write_vtu_PL_Complex("plc.vtu", plc);
+    // alg.run();
     
-    std::cout << "\n\nFINISH PART ONE\n" << std::endl;
+    // std::cout << "\n\nFINISH PART ONE\n" << std::endl;
 
     std::cout << "\nRead From File\n------------------------\n\n" << std::endl;
     auto vertices_from_file = read_vertices("data/vertices.txt");
@@ -73,7 +73,8 @@ int main(int argc, char *argv[]){
     alg_cat.run();
     
     vorocrust_vtk::write_vtu_PL_Complex("cat.vtu", alg_cat.plc);
-
+    vorocrust_vtk::write_vtu_trees("cat_trees.vtu", alg_cat.trees);
+    
     std::cout << "\n\nFINISH PART TWO\n" << std::endl;
 
     return 0;
