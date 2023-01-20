@@ -36,8 +36,10 @@ class VoroCrustFace
         /*! \brief calculate the normal to the surface defined by the vectors `vertices[2] - vertices[1]` X `vertices[1]-vertices[0]`*/
         Vector3D calcNormal();
 
+        /*! \brief calculates the signed ared using the formula in the answer at https://math.stackexchange.com/questions/3207981/how-do-you-calculate-the-area-of-a-2d-polygon-in-3d */
         double calcSignedArea();
 
+        /*! \brief return the Area of the face (absolute value of the signed area) */
         double calcArea();
 
         std::string repr() const;

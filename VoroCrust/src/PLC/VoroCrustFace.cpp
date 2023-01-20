@@ -28,6 +28,7 @@ Vector3D VoroCrustFace::calcNormal()
 }
 
 double VoroCrustFace::calcSignedArea(){
+    /*calculates the signed area using formula in https://math.stackexchange.com/questions/3207981/how-do-you-calculate-the-area-of-a-2d-polygon-in-3d*/
     Vector3D const& v = vertices[0]->vertex;
 
     double signed_area = 0;
