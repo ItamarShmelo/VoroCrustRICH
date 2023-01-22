@@ -155,6 +155,3 @@ ANNpointArray Trees::superSampleFaces(std::vector<Face> const& faces, std::size_
 
     return points;
 }
-
-
-
