@@ -10,3 +10,6 @@
 [submodule "gen_version"]
 	path = gen_version
 	url = https://gitlab.com/omrycohen/gen_version.git
+[submodule "VoroCrust/src/kdtree"]
+	path = VoroCrust/src/kdtree
+	url = git@github.com:ItamarShmelo/kdtree.git
