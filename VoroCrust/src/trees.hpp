@@ -7,6 +7,12 @@
 #include "PLC/PL_Complex.hpp"
 #include <memory>
 
+struct kdtree_deleter{
+    void operator ()(kdtree* p){
+        kd_free(p);
+    }
+};
+
 class Trees {
 
     public:
