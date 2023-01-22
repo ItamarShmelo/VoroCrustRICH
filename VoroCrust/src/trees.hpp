@@ -25,6 +25,7 @@ class Trees {
         ANNpointArray faces_points;
 
         Trees();
+        ~Trees() = default;
 
         //! \brief initialize the trees from a given PL_Complex
         //! \param plc
