@@ -24,6 +24,8 @@ file(GLOB_RECURSE SRC_CPP "src/*.cpp")
 file(GLOB R3D "../source/3D/GeometryCommon/Vector3D.cpp")
 file(GLOB MISC "../source/misc/utils.cpp" "../source/misc/serializable.cpp" "../source/misc/universal_error.cpp")
 file(GLOB ANN "../source/ANN/*.cpp")
+file(GLOB KDTREE "src/kdtree/*.c")
+
 
 find_package(VTK COMPONENTS 
     CommonCore 
@@ -47,7 +49,7 @@ message("proj_dir ${proj_dir}")
 set(EXE_NAME "VoroCrust.out")
 message("executable name ${EXE_NAME}")
 
-add_executable(${EXE_NAME} ${SRC_CPP} ${R3D} ${MISC} ${ANN})
+add_executable(${EXE_NAME} ${SRC_CPP} ${R3D} ${MISC} ${ANN} ${KDTREE})
 target_link_libraries(${EXE_NAME} PRIVATE ${VTK_LIBRARIES})
 
 vtk_module_autoinit(
