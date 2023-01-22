@@ -8,7 +8,10 @@ Trees::Trees(): kd_vertices(nullptr),
                 kd_faces(nullptr),
                 vertices_points(),
                 edges_points(),
-                faces_points() {}
+                faces_points(),
+                ball_kd_vertices(kd_create(3), kdtree_deleter()),
+                ball_kd_edges(kd_create(3), kdtree_deleter()),
+                ball_kd_faces(kd_create(3), kdtree_deleter()) {}
 
 void Trees::loadPLC(PL_Complex const& plc, std::size_t const Nsample_edges, std::size_t const Nsample_faces){
     
