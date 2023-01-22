@@ -3,6 +3,7 @@
 
 #include "../../source/ANN/ANN.h"
 #include "../../source/ANN/kd_tree.h"
+#include "kdtree/kdtree.h"
 #include "PLC/PL_Complex.hpp"
 #include <memory>
 
