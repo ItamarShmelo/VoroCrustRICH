@@ -24,6 +24,10 @@ class Trees {
         //! \brief point array used to define `kd_faces`
         ANNpointArray faces_points;
 
+        std::shared_ptr<kdtree> ball_kd_vertices;
+        std::shared_ptr<kdtree> ball_kd_edges;
+        std::shared_ptr<kdtree> ball_kd_faces;
+
         Trees();
         ~Trees() = default;
 
