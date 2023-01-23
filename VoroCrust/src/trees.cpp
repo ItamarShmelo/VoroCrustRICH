@@ -3,9 +3,9 @@
 #include <boost/random.hpp>
 #include <algorithm>
 
-Trees::Trees(): kd_vertices(nullptr), 
-                kd_edges(nullptr), 
-                kd_faces(nullptr),
+Trees::Trees(): kd_vertices(kd_create(3), kdtree_deleter()), 
+                kd_edges(kd_create(3), kdtree_deleter()), 
+                kd_faces(kd_create(3), kdtree_deleter()),
                 vertices_points(),
                 edges_points(),
                 faces_points(),
@@ -17,31 +17,44 @@ void Trees::loadPLC(PL_Complex const& plc, std::size_t const Nsample_edges, std:
     
     std::size_t const Npoints = plc.vertices.size();
     vertices_points = pointsFromVertices(plc.vertices);
-    kd_vertices = std::make_shared<ANNkd_tree>(vertices_points, Npoints, 1, ANN_KD_SUGGEST);
+    
+    for (Vector3D const& point : vertices_points){
+        if(kd_insert3(kd_vertices.get(), point.x, point.y, point.z, 0) == 0){
+            std::cout << "ERROR while creating kd_vertices" << std::endl;
+            exit(1);
+        }
+    }
 
     edges_points = superSampleEdges(plc.edges, Nsample_edges);
-    kd_edges = std::make_shared<ANNkd_tree>(edges_points, Nsample_edges, 1, ANN_KD_SUGGEST);
+    for (Vector3D const& point : edges_points){
+        if(kd_insert3(kd_edges.get(), point.x, point.y, point.z, 0) == 0){
+            std::cout << "ERROR while creating kd_edges" << std::endl;
+            exit(1);
+        }
+    }
+
 
     faces_points = superSampleFaces(plc.faces, Nsample_faces);
-    kd_faces = std::make_shared<ANNkd_tree>(faces_points, Nsample_faces, 1, ANN_KD_SUGGEST);    
+    for (Vector3D const& point : faces_points){
+        if(kd_insert3(kd_faces.get(), point.x, point.y, point.z, 0) == 0){
+            std::cout << "ERROR while creating kd_faces" << std::endl;
+            exit(1);
+        }
+    }
 }
 
-ANNpointArray Trees::pointsFromVertices(std::vector<Vertex> const& vertices){
+std::vector<Vector3D> Trees::pointsFromVertices(std::vector<Vertex> const& vertices){
     std::size_t const Npoints = vertices.size();
-    ANNpointArray points = annAllocPts(Npoints, 3);
+    std::vector<Vector3D> points(Npoints, {0, 0, 0});
 
     for(std::size_t i = 0; i<Npoints; ++i){
-        Vector3D vertex = vertices[i]->vertex;
-        
-        points[i][0] = vertex.x;
-        points[i][1] = vertex.y;
-        points[i][2] = vertex.z;
+        points[i] = vertices[i]->vertex;
     }
     
     return points;
 }
 
-ANNpointArray Trees::superSampleEdges(std::vector<Edge> const& edges, std::size_t const Nsample){
+std::vector<Vector3D> Trees::superSampleEdges(std::vector<Edge> const& edges, std::size_t const Nsample){
     // generate a random number generator
     boost::mt19937 rng(std::time(nullptr));
     boost::random::uniform_01<> zeroone;
@@ -61,7 +74,7 @@ ANNpointArray Trees::superSampleEdges(std::vector<Edge> const& edges, std::size_
     }
 
     std::cout << "\nEdge Samples : \n---------------------\n";
-    ANNpointArray points = annAllocPts(Nsample, 3);
+    std::vector<Vector3D> points(Nsample, {0, 0, 0});
 
     for(std::size_t i=0; i<Nsample; ++i){
         double const sample = rand_gen()*total_len; // sample a point uniformly [0, total_length)
@@ -84,15 +97,13 @@ ANNpointArray Trees::superSampleEdges(std::vector<Edge> const& edges, std::size_
         double const factor = (sample - start_len[edge_index]) / abs(edge_vec);
         Vector3D const& point = edge->vertex1->vertex + factor*edge_vec;
 
-        points[i][0] = point.x;
-        points[i][1] = point.y;
-        points[i][2] = point.z;        
+        points[i] = point;
     }
 
     return points;
 }
 
-ANNpointArray Trees::superSampleFaces(std::vector<Face> const& faces, std::size_t const Nsample){
+std::vector<Vector3D> Trees::superSampleFaces(std::vector<Face> const& faces, std::size_t const Nsample){
     // generate a random number generator
     boost::mt19937 rng(std::time(nullptr));
     boost::random::uniform_01<> zeroone;
@@ -112,7 +123,7 @@ ANNpointArray Trees::superSampleFaces(std::vector<Face> const& faces, std::size_
     }
 
     std::cout << "\nFace Samples: \n---------------------\n";
-    ANNpointArray points = annAllocPts(Nsample, 3);
+    std::vector<Vector3D> points(Nsample, {0, 0, 0});
 
     for(std::size_t i = 0; i<Nsample; ++i){
         double const sample_area = rand_gen()*total_area; // sample a number uniformly in [0, total_area)
@@ -147,9 +158,7 @@ ANNpointArray Trees::superSampleFaces(std::vector<Face> const& faces, std::size_
         // sample point formula is taken from https://math.stackexchange.com/questions/18686/uniform-random-point-in-triangle-in-3d
         Vector3D point = (1.0-sqrt_r1)*A + (sqrt_r1*(1.0-r2))*B + (r2*sqrt_r1)*C;
 
-        points[i][0] = point.x;
-        points[i][1] = point.y;
-        points[i][2] = point.z;
+        points[i] = point;
 
     }
 

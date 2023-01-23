@@ -91,13 +91,13 @@ namespace vorocrust_vtk {
     }
 
     void write_vtu_trees(std::filesystem::path const& filename, Trees const& trees){
-        ANNpointArray const& coord_points_vertices = trees.kd_vertices->thePoints();
-        ANNpointArray const& coord_points_edges = trees.kd_edges->thePoints();
-        ANNpointArray const& coord_points_faces = trees.kd_faces->thePoints();
+        std::vector<Vector3D> const& coord_points_vertices = trees.vertices_points;
+        std::vector<Vector3D> const& coord_points_edges = trees.edges_points;
+        std::vector<Vector3D> const& coord_points_faces = trees.faces_points;
 
-        std::size_t const num_points_vertices = trees.kd_vertices->nPoints();
-        std::size_t const num_points_edges = trees.kd_edges->nPoints();
-        std::size_t const num_points_faces = trees.kd_faces->nPoints();
+        std::size_t const num_points_vertices = coord_points_vertices.size();
+        std::size_t const num_points_edges = coord_points_edges.size();
+        std::size_t const num_points_faces = coord_points_faces.size();
 
         vtkNew<vtkUnstructuredGrid> ugrid;
 
@@ -106,18 +106,18 @@ namespace vorocrust_vtk {
         points->SetNumberOfPoints(num_points_vertices + num_points_edges + num_points_faces);
 
         for(std::size_t p = 0; p < num_points_vertices; ++p){
-            ANNpoint const& point = coord_points_vertices[p];
-            points->SetPoint(p, point[0], point[1], point[2]);
+            Vector3D const& point = coord_points_vertices[p];
+            points->SetPoint(p, point.x, point.y, point.z);
         }
         
         for(std::size_t p = 0; p < num_points_edges; ++p){
-            ANNpoint const& point = coord_points_edges[p];
-            points->SetPoint(p+num_points_vertices, point[0], point[1], point[2]);
+            Vector3D const& point = coord_points_edges[p];
+            points->SetPoint(p+num_points_vertices, point.x, point.y, point.z);
         }
 
         for(std::size_t p = 0; p < num_points_faces; ++p){
-            ANNpoint const& point = coord_points_faces[p];
-            points->SetPoint(p + (num_points_vertices + num_points_edges), point[0], point[1], point[2]);
+            Vector3D const& point = coord_points_faces[p];
+            points->SetPoint(p + (num_points_vertices + num_points_edges), point.x, point.y, point.z);
         }
 
         ugrid->SetPoints(points);

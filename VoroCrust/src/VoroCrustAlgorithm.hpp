@@ -15,6 +15,8 @@ class VoroCrustAlgorithm {
         double const maxRadius;
         double const L_Lipschitz;
 
+        std::vector<Vertex> eligble_vertices;
+
         VoroCrustAlgorithm( PL_Complex const& plc_,
                             double const sharpTheta_,
                             double const flatTheta_,
@@ -23,7 +25,10 @@ class VoroCrustAlgorithm {
 
         ~VoroCrustAlgorithm() = default;
 
+
         void run();
+
+        std::pair<unsigned int, Vertex> sampleEligbleVertices();
 
         std::string repr() const;
 };
