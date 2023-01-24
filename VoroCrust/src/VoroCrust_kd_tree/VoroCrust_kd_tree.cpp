@@ -98,3 +98,24 @@ void VoroCrust_KD_Tree::insert(Vector3D const& point){
     insertRecursive(point, root);
 }
 
+void VoroCrust_KD_Tree::insertRecursive(Vector3D const& point, std::shared_ptr<Node> const& node){
+    int const axis = node->axis;
+    Vector3D const& train = points[node->index];
+
+    if (point[axis] < train[axis]){
+        if(node->left == nullptr){
+            node->left = newNode(points.size(), (axis+1) % DIM);
+            points.push_back(point);
+            return;
+        }
+
+        insertRecursive(point, node->left);
+    } else {
+        if(node->right == nullptr){
+            node->right = newNode(points.size(), (axis+1) % DIM);
+            points.push_back(point);
+            return;
+        }
+        insertRecursive(point, node->right);
+    }
+}
