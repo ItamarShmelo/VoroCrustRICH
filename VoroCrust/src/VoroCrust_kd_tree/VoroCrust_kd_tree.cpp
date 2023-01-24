@@ -14,3 +14,8 @@ std::shared_ptr<Node> newNode(int index, int axis){
 }
 
 VoroCrust_KD_Tree::VoroCrust_KD_Tree() : root(nullptr), points() {}
+
+VoroCrust_KD_Tree::VoroCrust_KD_Tree(std::vector<Vector3D> const& points) : points(points), root(nullptr) {
+    makeTree(points);
+}
+
