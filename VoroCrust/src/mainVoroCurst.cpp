@@ -75,6 +75,11 @@ int main(int argc, char *argv[]){
     vorocrust_vtk::write_vtu_PL_Complex("cat.vtu", alg_cat.plc);
     vorocrust_vtk::write_vtu_trees("cat_trees.vtu", alg_cat.trees);
     
+    Vector3D query(100, 250, 50);
+    vorocrust_vtk::write_nearestNeighbor("cat_nearest_vertices.vtu", alg_cat.trees.VC_kd_vertices, query);
+    vorocrust_vtk::write_nearestNeighbor("cat_nearest_edges.vtu", alg_cat.trees.VC_kd_edges, query);
+    vorocrust_vtk::write_nearestNeighbor("cat_nearest_faces.vtu", alg_cat.trees.VC_kd_faces, query);
+
     std::cout << "\n\nFINISH PART TWO\n" << std::endl;
 
     return 0;
