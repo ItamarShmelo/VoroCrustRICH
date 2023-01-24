@@ -91,9 +91,9 @@ namespace vorocrust_vtk {
     }
 
     void write_vtu_trees(std::filesystem::path const& filename, Trees const& trees){
-        std::vector<Vector3D> const& coord_points_vertices = trees.vertices_points;
-        std::vector<Vector3D> const& coord_points_edges = trees.edges_points;
-        std::vector<Vector3D> const& coord_points_faces = trees.faces_points;
+        std::vector<Vector3D> const& coord_points_vertices = trees.VC_kd_vertices.points;
+        std::vector<Vector3D> const& coord_points_edges = trees.VC_kd_edges.points;
+        std::vector<Vector3D> const& coord_points_faces = trees.VC_kd_faces.points;
 
         std::size_t const num_points_vertices = coord_points_vertices.size();
         std::size_t const num_points_edges = coord_points_edges.size();
