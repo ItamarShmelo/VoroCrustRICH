@@ -263,6 +263,13 @@ Vector3D Reflect(Vector3D const& v, Vector3D const& normal);
 */
 double distance(Vector3D const& v1, Vector3D const& v2);
 
+/*! \brief Calculates the distance squared between two vectors
+	\param v1 First vector
+	\param v2 second vector
+	\return distance squared between v1 and v2
+*/
+double distanceSq(Vector3D const& v1, Vector3D const& v2);
+
 /*! \brief Returns the cross product of two vectors
 \param v1 First vector
 \param v2 Second vector

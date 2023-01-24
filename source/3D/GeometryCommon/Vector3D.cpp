@@ -263,6 +263,11 @@ double distance(Vector3D const& v1, Vector3D const& v2)
 	return abs(v1 - v2);
 }
 
+double distanceSq(Vector3D const& v1, Vector3D const& v2){
+	Vector3D const& v = v1 - v2;
+	return ScalarProd(v, v);
+}
+
 void Split(vector<Vector3D> const & vIn, vector<double> & vX, vector<double> & vY, vector<double> & vZ)
 {
 	vX.resize(vIn.size());
