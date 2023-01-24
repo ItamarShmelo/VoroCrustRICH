@@ -119,3 +119,12 @@ void VoroCrust_KD_Tree::insertRecursive(Vector3D const& point, std::shared_ptr<N
         insertRecursive(point, node->right);
     }
 }
+
+void VoroCrust_KD_Tree::remakeTree(){
+    root.reset();
+
+    std::vector<int> indices(points.size());
+    std::iota(indices.begin(), indices.end(), 0);
+    
+    root = buildRecursive(indices.data(), static_cast<int>(points.size()), 0);
+}
