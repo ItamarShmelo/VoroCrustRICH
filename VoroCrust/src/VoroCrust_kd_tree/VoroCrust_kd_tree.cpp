@@ -86,3 +86,15 @@ void VoroCrust_KD_Tree::nearestNeighborRecursive(Vector3D const& query, std::sha
         nearestNeighborRecursive(query, node_second, guess, minDist);
     }
 }
+
+void VoroCrust_KD_Tree::insert(Vector3D const& point){
+    if (root == nullptr)
+    {
+        root = newNode(0, 0);
+        points.push_back(point);
+        return;
+    }
+    
+    insertRecursive(point, root);
+}
+
