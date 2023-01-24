@@ -170,4 +170,71 @@ namespace vorocrust_vtk {
         writer->SetInputData(ugrid);
         writer->Write();
     }
+
+    void write_nearestNeighbor(std::filesystem::path const& filename, VoroCrust_KD_Tree const& tree, Vector3D const& query) {
+        std::vector<Vector3D> const& coord_points = tree.points;
+
+        std::size_t num_points = coord_points.size();
+
+        vtkNew<vtkUnstructuredGrid> ugrid;
+
+        vtkNew<vtkPoints> points;    
+
+        points->SetNumberOfPoints(num_points + 1);
+        
+        for(std::size_t p = 0; p < num_points; ++p){
+            Vector3D const& point = coord_points[p];
+            points->SetPoint(p, point.x, point.y, point.z);
+        }
+
+        points->SetPoint(num_points, query.x, query.y, query.z);
+
+        ugrid->SetPoints(points);
+        ugrid->Allocate(num_points + 1);
+
+        // define Points as Cells
+        std::vector<vtkIdType> point_array_in_cell;
+        for(std::size_t point_index=0; point_index < num_points+1; ++point_index){
+            vtkNew<vtkIdList> point_vtk;
+            point_array_in_cell.clear();
+
+            auto point = points->GetPoint(point_index);
+
+            point_vtk->InsertNextId(1);
+            point_vtk->InsertNextId(point_index);
+            point_array_in_cell.push_back(point_index);
+
+            std::sort(point_array_in_cell.begin(), point_array_in_cell.end());
+
+            point_array_in_cell = unique(point_array_in_cell);
+            
+            vtkIdType* ptIds = &point_array_in_cell[0];
+            ugrid->InsertNextCell(VTK_POLYHEDRON, point_array_in_cell.size(), ptIds, 1, point_vtk->GetPointer(0));        
+        }
+
+        vtkNew<vtkIntArray> data;
+        data->SetName("Nearest Neighbor");
+        data->SetNumberOfComponents(1);
+        data->SetNumberOfValues(num_points+1);
+
+        for(std::size_t p = 0; p < num_points; ++p){
+            data->SetValue(p, 0);
+        }
+
+        data->SetValue(num_points, 1); // query point
+
+        int index_nearest_neighbor = tree.nearestNeighbor(query);
+
+        data->SetValue(index_nearest_neighbor, 2);
+
+        ugrid->GetCellData()->AddArray(data);
+        
+        // write
+        vtkNew<vtkXMLUnstructuredGridWriter> writer;
+        writer->SetCompressionLevel(1);
+        writer->SetFileName(filename.c_str());
+        writer->SetInputData(ugrid);
+        writer->Write();
+}
+
 }

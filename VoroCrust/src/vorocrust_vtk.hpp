@@ -2,6 +2,7 @@
 #define WRITE_VTU_PL_COMPLEX
 
 #include "PLC/PL_Complex.hpp"
+#include "VoroCrust_kd_tree/VoroCrust_kd_tree.hpp"
 #include "trees.hpp"
 #include <filesystem>
 #include "../../source/3D/GeometryCommon/Vector3D.hpp"
@@ -16,6 +17,8 @@ namespace vorocrust_vtk{
 void write_vtu_PL_Complex(std::filesystem::path const& filename, PL_Complex const& plc);
 
 void write_vtu_trees(std::filesystem::path const& filename, Trees const& trees);
+
+void write_nearestNeighbor(std::filesystem::path const& filename, VoroCrust_KD_Tree const& tree, Vector3D const& query);
 
 } // namespace
 
