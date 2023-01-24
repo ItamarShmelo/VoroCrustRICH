@@ -53,3 +53,13 @@ std::shared_ptr<Node> VoroCrust_KD_Tree::buildRecursive(int * indices, int npoin
 
     return node;
 }
+
+int VoroCrust_KD_Tree::nearestNeighbor(Vector3D const& query) const {
+    int guess = 0;
+    double minDist = std::numeric_limits<double>::max();
+
+    nearestNeighborRecursive(query, root, &guess, &minDist);
+
+    return guess;
+}
+
