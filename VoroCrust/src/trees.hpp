@@ -1,25 +1,19 @@
 #ifndef TREES
 #define TREES
 
-#include "kdtree/kdtree.h"
+#include "VoroCrust_kd_tree/VoroCrust_kd_tree.hpp"
 #include "PLC/PL_Complex.hpp"
 #include <memory>
-
-struct kdtree_deleter{
-    void operator ()(kdtree* p){
-        kd_free(p);
-    }
-};
 
 class Trees {
 
     public:
         //! \brief kd_tree holding information on vertices
-        std::shared_ptr<kdtree> kd_vertices;
+        VoroCrust_KD_Tree VC_kd_vertices;
         //! \brief kd_tree holding information on edges
-        std::shared_ptr<kdtree> kd_edges;
+        VoroCrust_KD_Tree VC_kd_edges;
         //! \brief kd_tree holding information on vertices
-        std::shared_ptr<kdtree> kd_faces;
+        VoroCrust_KD_Tree VC_kd_faces;
 
         //! IMPORTANT: point arrays need to be saved since the kd_trees holds a pointer not a copy!
         //! \brief point array used to define `kd_vertices`
@@ -29,9 +23,9 @@ class Trees {
         //! \brief point array used to define `kd_faces`
         std::vector<Vector3D> faces_points;
 
-        std::shared_ptr<kdtree> ball_kd_vertices;
-        std::shared_ptr<kdtree> ball_kd_edges;
-        std::shared_ptr<kdtree> ball_kd_faces;
+        VoroCrust_KD_Tree ball_kd_vertices;
+        VoroCrust_KD_Tree ball_kd_edges;
+        VoroCrust_KD_Tree ball_kd_faces;
 
         Trees();
         ~Trees() = default;
