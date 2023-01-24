@@ -63,3 +63,26 @@ int VoroCrust_KD_Tree::nearestNeighbor(Vector3D const& query) const {
     return guess;
 }
 
+void VoroCrust_KD_Tree::nearestNeighborRecursive(Vector3D const& query, std::shared_ptr<Node> const& node, int *guess, double *minDist) const {
+    if(node.get() == nullptr) return;
+
+    Vector3D const& train = points[node->index];
+
+    double const dist = distance(train, query);
+
+    if(dist < *minDist){
+        *minDist = dist;
+        *guess = node->index;
+    }
+
+    int const axis = node->axis;
+    std::shared_ptr<Node> node_first = query[axis] < train[axis] ? node->left : node->right;
+
+    nearestNeighborRecursive(query, node_first, guess, minDist);
+
+    double const diff = fabs(query[axis] - train[axis]);
+    if(diff < *minDist){
+        std::shared_ptr<Node> node_second = query[axis] < train[axis] ? node->right : node->left;
+        nearestNeighborRecursive(query, node_second, guess, minDist);
+    }
+}
