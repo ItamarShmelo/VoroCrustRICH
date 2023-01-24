@@ -40,9 +40,7 @@ void VoroCrustAlgorithm::run() {
     plc.detectFeatures(sharpTheta, flatTheta);
 
     //! TODO: make sampling size a user input!
-    trees.loadPLC(plc, 1e5, 1e6);
-
-    
+    trees.loadPLC(plc, 1e5, 1e6);    
 
 }
 
