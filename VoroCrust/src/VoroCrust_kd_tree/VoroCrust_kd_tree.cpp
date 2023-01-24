@@ -23,3 +23,13 @@ void VoroCrust_KD_Tree::clear(){
     root.reset();
     points.clear();
 }
+
+void VoroCrust_KD_Tree::makeTree(std::vector<Vector3D> const& points_){
+    clear();
+
+    points = points_;
+    std::vector<int> indices(points.size());
+    std::iota(indices.begin(), indices.end(), 0);
+    
+    root = buildRecursive(indices.data(), static_cast<int>(points.size()), 0);
+}
