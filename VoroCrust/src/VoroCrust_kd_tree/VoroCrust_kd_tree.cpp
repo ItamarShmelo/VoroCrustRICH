@@ -128,3 +128,21 @@ void VoroCrust_KD_Tree::remakeTree(){
     
     root = buildRecursive(indices.data(), static_cast<int>(points.size()), 0);
 }
+
+bool VoroCrust_KD_Tree::operator==(VoroCrust_KD_Tree const& t) const {
+    return equalRecursive(root, t.root, t);
+}
+
+bool VoroCrust_KD_Tree::equalRecursive(std::shared_ptr<Node> const& node1, std::shared_ptr<Node> const& node2, VoroCrust_KD_Tree const& t) const {
+    if(node1 == nullptr || node2 == nullptr){
+        if(node1 == nullptr && node2 == nullptr)
+            return true;
+        return false;
+    }
+
+    if(points[node1->index] == t.points[node2->index]){
+        return (equalRecursive(node1->left, node2->left, t) && (equalRecursive(node1->right, node2->right, t)));
+    }
+
+    return false;
+}
