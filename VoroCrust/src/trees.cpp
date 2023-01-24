@@ -24,8 +24,7 @@ void Trees::loadPLC(PL_Complex const& plc, std::size_t const Nsample_edges, std:
     VC_kd_vertices = VoroCrust_KD_Tree(vertices_points);
     VC_kd_edges = VoroCrust_KD_Tree(edges_points);
     VC_kd_faces = VoroCrust_KD_Tree(faces_points);
-
-    }
+    
 }
 
 std::vector<Vector3D> Trees::pointsFromVertices(std::vector<Vertex> const& vertices){
