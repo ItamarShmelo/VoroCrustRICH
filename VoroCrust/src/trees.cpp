@@ -3,43 +3,28 @@
 #include <boost/random.hpp>
 #include <algorithm>
 
-Trees::Trees(): kd_vertices(kd_create(3), kdtree_deleter()), 
-                kd_edges(kd_create(3), kdtree_deleter()), 
-                kd_faces(kd_create(3), kdtree_deleter()),
+Trees::Trees(): VC_kd_vertices(),
+                VC_kd_edges(),
+                VC_kd_faces(),
                 vertices_points(),
                 edges_points(),
                 faces_points(),
-                ball_kd_vertices(kd_create(3), kdtree_deleter()),
-                ball_kd_edges(kd_create(3), kdtree_deleter()),
-                ball_kd_faces(kd_create(3), kdtree_deleter()) {}
+                ball_kd_vertices(),
+                ball_kd_edges(),
+                ball_kd_faces() {}
 
 void Trees::loadPLC(PL_Complex const& plc, std::size_t const Nsample_edges, std::size_t const Nsample_faces){
     
     std::size_t const Npoints = plc.vertices.size();
-    vertices_points = pointsFromVertices(plc.vertices);
     
-    for (Vector3D const& point : vertices_points){
-        if(kd_insert3(kd_vertices.get(), point.x, point.y, point.z, 0) == 0){
-            std::cout << "ERROR while creating kd_vertices" << std::endl;
-            exit(1);
-        }
-    }
-
+    vertices_points = pointsFromVertices(plc.vertices);
     edges_points = superSampleEdges(plc.edges, Nsample_edges);
-    for (Vector3D const& point : edges_points){
-        if(kd_insert3(kd_edges.get(), point.x, point.y, point.z, 0) == 0){
-            std::cout << "ERROR while creating kd_edges" << std::endl;
-            exit(1);
-        }
-    }
-
-
     faces_points = superSampleFaces(plc.faces, Nsample_faces);
-    for (Vector3D const& point : faces_points){
-        if(kd_insert3(kd_faces.get(), point.x, point.y, point.z, 0) == 0){
-            std::cout << "ERROR while creating kd_faces" << std::endl;
-            exit(1);
-        }
+    
+    VC_kd_vertices = VoroCrust_KD_Tree(vertices_points);
+    VC_kd_edges = VoroCrust_KD_Tree(edges_points);
+    VC_kd_faces = VoroCrust_KD_Tree(faces_points);
+
     }
 }
 
