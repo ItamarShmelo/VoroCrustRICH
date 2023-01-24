@@ -19,3 +19,7 @@ VoroCrust_KD_Tree::VoroCrust_KD_Tree(std::vector<Vector3D> const& points) : poin
     makeTree(points);
 }
 
+void VoroCrust_KD_Tree::clear(){
+    root.reset();
+    points.clear();
+}
