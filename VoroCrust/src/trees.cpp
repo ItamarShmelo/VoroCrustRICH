@@ -6,9 +6,6 @@
 Trees::Trees(): VC_kd_vertices(),
                 VC_kd_edges(),
                 VC_kd_faces(),
-                vertices_points(),
-                edges_points(),
-                faces_points(),
                 ball_kd_vertices(),
                 ball_kd_edges(),
                 ball_kd_faces() {}
