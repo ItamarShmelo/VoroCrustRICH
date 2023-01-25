@@ -156,3 +156,33 @@ bool VoroCrust_KD_Tree::equalRecursive(std::shared_ptr<Node> const& node1, std::
 
     return false;
 }
+
+/* BOUNDARY KD TREE */
+VoroCrust_KD_Tree_Boundary::VoroCrust_KD_Tree_Boundary() : VoroCrust_KD_Tree(), vectors() {}
+
+VoroCrust_KD_Tree_Boundary::VoroCrust_KD_Tree_Boundary(std::vector<Vector3D> const& points, std::vector<Vector3D> const& vecs) : VoroCrust_KD_Tree(points), vectors(vecs){
+    if (points.size() != vecs.size()){
+        std::cout << "ERROR : points.size() != vecs.size() in initialization of VoroCrust_KD_Tree_Boundary" << std::endl;
+        exit(1);
+    }
+}
+
+void VoroCrust_KD_Tree_Boundary::insert(Vector3D const& point, Vector3D const& vec){
+    this->VoroCrust_KD_Tree::insert(point);
+    vectors.push_back(vec);
+}
+
+/* BALL KD TREE */
+VoroCrust_KD_Tree_Ball::VoroCrust_KD_Tree_Ball() : VoroCrust_KD_Tree(), ball_redii() {}
+
+VoroCrust_KD_Tree_Ball::VoroCrust_KD_Tree_Ball(std::vector<Vector3D> const& points, std::vector<double> const& redii) : VoroCrust_KD_Tree(points), ball_redii(redii) {
+    if (points.size() != ball_redii.size()){
+        std::cout << "ERROR : points.size() !=  ball_redii.size() in initialization of VoroCrust_KD_Tree_Ball" << std::endl;
+        exit(1);
+    }
+}
+
+void VoroCrust_KD_Tree_Ball::insert(Vector3D const& point, double radius){
+    this->VoroCrust_KD_Tree::insert(point);
+    ball_redii.push_back(radius);
+}
