@@ -1,6 +1,7 @@
 #include "VoroCrust_kd_tree.hpp"
 #include <functional>
 #include <numeric>
+#include <iostream>
  
 //! TODO: index should be std::size_t and everything else (except axis) which is unsigned should be std::size_t
 
