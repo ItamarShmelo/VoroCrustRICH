@@ -139,6 +139,7 @@ void VoroCrust_KD_Tree::remakeTree(){
 }
 
 bool VoroCrust_KD_Tree::operator==(VoroCrust_KD_Tree const& t) const {
+    if(points.size() != t.points.size()) return false;
     return equalRecursive(root, t.root, t);
 }
 
