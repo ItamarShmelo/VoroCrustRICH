@@ -9,23 +9,15 @@ class Trees {
 
     public:
         //! \brief kd_tree holding information on vertices
-        VoroCrust_KD_Tree VC_kd_vertices;
+        VoroCrust_KD_Tree_Boundary VC_kd_vertices;
         //! \brief kd_tree holding information on edges
-        VoroCrust_KD_Tree VC_kd_edges;
+        VoroCrust_KD_Tree_Boundary VC_kd_edges;
         //! \brief kd_tree holding information on vertices
-        VoroCrust_KD_Tree VC_kd_faces;
+        VoroCrust_KD_Tree_Boundary VC_kd_faces;
 
-        //! IMPORTANT: point arrays need to be saved since the kd_trees holds a pointer not a copy!
-        //! \brief point array used to define `kd_vertices`
-        std::vector<Vector3D> vertices_points;
-        //! \brief point array used to define `kd_edges`
-        std::vector<Vector3D> edges_points;
-        //! \brief point array used to define `kd_faces`
-        std::vector<Vector3D> faces_points;
-
-        VoroCrust_KD_Tree ball_kd_vertices;
-        VoroCrust_KD_Tree ball_kd_edges;
-        VoroCrust_KD_Tree ball_kd_faces;
+        VoroCrust_KD_Tree_Ball ball_kd_vertices;
+        VoroCrust_KD_Tree_Ball ball_kd_edges;
+        VoroCrust_KD_Tree_Ball ball_kd_faces;
 
         Trees();
         ~Trees() = default;
