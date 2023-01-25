@@ -14,13 +14,13 @@ void Trees::loadPLC(PL_Complex const& plc, std::size_t const Nsample_edges, std:
     
     std::size_t const Npoints = plc.vertices.size();
     
-    vertices_points = pointsFromVertices(plc.vertices);
-    edges_points = superSampleEdges(plc.edges, Nsample_edges);
-    faces_points = superSampleFaces(plc.faces, Nsample_faces);
+    std::vector<Vector3D> vertices_points = pointsFromVertices(plc.vertices);
+    auto const result_edges = superSampleEdges(plc.edges, Nsample_edges);
+    auto const result_faces = superSampleFaces(plc.faces, Nsample_faces);
     
-    VC_kd_vertices = VoroCrust_KD_Tree(vertices_points);
-    VC_kd_edges = VoroCrust_KD_Tree(edges_points);
-    VC_kd_faces = VoroCrust_KD_Tree(faces_points);
+    VC_kd_vertices = VoroCrust_KD_Tree_Boundary(vertices_points);
+    VC_kd_edges = VoroCrust_KD_Tree_Boundary(result_edges.first, result_edges.second);
+    VC_kd_faces = VoroCrust_KD_Tree_Boundary(result_faces.first, result_faces.second);
     
 }
 
