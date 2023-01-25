@@ -79,7 +79,7 @@ std::pair<std::vector<Vector3D>, std::vector<Vector3D>> Trees::superSampleEdges(
         Vector3D const& point = edge->vertex1->vertex + factor*edge_vec;
 
         points[i] = point;
-        parallel[i] = edge_vec;
+        parallel[i] = (edge_vec / abs(edge_vec));
 
     }
 
