@@ -35,7 +35,7 @@ std::vector<Vector3D> Trees::pointsFromVertices(std::vector<Vertex> const& verti
     return points;
 }
 
-std::vector<Vector3D> Trees::superSampleEdges(std::vector<Edge> const& edges, std::size_t const Nsample){
+std::pair<std::vector<Vector3D>, std::vector<Vector3D>> Trees::superSampleEdges(std::vector<Edge> const& edges, std::size_t const Nsample){
     // generate a random number generator
     boost::mt19937 rng(std::time(nullptr));
     boost::random::uniform_01<> zeroone;
@@ -56,6 +56,7 @@ std::vector<Vector3D> Trees::superSampleEdges(std::vector<Edge> const& edges, st
 
     std::cout << "\nEdge Samples : \n---------------------\n";
     std::vector<Vector3D> points(Nsample, {0, 0, 0});
+    std::vector<Vector3D> parallel(Nsample, {0, 0, 0});
 
     for(std::size_t i=0; i<Nsample; ++i){
         double const sample = rand_gen()*total_len; // sample a point uniformly [0, total_length)
@@ -74,14 +75,15 @@ std::vector<Vector3D> Trees::superSampleEdges(std::vector<Edge> const& edges, st
         // find point on edge
         Edge const& edge = edges[edge_index];
         Vector3D const& edge_vec = (edge->vertex2->vertex - edge->vertex1->vertex);
-
         double const factor = (sample - start_len[edge_index]) / abs(edge_vec);
         Vector3D const& point = edge->vertex1->vertex + factor*edge_vec;
 
         points[i] = point;
+        parallel[i] = edge_vec;
+
     }
 
-    return points;
+    return std::pair<std::vector<Vector3D>, std::vector<Vector3D>>(points, parallel);
 }
 
 std::vector<Vector3D> Trees::superSampleFaces(std::vector<Face> const& faces, std::size_t const Nsample){
