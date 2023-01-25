@@ -174,10 +174,10 @@ void VoroCrust_KD_Tree_Boundary::insert(Vector3D const& point, Vector3D const& v
 }
 
 /* BALL KD TREE */
-VoroCrust_KD_Tree_Ball::VoroCrust_KD_Tree_Ball() : VoroCrust_KD_Tree(), ball_redii() {}
+VoroCrust_KD_Tree_Ball::VoroCrust_KD_Tree_Ball() : VoroCrust_KD_Tree(), ball_radii() {}
 
-VoroCrust_KD_Tree_Ball::VoroCrust_KD_Tree_Ball(std::vector<Vector3D> const& points, std::vector<double> const& redii) : VoroCrust_KD_Tree(points), ball_redii(redii) {
-    if (points.size() != ball_redii.size()){
+VoroCrust_KD_Tree_Ball::VoroCrust_KD_Tree_Ball(std::vector<Vector3D> const& points, std::vector<double> const& radii) : VoroCrust_KD_Tree(points), ball_radii(radii) {
+    if (points.size() != ball_radii.size()){
         std::cout << "ERROR : points.size() !=  ball_redii.size() in initialization of VoroCrust_KD_Tree_Ball" << std::endl;
         exit(1);
     }
@@ -185,5 +185,5 @@ VoroCrust_KD_Tree_Ball::VoroCrust_KD_Tree_Ball(std::vector<Vector3D> const& poin
 
 void VoroCrust_KD_Tree_Ball::insert(Vector3D const& point, double radius){
     this->VoroCrust_KD_Tree::insert(point);
-    ball_redii.push_back(radius);
+    ball_radii.push_back(radius);
 }

@@ -86,11 +86,11 @@ class VoroCrust_KD_Tree_Boundary : public VoroCrust_KD_Tree {
 
 class VoroCrust_KD_Tree_Ball : public VoroCrust_KD_Tree {
     public:
-        std::vector<double> ball_redii;
+        std::vector<double> ball_radii;
 
         VoroCrust_KD_Tree_Ball();
 
-        VoroCrust_KD_Tree_Ball(std::vector<Vector3D> const& points, std::vector<double> const& redii);
+        VoroCrust_KD_Tree_Ball(std::vector<Vector3D> const& points, std::vector<double> const& radii);
 
         ~VoroCrust_KD_Tree_Ball() = default;
 
