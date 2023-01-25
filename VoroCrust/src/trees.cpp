@@ -86,7 +86,7 @@ std::pair<std::vector<Vector3D>, std::vector<Vector3D>> Trees::superSampleEdges(
     return std::pair<std::vector<Vector3D>, std::vector<Vector3D>>(points, parallel);
 }
 
-std::vector<Vector3D> Trees::superSampleFaces(std::vector<Face> const& faces, std::size_t const Nsample){
+std::pair<std::vector<Vector3D>, std::vector<Vector3D>> Trees::superSampleFaces(std::vector<Face> const& faces, std::size_t const Nsample){
     // generate a random number generator
     boost::mt19937 rng(std::time(nullptr));
     boost::random::uniform_01<> zeroone;
@@ -107,13 +107,14 @@ std::vector<Vector3D> Trees::superSampleFaces(std::vector<Face> const& faces, st
 
     std::cout << "\nFace Samples: \n---------------------\n";
     std::vector<Vector3D> points(Nsample, {0, 0, 0});
+    std::vector<Vector3D> normals(Nsample, {0, 0, 0});
 
     for(std::size_t i = 0; i<Nsample; ++i){
         double const sample_area = rand_gen()*total_area; // sample a number uniformly in [0, total_area)
 
         // find the face it lies on
         auto const iter_lower_bound = std::lower_bound(start_area.begin(), start_area.end(), sample_area);
-        std::size_t face_index = std::distance(start_area.begin(), iter_lower_bound) - 1;
+        int face_index = std::distance(start_area.begin(), iter_lower_bound) - 1;
 
         Face const& face = faces[face_index];
         
@@ -142,8 +143,11 @@ std::vector<Vector3D> Trees::superSampleFaces(std::vector<Face> const& faces, st
         Vector3D point = (1.0-sqrt_r1)*A + (sqrt_r1*(1.0-r2))*B + (r2*sqrt_r1)*C;
 
         points[i] = point;
-
+        normals[i] = face->calcNormal();
     }
+
+    return std::pair<std::vector<Vector3D>, std::vector<Vector3D>>(points, normals);
+}
 
     return points;
 }
