@@ -97,7 +97,7 @@ std::vector<Vector3D> Trees::superSampleFaces(std::vector<Face> const& faces, st
 
     // calculate the total area and the start area of each face
     // i.e. the total area up to the face
-    double total_area;
+    double total_area = 0.0;
     for(unsigned int i=0; i<faces.size(); ++i){
         Face const& face = faces[i];
         start_area[i] = total_area;
