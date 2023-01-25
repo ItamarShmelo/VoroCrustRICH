@@ -69,6 +69,34 @@ class VoroCrust_KD_Tree {
         bool equalRecursive(std::shared_ptr<Node> const& node1, std::shared_ptr<Node> const& node2, VoroCrust_KD_Tree const& t) const;
 };
 
+class VoroCrust_KD_Tree_Boundary : public VoroCrust_KD_Tree {
+    public:
+        std::vector<Vector3D> vectors;
+
+        VoroCrust_KD_Tree_Boundary();
+
+        VoroCrust_KD_Tree_Boundary(std::vector<Vector3D> const& points) : VoroCrust_KD_Tree(points) {}
+
+        VoroCrust_KD_Tree_Boundary(std::vector<Vector3D> const& points, std::vector<Vector3D> const& vecs);
+
+        ~VoroCrust_KD_Tree_Boundary() = default;
+
+        void insert(Vector3D const& point, Vector3D const& vec);
+};
+
+class VoroCrust_KD_Tree_Ball : public VoroCrust_KD_Tree {
+    public:
+        std::vector<double> ball_redii;
+
+        VoroCrust_KD_Tree_Ball();
+
+        VoroCrust_KD_Tree_Ball(std::vector<Vector3D> const& points, std::vector<double> const& redii);
+
+        ~VoroCrust_KD_Tree_Ball() = default;
+
+        void insert(Vector3D const& point, double radius);
+};
+
 
 
 #endif /* VOROCRUST_KD_TREE */
