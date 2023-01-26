@@ -95,6 +95,40 @@ void VoroCrust_KD_Tree::nearestNeighborRecursive(Vector3D const& query, std::sha
     }
 }
 
+void VoroCrust_KD_Tree::kNearestNeighborsRecursive(Vector3D const& query, int const k, std::shared_ptr<Node> const& node, std::vector<int>& indices, std::vector<double> &minDist) const{
+    if(node.get() == nullptr) return;
+
+    Vector3D const& train = points[node->index];
+
+    double const dist = distance(train, query);
+    int i;
+    for(i = k; i > 0; --i){
+        if(dist > minDist[i-1])
+            break;
+    }
+
+    if(i != k){
+        indices.insert(indices.begin() + i, node->index);
+        minDist.insert(minDist.begin() + i, dist);
+
+        indices.pop_back();
+        minDist.pop_back();
+    }
+
+    int const axis = node->axis;
+    std::shared_ptr<Node> node_first = query[axis] < train[axis] ? node->left : node->right;
+
+    kNearestNeighborsRecursive(query, k, node_first, indices, minDist);
+
+    double const diff = fabs(query[axis] - train[axis]);
+    //! TODO: make the epsilon a constant throughout the program or use machine limits
+    if(diff < minDist.back()){
+        std::shared_ptr<Node> const& node_second = query[axis] < train[axis] ? node->right : node->left;
+        kNearestNeighborsRecursive(query, k, node_second, indices, minDist);
+    }
+}
+
+
 void VoroCrust_KD_Tree::insert(Vector3D const& point){
     if (root == nullptr)
     {
