@@ -82,7 +82,7 @@ void VoroCrust_KD_Tree::nearestNeighborRecursive(Vector3D const& query, std::sha
 
     int const axis = node->axis;
     // which node subtree to search tree
-    std::shared_ptr<Node> node_first = query[axis] < train[axis] ? node->left : node->right;
+    std::shared_ptr<Node> const& node_first = query[axis] < train[axis] ? node->left : node->right;
     
     nearestNeighborRecursive(query, node_first, guess, minDist);
 
@@ -90,7 +90,7 @@ void VoroCrust_KD_Tree::nearestNeighborRecursive(Vector3D const& query, std::sha
     // if distance to current dividing axis to other node is `more` then `minDist` 
     // then we can discard this subtree 
     if(diff < *minDist){
-        std::shared_ptr<Node> node_second = query[axis] < train[axis] ? node->right : node->left;
+        std::shared_ptr<Node> const& node_second = query[axis] < train[axis] ? node->right : node->left;
         nearestNeighborRecursive(query, node_second, guess, minDist);
     }
 }
