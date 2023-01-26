@@ -95,6 +95,20 @@ void VoroCrust_KD_Tree::nearestNeighborRecursive(Vector3D const& query, std::sha
     }
 }
 
+std::vector<int> VoroCrust_KD_Tree::kNearestNeighbors(Vector3D const& query, int const k) const {
+    if(k > points.size()){
+        std::cout << "Error: kNearestNeighbors, `k` can't be larger then number of points" << std::endl;
+        exit(1);
+    }
+
+    std::vector<double> minDist(k, std::numeric_limits<double>::max());
+
+    std::vector<int> indices(k, -1);
+
+    kNearestNeighborsRecursive(query, k, root, indices, minDist);
+    return indices;
+}
+
 void VoroCrust_KD_Tree::kNearestNeighborsRecursive(Vector3D const& query, int const k, std::shared_ptr<Node> const& node, std::vector<int>& indices, std::vector<double> &minDist) const{
     if(node.get() == nullptr) return;
 
