@@ -5,8 +5,8 @@
  
 //! TODO: index should be std::size_t and everything else (except axis) which is unsigned should be std::size_t
 
-std::shared_ptr<Node> newNode(int index, int axis){
-    std::shared_ptr<Node> node = std::make_shared<Node>();
+NodePtr newNode(int index, int axis){
+    NodePtr node = std::make_shared<Node>();
 
     node->index = index;
     node->axis = axis;
@@ -35,7 +35,7 @@ void VoroCrust_KD_Tree::makeTree(std::vector<Vector3D> const& points_){
     root = buildRecursive(indices.data(), static_cast<int>(points.size()), 0);
 }
 
-std::shared_ptr<Node> VoroCrust_KD_Tree::buildRecursive(int * indices, int npoints, int depth){
+NodePtr VoroCrust_KD_Tree::buildRecursive(int * indices, int npoints, int depth){
     if(npoints <= 0){
         return nullptr;
     }
@@ -50,7 +50,7 @@ std::shared_ptr<Node> VoroCrust_KD_Tree::buildRecursive(int * indices, int npoin
         return points[lhs][axis] < points[rhs][axis];
     });
 
-    std::shared_ptr<Node> node = newNode(indices[mid], axis);
+    NodePtr node = newNode(indices[mid], axis);
 
     node->left = buildRecursive(indices, mid, depth + 1); 
     node->right = buildRecursive(indices + mid + 1, npoints - mid - 1, depth+1);
@@ -67,7 +67,7 @@ int VoroCrust_KD_Tree::nearestNeighbor(Vector3D const& query) const {
     return guess;
 }
 
-void VoroCrust_KD_Tree::nearestNeighborRecursive(Vector3D const& query, std::shared_ptr<Node> const& node, int *guess, double *minDist) const {
+void VoroCrust_KD_Tree::nearestNeighborRecursive(Vector3D const& query, NodePtr const& node, int *guess, double *minDist) const {
     if(node.get() == nullptr) return;
 
     Vector3D const& train = points[node->index];
@@ -82,7 +82,7 @@ void VoroCrust_KD_Tree::nearestNeighborRecursive(Vector3D const& query, std::sha
 
     int const axis = node->axis;
     // which node subtree to search tree
-    std::shared_ptr<Node> const& node_first = query[axis] < train[axis] ? node->left : node->right;
+    NodePtr const& node_first = query[axis] < train[axis] ? node->left : node->right;
     
     nearestNeighborRecursive(query, node_first, guess, minDist);
 
@@ -90,7 +90,7 @@ void VoroCrust_KD_Tree::nearestNeighborRecursive(Vector3D const& query, std::sha
     // if distance to current dividing axis to other node is `more` then `minDist` 
     // then we can discard this subtree 
     if(diff < *minDist){
-        std::shared_ptr<Node> const& node_second = query[axis] < train[axis] ? node->right : node->left;
+        NodePtr const& node_second = query[axis] < train[axis] ? node->right : node->left;
         nearestNeighborRecursive(query, node_second, guess, minDist);
     }
 }
@@ -109,7 +109,7 @@ std::vector<int> VoroCrust_KD_Tree::kNearestNeighbors(Vector3D const& query, int
     return indices;
 }
 
-void VoroCrust_KD_Tree::kNearestNeighborsRecursive(Vector3D const& query, int const k, std::shared_ptr<Node> const& node, std::vector<int>& indices, std::vector<double> &minDist) const{
+void VoroCrust_KD_Tree::kNearestNeighborsRecursive(Vector3D const& query, int const k, NodePtr const& node, std::vector<int>& indices, std::vector<double> &minDist) const{
     if(node.get() == nullptr) return;
 
     Vector3D const& train = points[node->index];
@@ -130,14 +130,14 @@ void VoroCrust_KD_Tree::kNearestNeighborsRecursive(Vector3D const& query, int co
     }
 
     int const axis = node->axis;
-    std::shared_ptr<Node> node_first = query[axis] < train[axis] ? node->left : node->right;
+    NodePtr node_first = query[axis] < train[axis] ? node->left : node->right;
 
     kNearestNeighborsRecursive(query, k, node_first, indices, minDist);
 
     double const diff = fabs(query[axis] - train[axis]);
     //! TODO: make the epsilon a constant throughout the program or use machine limits
     if(diff < minDist.back()){
-        std::shared_ptr<Node> const& node_second = query[axis] < train[axis] ? node->right : node->left;
+        NodePtr const& node_second = query[axis] < train[axis] ? node->right : node->left;
         kNearestNeighborsRecursive(query, k, node_second, indices, minDist);
     }
 }
@@ -154,7 +154,7 @@ void VoroCrust_KD_Tree::insert(Vector3D const& point){
     insertRecursive(point, root);
 }
 
-void VoroCrust_KD_Tree::insertRecursive(Vector3D const& point, std::shared_ptr<Node> const& node){
+void VoroCrust_KD_Tree::insertRecursive(Vector3D const& point, NodePtr const& node){
     int const axis = node->axis;
     Vector3D const& train = points[node->index];
 
@@ -192,7 +192,7 @@ bool VoroCrust_KD_Tree::operator==(VoroCrust_KD_Tree const& t) const {
     return equalRecursive(root, t.root, t);
 }
 
-bool VoroCrust_KD_Tree::equalRecursive(std::shared_ptr<Node> const& node1, std::shared_ptr<Node> const& node2, VoroCrust_KD_Tree const& t) const {
+bool VoroCrust_KD_Tree::equalRecursive(NodePtr const& node1, NodePtr const& node2, VoroCrust_KD_Tree const& t) const {
     if(node1 == nullptr || node2 == nullptr){
         if(node1 == nullptr && node2 == nullptr) // assert that if one node is nullptr then both are
             return true;

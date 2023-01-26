@@ -10,6 +10,9 @@
 
 /*! \brief a Node in a VoroCrust_KD_Tree
 */
+struct Node;
+using NodePtr = std::shared_ptr<Node>;
+
 struct Node
 {
     //! \brief index of point in the VoroCrust_KD_Tree::points vector
@@ -17,17 +20,17 @@ struct Node
     //! \brief depth % DIM. depth of node is depth in the tree
     int axis;
     //! \brief pointers to left and right nodes in tree
-    std::shared_ptr<Node> left, right;
+    NodePtr left, right;
 
     Node() : index(0), axis(0), left(nullptr), right(nullptr) {}
 };
 
-std::shared_ptr<Node> newNode(int index, int axis);
+NodePtr newNode(int index, int axis);
 
 class VoroCrust_KD_Tree {
     public:
         //! \brief pointer to root node of the tree  
-        std::shared_ptr<Node> root;
+        NodePtr root;
         
         //! \brief holds the actual points of the tree
         std::vector<Vector3D> points;
@@ -45,13 +48,13 @@ class VoroCrust_KD_Tree {
         void clear();
 
         //! \brief builds the tree recursively
-        std::shared_ptr<Node> buildRecursive(int *indices, int npoints, int depth);
+        NodePtr buildRecursive(int *indices, int npoints, int depth);
 
         //! \brief insert a new point to the tree
         void insert(Vector3D const& point);
 
         //! \brief recursively checks where to insert the new point
-        void insertRecursive(Vector3D const& point, std::shared_ptr<Node> const& node);
+        void insertRecursive(Vector3D const& point, NodePtr const& node);
 
         //! \brief remakes the tree (used after a lot of new insertions)
         void remakeTree();
@@ -60,17 +63,17 @@ class VoroCrust_KD_Tree {
         int nearestNeighbor(Vector3D const& query) const;
 
         //! \brief finds nearest neighbor recursively in tree to `query`
-        void nearestNeighborRecursive(Vector3D const& query, std::shared_ptr<Node> const& node, int *guess, double *minDist) const;
+        void nearestNeighborRecursive(Vector3D const& query, NodePtr const& node, int *guess, double *minDist) const;
 
         std::vector<int> kNearestNeighbors(Vector3D const& query, int const k) const;
         
-        void kNearestNeighborsRecursive(Vector3D const& query, int const k, std::shared_ptr<Node> const& node, std::vector<int>& indices, std::vector<double> &minDist) const;
+        void kNearestNeighborsRecursive(Vector3D const& query, int const k, NodePtr const& node, std::vector<int>& indices, std::vector<double> &minDist) const;
 
         //! \brief checks if two trees are equal
         bool operator==(VoroCrust_KD_Tree const& tree) const;
         
         //! \brief checks if two trees are equal recursively
-        bool equalRecursive(std::shared_ptr<Node> const& node1, std::shared_ptr<Node> const& node2, VoroCrust_KD_Tree const& t) const;
+        bool equalRecursive(NodePtr const& node1, NodePtr const& node2, VoroCrust_KD_Tree const& t) const;
 };
 
 class VoroCrust_KD_Tree_Boundary : public VoroCrust_KD_Tree {
