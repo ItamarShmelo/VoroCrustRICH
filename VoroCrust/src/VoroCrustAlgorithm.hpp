@@ -33,6 +33,9 @@ class VoroCrustAlgorithm {
         void RMPS_Vertices();
 
         double calculateInitialRadiusOfVertex(Vertex const& vertex);
+
+        void enforceLipschitzness(VoroCrust_KD_Tree_Ball& ball_tree);
+
         std::string repr() const;
 };
 

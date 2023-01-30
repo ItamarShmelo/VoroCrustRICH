@@ -88,6 +88,21 @@ double VoroCrustAlgorithm::calculateInitialRadiusOfVertex(Vertex const& vertex){
     
     return std::min<double>({maxRadius, 0.49*dist_q_prime, r_q + L_Lipschitz*dist_q});
 }
+
+void VoroCrustAlgorithm::enforceLipschitzness(VoroCrust_KD_Tree_Ball& ball_tree){
+    std::size_t num_of_points = ball_tree.points.size();
+    for(std::size_t i = 0; i<num_of_points; ++i){
+        for(std::size_t j = 0; j<num_of_points; ++j){
+            if(i == j) continue;
+            double const dist = distance(ball_tree.points[i], ball_tree.points[j]);
+            if(ball_tree.ball_radii[i] > ball_tree.ball_radii[j] + L_Lipschitz*dist){
+                std::cout << "Enforce Lipschitzness ball " << i << std::endl;
+            }
+            ball_tree.ball_radii[i] = std::min({ball_tree.ball_radii[i], ball_tree.ball_radii[j] + L_Lipschitz*dist}); 
+        }
+    }
+}
+
 std::string VoroCrustAlgorithm::repr() const {
     std::ostringstream s;
     
