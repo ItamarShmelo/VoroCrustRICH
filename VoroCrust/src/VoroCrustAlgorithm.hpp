@@ -14,6 +14,7 @@ class VoroCrustAlgorithm {
         double const flatTheta;
         double const maxRadius;
         double const L_Lipschitz;
+        std::size_t const maximal_num_iter;
 
         std::vector<Vertex> eligble_vertices;
 
