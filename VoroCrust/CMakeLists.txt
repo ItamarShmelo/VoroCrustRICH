@@ -27,12 +27,16 @@ file(GLOB ANN "../source/ANN/*.cpp")
 file(GLOB KDTREE "src/kdtree/*.c")
 
 
-find_package(VTK COMPONENTS 
-    CommonCore 
+find_package(VTK COMPONENTS
+    CommonColor
+    CommonCore
+    CommonDataModel 
     IOXML 
-    IOParallelXML 
+    IOParallelXML
     ParallelMPI 
-    NO_MODULE 
+    FiltersSources
+    InteractionStyle
+    NO_MODULE
     PATHS ${VTK_DIRECTORY} NO_DEFAULT_PATH
 )
 if (NOT VTK_FOUND)
