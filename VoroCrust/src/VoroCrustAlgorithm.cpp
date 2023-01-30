@@ -81,8 +81,6 @@ void VoroCrustAlgorithm::RMPS_Vertices(){
 
         trees.ball_kd_vertices.insert(sample.second->vertex, radius);
     }
-
-    trees.ball_kd_vertices.remakeTree();
 }
 
 double VoroCrustAlgorithm::calculateInitialRadiusOfVertex(Vertex const& vertex){
