@@ -18,6 +18,10 @@
 
 namespace vorocrust_vtk {
     void write_vtu_PL_Complex(std::filesystem::path const& filename, PL_Complex const& plc){
+        if(filename.extension() != ".vtu"){
+            std::cout << "file extension for `filename` in `write_vtu_PL_Complex` must be '.vtu'!!!" << std::endl;
+            exit(1);
+        }
         auto const& vertices = plc.vertices;
         auto const& faces = plc.faces;
 
@@ -91,6 +95,10 @@ namespace vorocrust_vtk {
     }
 
     void write_vtu_trees(std::filesystem::path const& filename, Trees const& trees){
+        if(filename.extension() != ".vtu"){
+            std::cout << "file extension for `filename` in `write_vtu_trees` must be '.vtu'!!!" << std::endl;
+            exit(1);
+        }
         std::vector<Vector3D> const& coord_points_vertices = trees.VC_kd_sharp_corners.points;
         std::vector<Vector3D> const& coord_points_edges = trees.VC_kd_sharp_edges.points;
         std::vector<Vector3D> const& coord_points_faces = trees.VC_kd_faces.points;
@@ -172,6 +180,10 @@ namespace vorocrust_vtk {
     }
 
     void write_nearestNeighbor(std::filesystem::path const& filename, VoroCrust_KD_Tree const& tree, Vector3D const& query) {
+        if(filename.extension() != ".vtu"){
+            std::cout << "file extension for `filename` in `write_nearestNeighbor` must be '.vtu'!!!" << std::endl;
+            exit(1);
+        }
         std::vector<Vector3D> const& coord_points = tree.points;
 
         std::size_t num_points = coord_points.size();
@@ -241,7 +253,10 @@ void write_kNearestNeighbors(std::filesystem::path const& filename,
                              VoroCrust_KD_Tree const& tree, 
                              Vector3D const& query, 
                              int k){
-    
+    if(filename.extension() != ".vtu"){
+        std::cout << "file extension for `filename` in `write_kNearestNeighbors` must be '.vtu'!!!" << std::endl;
+        exit(1);
+    }
     std::vector<Vector3D> const& coord_points = tree.points;
 
     std::size_t num_points = coord_points.size();
