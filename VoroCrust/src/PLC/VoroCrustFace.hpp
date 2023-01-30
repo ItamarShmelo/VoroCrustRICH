@@ -42,6 +42,9 @@ class VoroCrustFace
         /*! \brief return the Area of the face (absolute value of the signed area) */
         double calcArea();
 
+        //! \brief flips the orientation of the face i.e. reverse the vector `vertices`
+        void flipOrientation();
+
         std::string repr() const;
 
 };

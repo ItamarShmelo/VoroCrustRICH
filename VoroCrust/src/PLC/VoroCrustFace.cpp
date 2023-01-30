@@ -1,6 +1,7 @@
 #include "VoroCrustFace.hpp"
 #include <iostream>
 #include <sstream>
+#include <algorithm>
 
 VoroCrustFace::VoroCrustFace(std::vector<Vertex> const &vertices_,
                              std::size_t const index_) : vertices(vertices_),
@@ -45,6 +46,11 @@ double VoroCrustFace::calcSignedArea(){
 
 double VoroCrustFace::calcArea(){
     return std::abs(calcSignedArea());
+}
+
+
+void VoroCrustFace::flipOrientation(){
+    std::reverse(vertices.begin(), vertices.end());
 }
 
 std::string VoroCrustFace::repr() const

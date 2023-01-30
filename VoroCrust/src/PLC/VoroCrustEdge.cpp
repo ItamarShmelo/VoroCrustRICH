@@ -82,6 +82,12 @@ double VoroCrustEdge::calcDihedralAngle(){
     return std::acos(cos_phi);
 }
 
+void VoroCrustEdge::flipOrientation() {
+    Vertex const& temp = vertex1;
+    vertex1 = vertex2;
+    vertex2 = temp;
+}
+
 std::string VoroCrustEdge::repr() {
     std::ostringstream s;
 

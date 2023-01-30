@@ -47,6 +47,9 @@ public:
     //! \brief calculates and returns the dihedral angle of the two faces (if there are exactly 2) incident to the Edge.
     double calcDihedralAngle();
 
+    //! \brief flips the orientation of the Edge i.e. vertex1 = vertex2 and vice versa.
+    void flipOrientation();
+
     std::string repr();
 };
 
