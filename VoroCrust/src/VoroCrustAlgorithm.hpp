@@ -30,6 +30,7 @@ class VoroCrustAlgorithm {
 
         std::pair<unsigned int, Vertex> sampleEligbleVertices();
 
+        void RMPS_Vertices();
         std::string repr() const;
 };
 

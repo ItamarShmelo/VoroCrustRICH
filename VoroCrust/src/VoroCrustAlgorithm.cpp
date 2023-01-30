@@ -58,6 +58,21 @@ std::pair<unsigned int, Vertex> VoroCrustAlgorithm::sampleEligbleVertices(){
     return pair;
 }
 
+void VoroCrustAlgorithm::RMPS_Vertices(){
+    while(not eligble_vertices.empty()){
+        std::pair<unsigned int, Vertex> const sample = sampleEligbleVertices();
+        double radius;
+        if(not trees.ball_kd_vertices.points.empty())
+            radius = calculateInitialRadiusOfVertex(sample.second);
+        else
+            radius = maxRadius;
+
+        trees.ball_kd_vertices.insert(sample.second->vertex, radius);
+    }
+
+    trees.ball_kd_vertices.remakeTree();
+}
+
 std::string VoroCrustAlgorithm::repr() const {
     std::ostringstream s;
     
