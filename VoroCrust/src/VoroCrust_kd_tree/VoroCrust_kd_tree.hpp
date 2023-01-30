@@ -65,8 +65,12 @@ class VoroCrust_KD_Tree {
         //! \brief finds nearest neighbor recursively in tree to `query`
         void nearestNeighborRecursive(Vector3D const& query, NodePtr const& node, int *guess, double *minDist) const;
 
+        /*! \brief finds the `k` nearest neighbors to `query` in the tree 
+            \param query
+            \param k number of nearest neighbors */
         std::vector<int> kNearestNeighbors(Vector3D const& query, int const k) const;
         
+        //! \brief finds the `k` nearest neighbors in the tree recursively
         void kNearestNeighborsRecursive(Vector3D const& query, int const k, NodePtr const& node, std::vector<int>& indices, std::vector<double> &minDist) const;
 
         //! \brief checks if two trees are equal
@@ -76,6 +80,7 @@ class VoroCrust_KD_Tree {
         bool equalRecursive(NodePtr const& node1, NodePtr const& node2, VoroCrust_KD_Tree const& t) const;
 };
 
+//! \brief a boundary tree for F_C, F_E and T_S
 class VoroCrust_KD_Tree_Boundary : public VoroCrust_KD_Tree {
     public:
         std::vector<Vector3D> vectors;

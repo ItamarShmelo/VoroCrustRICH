@@ -47,8 +47,10 @@ void VoroCrustAlgorithm::run() {
     eligble_vertices = plc.sharp_corners;
     RMPS_Vertices();
     enforceLipschitzness(trees.ball_kd_vertices);
+    
     std::cout << "\nRun enforceLipschitzness again\n--------------\n" << std::endl;
     enforceLipschitzness(trees.ball_kd_vertices);
+    
     trees.ball_kd_vertices.remakeTree();
     for(std::size_t iteration = 0; iteration < maximal_num_iter; ++iteration){
         
@@ -57,10 +59,12 @@ void VoroCrustAlgorithm::run() {
 }
 
 std::pair<unsigned int, Vertex> VoroCrustAlgorithm::sampleEligbleVertices(){
+    // create a random number generator
     boost::mt19937 rng(std::time(nullptr));
     boost::random::uniform_int_distribution<> int_distribution(0, eligble_vertices.size());
     boost::variate_generator<boost::mt19937, boost::random::uniform_int_distribution<>> rand_gen(rng, int_distribution);
 
+    // sample a random index
     unsigned int index = rand_gen();
     std::pair<unsigned int, Vertex> pair(index, eligble_vertices[index]);
     
@@ -71,9 +75,13 @@ std::pair<unsigned int, Vertex> VoroCrustAlgorithm::sampleEligbleVertices(){
 }
 
 void VoroCrustAlgorithm::RMPS_Vertices(){
+    // while there are eligble vertices
     while(not eligble_vertices.empty()){
+        // sample a vertex
         std::pair<unsigned int, Vertex> const sample = sampleEligbleVertices();
+        
         double radius;
+        // determine a radius
         if(not trees.ball_kd_vertices.points.empty())
             radius = calculateInitialRadiusOfVertex(sample.second);
         else
@@ -85,22 +93,26 @@ void VoroCrustAlgorithm::RMPS_Vertices(){
 
 double VoroCrustAlgorithm::calculateInitialRadiusOfVertex(Vertex const& vertex){
 
+    // fined nearest ball center
     int nearsetBall_index = trees.ball_kd_vertices.nearestNeighbor(vertex->vertex);
 
     Vector3D const& nearsetBallCenter = trees.ball_kd_vertices.points[nearsetBall_index];
-    double const dist_q = distance(vertex->vertex, nearsetBallCenter);
-    double const r_q = trees.ball_kd_vertices.ball_radii[nearsetBall_index];
+    double const dist_q = distance(vertex->vertex, nearsetBallCenter); // ||p-q||
+    double const r_q = trees.ball_kd_vertices.ball_radii[nearsetBall_index]; 
 
+    // find nearest sharp corner
     int nearsetSharpCorner_index = trees.VC_kd_sharp_corners.kNearestNeighbors(vertex->vertex, 2)[1];
     Vector3D const& nearestSharpCorner = trees.VC_kd_sharp_corners.points[nearsetSharpCorner_index];
 
-    double const dist_q_prime = distance(vertex->vertex, nearestSharpCorner);
+    double const dist_q_prime = distance(vertex->vertex, nearestSharpCorner); // ||p-q^*||
     
-    return std::min<double>({maxRadius, 0.49*dist_q_prime, r_q + L_Lipschitz*dist_q});
+    return std::min<double>({maxRadius, 0.49*dist_q_prime, r_q + L_Lipschitz*dist_q}); // min {sz, 0.49*||r-q^*||, r_q + L * ||p - q||}
 }
 
 void VoroCrustAlgorithm::enforceLipschitzness(VoroCrust_KD_Tree_Ball& ball_tree){
     std::size_t num_of_points = ball_tree.points.size();
+
+    // go through all pairs i != j and enforce r_i <= r_j + L * ||p_i - p_j||
     for(std::size_t i = 0; i<num_of_points; ++i){
         for(std::size_t j = 0; j<num_of_points; ++j){
             if(i == j) continue;

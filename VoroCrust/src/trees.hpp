@@ -15,8 +15,11 @@ class Trees {
         //! \brief kd_tree holding information on surface patches
         VoroCrust_KD_Tree_Boundary VC_kd_faces;
 
+        //! \brief ball kd_tree holding the information of the balls on the sharp corners
         VoroCrust_KD_Tree_Ball ball_kd_vertices;
+        //! \brief ball kd_tree holding the information of the balls on the sharp edges
         VoroCrust_KD_Tree_Ball ball_kd_edges;
+        //! \brief ball kd_tree holding the information of the balls on the faces.
         VoroCrust_KD_Tree_Ball ball_kd_faces;
 
         Trees();

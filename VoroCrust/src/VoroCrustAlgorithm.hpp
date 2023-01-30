@@ -26,15 +26,20 @@ class VoroCrustAlgorithm {
 
         ~VoroCrustAlgorithm() = default;
 
-
+        /*! \brief runs the VoroCrust Algorithm*/
         void run();
 
+        /*! \brief samples a vertex from the `eligble_vertices` and returns it 
+            together with its index then erase it from the vector */
         std::pair<unsigned int, Vertex> sampleEligbleVertices();
 
+        /*! \brief RMPS on the vertices, creates the initial balls on the sharp corners*/
         void RMPS_Vertices();
 
+        /*! \brief calculates the initial radius of a vertex ball */
         double calculateInitialRadiusOfVertex(Vertex const& vertex);
 
+        /*! \brief enforces the Lipschitzness for a strata ball_tree*/
         void enforceLipschitzness(VoroCrust_KD_Tree_Ball& ball_tree);
 
         std::string repr() const;
