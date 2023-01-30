@@ -21,6 +21,9 @@ void write_vtu_trees(std::filesystem::path const& filename, Trees const& trees);
 void write_nearestNeighbor(std::filesystem::path const& filename, VoroCrust_KD_Tree const& tree, Vector3D const& query);
 
 void write_kNearestNeighbors(std::filesystem::path const& filename, VoroCrust_KD_Tree const& tree, Vector3D const& query, int k);
+
+void write_ballTree(std::filesystem::path const& filename, VoroCrust_KD_Tree_Ball const& b_tree);
+
 } // namespace
 
 #endif /* WRITE_VTU_PL_COMPLEX */

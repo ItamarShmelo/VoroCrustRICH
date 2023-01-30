@@ -15,6 +15,9 @@
 #include <vtkPoints.h>
 #include <vtkProperty.h>
 #include <vtkNew.h>
+#include <vtkXMLPolyDataWriter.h>
+#include <vtkSphereSource.h>
+#include <vtkAppendPolyData.h>
 
 namespace vorocrust_vtk {
     void write_vtu_PL_Complex(std::filesystem::path const& filename, PL_Complex const& plc){
@@ -323,3 +326,48 @@ void write_kNearestNeighbors(std::filesystem::path const& filename,
     writer->Write();
 }
 
+
+void write_ballTree(std::filesystem::path const& filename, VoroCrust_KD_Tree_Ball const& b_tree){
+    if(filename.extension() != ".vtp"){
+        std::cout << "file extension for `filename` in `write_ballTree` must be '.vtp'!!!" << std::endl;
+        exit(1);
+    }
+
+    std::vector<Vector3D> const& centers = b_tree.points;
+    std::vector<double> const& ball_radii = b_tree.ball_radii;
+
+
+    vtkNew<vtkAppendPolyData> appender;
+    
+    vtkNew<vtkSphereSource> sphere;
+    
+    sphere->SetCenter(centers[0].x, centers[0].y, centers[0].z);
+    sphere->SetRadius(ball_radii[0]);
+    sphere->SetPhiResolution(20);
+    sphere->SetThetaResolution(20);
+    sphere->Update();
+    
+    appender->SetInputData(sphere->GetOutput());
+
+    for(unsigned int i=1; i < centers.size(); ++i){
+        vtkNew<vtkSphereSource> sphere_input;
+
+        sphere_input->SetCenter(centers[i].x, centers[i].y, centers[i].z);
+        sphere_input->SetRadius(ball_radii[i]);
+        sphere_input->SetPhiResolution(20);
+        sphere_input->SetThetaResolution(20);
+        sphere_input->Update();
+        
+        appender->AddInputData(sphere_input->GetOutput());
+    }
+    appender->Update();
+
+    vtkNew<vtkXMLPolyDataWriter> writer;
+    writer->SetCompressionLevel(1);
+    writer->SetFileName(filename.c_str());
+    writer->SetInputData(appender->GetOutput());
+    writer->Update();
+    writer->Write();
+}
+
+} // namespace
