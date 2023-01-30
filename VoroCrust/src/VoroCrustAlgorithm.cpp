@@ -73,6 +73,21 @@ void VoroCrustAlgorithm::RMPS_Vertices(){
     trees.ball_kd_vertices.remakeTree();
 }
 
+double VoroCrustAlgorithm::calculateInitialRadiusOfVertex(Vertex const& vertex){
+
+    int nearsetBall_index = trees.ball_kd_vertices.nearestNeighbor(vertex->vertex);
+
+    Vector3D const& nearsetBallCenter = trees.ball_kd_vertices.points[nearsetBall_index];
+    double const dist_q = distance(vertex->vertex, nearsetBallCenter);
+    double const r_q = trees.ball_kd_vertices.ball_radii[nearsetBall_index];
+
+    int nearsetSharpCorner_index = trees.VC_kd_sharp_corners.kNearestNeighbors(vertex->vertex, 2)[1];
+    Vector3D const& nearestSharpCorner = trees.VC_kd_sharp_corners.points[nearsetSharpCorner_index];
+
+    double const dist_q_prime = distance(vertex->vertex, nearestSharpCorner);
+    
+    return std::min<double>({maxRadius, 0.49*dist_q_prime, r_q + L_Lipschitz*dist_q});
+}
 std::string VoroCrustAlgorithm::repr() const {
     std::ostringstream s;
     

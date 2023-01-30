@@ -31,6 +31,8 @@ class VoroCrustAlgorithm {
         std::pair<unsigned int, Vertex> sampleEligbleVertices();
 
         void RMPS_Vertices();
+
+        double calculateInitialRadiusOfVertex(Vertex const& vertex);
         std::string repr() const;
 };
 
