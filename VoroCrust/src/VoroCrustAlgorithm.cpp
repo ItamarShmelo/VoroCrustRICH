@@ -42,6 +42,17 @@ void VoroCrustAlgorithm::run() {
     //! TODO: make sampling size a user input!
     trees.loadPLC(plc, 1e5, 1e6);    
 
+    //! TODO: init eligable edges vertices and faces
+    eligble_vertices = plc.sharp_corners;
+    RMPS_Vertices();
+    enforceLipschitzness(trees.ball_kd_vertices);
+    std::cout << "\nRun enforceLipschitzness again\n--------------\n" << std::endl;
+    enforceLipschitzness(trees.ball_kd_vertices);
+    trees.ball_kd_vertices.remakeTree();
+    for(std::size_t iteration = 0; iteration < maximal_num_iter; ++iteration){
+        
+    }
+
 }
 
 std::pair<unsigned int, Vertex> VoroCrustAlgorithm::sampleEligbleVertices(){
