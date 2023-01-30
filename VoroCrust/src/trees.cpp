@@ -6,6 +6,7 @@
 Trees::Trees(): VC_kd_vertices(),
                 VC_kd_edges(),
                 VC_kd_faces(),
+                VC_kd_sharp_corners(),
                 ball_kd_vertices(),
                 ball_kd_edges(),
                 ball_kd_faces() {}
@@ -14,7 +15,7 @@ void Trees::loadPLC(PL_Complex const& plc, std::size_t const Nsample_edges, std:
     
     std::size_t const Npoints = plc.vertices.size();
     
-    std::vector<Vector3D> vertices_points = pointsFromVertices(plc.vertices);
+    std::vector<Vector3D> const vertices_points = pointsFromVertices(plc.vertices);
     auto const result_edges = superSampleEdges(plc.edges, Nsample_edges);
     auto const result_faces = superSampleFaces(plc.faces, Nsample_faces);
     
@@ -22,6 +23,8 @@ void Trees::loadPLC(PL_Complex const& plc, std::size_t const Nsample_edges, std:
     VC_kd_edges = VoroCrust_KD_Tree_Boundary(result_edges.first, result_edges.second);
     VC_kd_faces = VoroCrust_KD_Tree_Boundary(result_faces.first, result_faces.second);
     
+    std::vector<Vector3D> const sharp_corners_points = pointsFromVertices(plc.sharp_corners);
+    VC_kd_sharp_corners = VoroCrust_KD_Tree(sharp_corners_points);
 }
 
 std::vector<Vector3D> Trees::pointsFromVertices(std::vector<Vertex> const& vertices){
@@ -149,5 +152,7 @@ std::pair<std::vector<Vector3D>, std::vector<Vector3D>> Trees::superSampleFaces(
     return std::pair<std::vector<Vector3D>, std::vector<Vector3D>>(points, normals);
 }
 
-    return points;
+Vector3D Trees::findNearsetNonSmoothPoint(Vector3D const& point, double const thetaSharp){
+    
+    return Vector3D({0, 0, 0});
 }

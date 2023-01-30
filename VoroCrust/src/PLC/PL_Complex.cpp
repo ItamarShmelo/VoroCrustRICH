@@ -196,8 +196,8 @@ void PL_Complex::detectFeatures(double const sharpTheta, double const flatTheta)
             continue;
         }
 
-        // if a Vertex is shared by more than 2 sharp Edges then it is a sharp corner.
-        if (vertex_sharp_edges.size() > 2)
+        // if a Vertex is shared by more than 2 sharp Edges or by one sharp edge then it is a sharp corner.
+        if (vertex_sharp_edges.size() > 2 || vertex_sharp_edges.size() == 1)
         {
             sharp_corners.push_back(vertex);
             vertex->isSharp = true;
@@ -243,9 +243,6 @@ void PL_Complex::detectFeatures(double const sharpTheta, double const flatTheta)
             vertex->isSharp = false;
             continue;
         } 
-
-        // if Vertex is shared by only one sharp edge then it is sharp.
-        vertex->isSharp = true;
     }
 
     std::cout << "\n\nSummary Sharp Features";
