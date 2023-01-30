@@ -8,11 +8,11 @@
 class Trees {
 
     public:
-        //! \brief kd_tree holding information on vertices
-        VoroCrust_KD_Tree_Boundary VC_kd_vertices;
-        //! \brief kd_tree holding information on edges
-        VoroCrust_KD_Tree_Boundary VC_kd_edges;
-        //! \brief kd_tree holding information on vertices
+        //! \brief kd_tree holding information on sharp corners
+        VoroCrust_KD_Tree_Boundary VC_kd_sharp_corners;
+        //! \brief kd_tree holding information on sharp edges
+        VoroCrust_KD_Tree_Boundary VC_kd_sharp_edges;
+        //! \brief kd_tree holding information on surface patches
         VoroCrust_KD_Tree_Boundary VC_kd_faces;
 
         VoroCrust_KD_Tree_Ball ball_kd_vertices;
@@ -41,6 +41,8 @@ class Trees {
         //! \param faces vector of Face to be super sampled for points
         //! \param Nsample number of points to sample
         std::pair<std::vector<Vector3D>, std::vector<Vector3D>> superSampleFaces(std::vector<Face> const& faces, std::size_t const Nsample);
+
+        Vector3D findNearsetNonSmoothPoint(Vector3D const& point, double const sharpTheta);
 };
 
 #endif // TREES

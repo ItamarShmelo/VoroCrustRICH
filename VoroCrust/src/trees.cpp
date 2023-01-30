@@ -3,10 +3,9 @@
 #include <boost/random.hpp>
 #include <algorithm>
 
-Trees::Trees(): VC_kd_vertices(),
-                VC_kd_edges(),
+Trees::Trees(): VC_kd_sharp_corners(),
+                VC_kd_sharp_edges(),
                 VC_kd_faces(),
-                VC_kd_sharp_corners(),
                 ball_kd_vertices(),
                 ball_kd_edges(),
                 ball_kd_faces() {}
@@ -15,16 +14,14 @@ void Trees::loadPLC(PL_Complex const& plc, std::size_t const Nsample_edges, std:
     
     std::size_t const Npoints = plc.vertices.size();
     
-    std::vector<Vector3D> const vertices_points = pointsFromVertices(plc.vertices);
-    auto const result_edges = superSampleEdges(plc.edges, Nsample_edges);
+    std::vector<Vector3D> const sharp_corners_points = pointsFromVertices(plc.sharp_corners);
+    auto const result_edges = superSampleEdges(plc.sharp_edges, Nsample_edges);
     auto const result_faces = superSampleFaces(plc.faces, Nsample_faces);
     
-    VC_kd_vertices = VoroCrust_KD_Tree_Boundary(vertices_points);
-    VC_kd_edges = VoroCrust_KD_Tree_Boundary(result_edges.first, result_edges.second);
+    VC_kd_sharp_corners = VoroCrust_KD_Tree_Boundary(sharp_corners_points);
+    VC_kd_sharp_edges = VoroCrust_KD_Tree_Boundary(result_edges.first, result_edges.second);
     VC_kd_faces = VoroCrust_KD_Tree_Boundary(result_faces.first, result_faces.second);
     
-    std::vector<Vector3D> const sharp_corners_points = pointsFromVertices(plc.sharp_corners);
-    VC_kd_sharp_corners = VoroCrust_KD_Tree(sharp_corners_points);
 }
 
 std::vector<Vector3D> Trees::pointsFromVertices(std::vector<Vertex> const& vertices){
