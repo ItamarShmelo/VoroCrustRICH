@@ -18,6 +18,11 @@
 #include <vtkXMLPolyDataWriter.h>
 #include <vtkSphereSource.h>
 #include <vtkAppendPolyData.h>
+#include <vtkArrowSource.h>
+#include <vtkMatrix4x4.h>
+#include <vtkTransform.h>
+#include <vtkTransformPolyDataFilter.h>
+#include <vtkGlyph3D.h>
 
 namespace vorocrust_vtk {
     void write_vtu_PL_Complex(std::filesystem::path const& filename, PL_Complex const& plc){
@@ -88,12 +93,59 @@ namespace vorocrust_vtk {
 
         ugrid->GetCellData()->AddArray(data);
 
-
         // write
         vtkNew<vtkXMLUnstructuredGridWriter> writer;
         writer->SetCompressionLevel(1);
         writer->SetFileName(filename.c_str());
         writer->SetInputData(ugrid);
+        writer->Write();
+    }
+    
+    void write_arbitrary_oriented_vectors(std::filesystem::path const& filename, std::vector<Vector3D> const& startPoints, std::vector<Vector3D> const& vectors, std::string const& name){
+        // partly taken from https://stackoverflow.com/questions/59223211/visualize-velocity-field-as-oriented-arrows
+        if(filename.extension() != ".vtp"){
+            std::cout << "file extension for `filename` in `write_faces_normals` must be '.vtp'!!!" << std::endl;
+            exit(1);
+        }
+
+        vtkNew<vtkPolyData> polyData;
+        vtkNew<vtkPoints> points;
+
+        std::size_t const nPoints = startPoints.size();
+
+        points->SetNumberOfPoints(nPoints);
+
+        for(std::size_t i=0; i<nPoints; ++i)
+            points->SetPoint(i, startPoints[i].x, startPoints[i].y,  startPoints[i].z);
+
+        polyData->SetPoints(points);
+
+        vtkNew<vtkDoubleArray> vecs;
+        vecs->SetName(name.c_str());
+        vecs->SetNumberOfComponents(3);
+        vecs->SetNumberOfTuples(nPoints);
+        
+        for(std::size_t i=0; i< nPoints; ++i)
+            vecs->SetTuple3(i, vectors[i].x, vectors[i].y, vectors[i].z);
+
+        polyData->GetPointData()->AddArray(vecs);
+        polyData->GetPointData()->SetActiveVectors(name.c_str());
+
+        vtkNew<vtkGlyph3D> glyph;
+        glyph->SetInputData(polyData);
+
+        vtkNew<vtkArrowSource> arrow;
+        glyph->SetSourceConnection(arrow->GetOutputPort());
+        glyph->SetScaleFactor(10.0);
+        glyph->SetVectorModeToUseVector();
+        glyph->Update();
+
+
+        vtkNew<vtkXMLPolyDataWriter> writer;
+        writer->SetCompressionLevel(1);
+        writer->SetFileName(filename.c_str());
+        writer->SetInputData(glyph->GetOutput());
+        writer->Update();
         writer->Write();
     }
 

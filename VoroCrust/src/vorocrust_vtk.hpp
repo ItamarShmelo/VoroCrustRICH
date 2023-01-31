@@ -7,6 +7,7 @@
 #include <filesystem>
 #include "../../source/3D/GeometryCommon/Vector3D.hpp"
 #include <memory>
+#include <string>
 
 namespace vorocrust_vtk{
 
@@ -15,6 +16,8 @@ namespace vorocrust_vtk{
     \param plc  PL_Complex to be exported as vtu. 
 */
 void write_vtu_PL_Complex(std::filesystem::path const& filename, PL_Complex const& plc);
+
+void write_arbitrary_oriented_vectors(std::filesystem::path const& filename, std::vector<Vector3D> const& startPoints, std::vector<Vector3D> const& vectors, std::string const& name);
 
 /*! \brief writes the points in the boundary kd trees in `trees`*/
 void write_vtu_trees(std::filesystem::path const& filename, Trees const& trees);
