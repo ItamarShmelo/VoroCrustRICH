@@ -25,7 +25,8 @@
 #include <vtkGlyph3D.h>
 
 namespace vorocrust_vtk {
-    void write_vtu_PL_Complex(std::filesystem::path const& filename, PL_Complex const& plc){
+    void write_vtu_PL_Complex(std::filesystem::path const& filename, 
+                              PL_Complex const& plc){
         if(filename.extension() != ".vtu"){
             std::cout << "file extension for `filename` in `write_vtu_PL_Complex` must be '.vtu'!!!" << std::endl;
             exit(1);
@@ -101,7 +102,12 @@ namespace vorocrust_vtk {
         writer->Write();
     }
     
-    void write_arbitrary_oriented_vectors(std::filesystem::path const& filename, std::vector<Vector3D> const& startPoints, std::vector<Vector3D> const& vectors, std::string const& name, double const factor){
+    void write_arbitrary_oriented_vectors(std::filesystem::path const& filename, 
+                                          std::vector<Vector3D> const& startPoints, 
+                                          std::vector<Vector3D> const& vectors, 
+                                          std::string const& name, 
+                                          double const factor){
+
         // partly taken from https://stackoverflow.com/questions/59223211/visualize-velocity-field-as-oriented-arrows
         if(filename.extension() != ".vtp"){
             std::cout << "file extension for `filename` in `write_faces_normals` must be '.vtp'!!!" << std::endl;
@@ -149,7 +155,9 @@ namespace vorocrust_vtk {
         writer->Write();
     }
 
-    void write_vtu_trees(std::filesystem::path const& filename, Trees const& trees){
+    void write_vtu_trees(std::filesystem::path const& filename, 
+                         Trees const& trees){
+                            
         if(filename.extension() != ".vtu"){
             std::cout << "file extension for `filename` in `write_vtu_trees` must be '.vtu'!!!" << std::endl;
             exit(1);
@@ -234,7 +242,10 @@ namespace vorocrust_vtk {
         writer->Write();
     }
 
-    void write_nearestNeighbor(std::filesystem::path const& filename, VoroCrust_KD_Tree const& tree, Vector3D const& query) {
+    void write_nearestNeighbor(std::filesystem::path const& filename, 
+                               VoroCrust_KD_Tree const& tree, 
+                               Vector3D const& query) {
+
         if(filename.extension() != ".vtu"){
             std::cout << "file extension for `filename` in `write_nearestNeighbor` must be '.vtu'!!!" << std::endl;
             exit(1);
@@ -308,6 +319,7 @@ void write_kNearestNeighbors(std::filesystem::path const& filename,
                              VoroCrust_KD_Tree const& tree, 
                              Vector3D const& query, 
                              int k){
+
     if(filename.extension() != ".vtu"){
         std::cout << "file extension for `filename` in `write_kNearestNeighbors` must be '.vtu'!!!" << std::endl;
         exit(1);
@@ -379,7 +391,9 @@ void write_kNearestNeighbors(std::filesystem::path const& filename,
 }
 
 
-void write_ballTree(std::filesystem::path const& filename, VoroCrust_KD_Tree_Ball const& b_tree){
+void write_ballTree(std::filesystem::path const& filename, 
+                    VoroCrust_KD_Tree_Ball const& b_tree){
+                        
     if(filename.extension() != ".vtp"){
         std::cout << "file extension for `filename` in `write_ballTree` must be '.vtp'!!!" << std::endl;
         exit(1);
