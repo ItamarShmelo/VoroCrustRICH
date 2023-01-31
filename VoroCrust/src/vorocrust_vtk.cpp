@@ -101,7 +101,7 @@ namespace vorocrust_vtk {
         writer->Write();
     }
     
-    void write_arbitrary_oriented_vectors(std::filesystem::path const& filename, std::vector<Vector3D> const& startPoints, std::vector<Vector3D> const& vectors, std::string const& name){
+    void write_arbitrary_oriented_vectors(std::filesystem::path const& filename, std::vector<Vector3D> const& startPoints, std::vector<Vector3D> const& vectors, std::string const& name, double const factor){
         // partly taken from https://stackoverflow.com/questions/59223211/visualize-velocity-field-as-oriented-arrows
         if(filename.extension() != ".vtp"){
             std::cout << "file extension for `filename` in `write_faces_normals` must be '.vtp'!!!" << std::endl;
@@ -136,7 +136,7 @@ namespace vorocrust_vtk {
 
         vtkNew<vtkArrowSource> arrow;
         glyph->SetSourceConnection(arrow->GetOutputPort());
-        glyph->SetScaleFactor(10.0);
+        glyph->SetScaleFactor(factor);
         glyph->SetVectorModeToUseVector();
         glyph->Update();
 
