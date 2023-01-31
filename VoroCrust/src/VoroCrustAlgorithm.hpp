@@ -4,6 +4,7 @@
 #include "PLC/PL_Complex.hpp"
 #include "trees.hpp"
 #include <sstream>
+using EligbleVertex = Vector3D;
 
 class VoroCrustAlgorithm {
     public:
