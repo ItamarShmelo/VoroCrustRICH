@@ -308,6 +308,7 @@ Crease PL_Complex::createCrease(Edge const &edge)
                 {
                     if (vertex_edge->isSharp && not vertex_edge->isCreased)
                     {
+                        vertex_edge->orientWithRespectTo(curr_edge);
                         queue.push(vertex_edge);
                         break;
                     }
@@ -320,6 +321,7 @@ Crease PL_Complex::createCrease(Edge const &edge)
                 {
                     if (vertex_edge->isSharp && not vertex_edge->isCreased)
                     {
+                        vertex_edge->orientWithRespectTo(curr_edge);
                         queue.push(vertex_edge);
                         break;
                     }
@@ -372,6 +374,7 @@ SurfacePatch PL_Complex::createSurfacePatch(Face const &face)
 
                 for(Face const& edge_face : edge->faces){
                     if(not edge_face->isPatched){
+                        edge_face->orientWithRespectTo(curr_face);
                         queue.push(edge_face);
                     }
                 }
