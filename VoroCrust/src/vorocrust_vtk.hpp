@@ -17,6 +17,7 @@ namespace vorocrust_vtk{
 */
 void write_vtu_PL_Complex(std::filesystem::path const& filename, PL_Complex const& plc);
 
+/*! \brief writes an arbitrary set of orienter `vectors` starting at `startPoints` */
 void write_arbitrary_oriented_vectors(std::filesystem::path const& filename, std::vector<Vector3D> const& startPoints, std::vector<Vector3D> const& vectors, std::string const& name, double const factor);
 
 /*! \brief writes the points in the boundary kd trees in `trees`*/
