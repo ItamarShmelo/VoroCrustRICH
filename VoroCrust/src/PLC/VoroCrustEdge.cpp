@@ -88,6 +88,14 @@ void VoroCrustEdge::flipOrientation() {
     vertex2 = temp;
 }
 
+void VoroCrustEdge::orientWithRespectTo(Edge const& edge){
+    //! WARNING: this assumes that one of the vertices are shared by the edge
+    if(edge->vertex2->index == vertex2->index){
+        std::cout << "flips orientation of edge " << index << ", because of " << edge->index <<"\n";
+        flipOrientation();
+    }
+}
+
 std::string VoroCrustEdge::repr() {
     std::ostringstream s;
 

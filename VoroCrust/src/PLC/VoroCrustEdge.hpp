@@ -50,6 +50,8 @@ public:
     //! \brief flips the orientation of the Edge i.e. vertex1 = vertex2 and vice versa.
     void flipOrientation();
 
+    void orientWithRespectTo(Edge const& edge);
+    
     std::string repr();
 };
 
