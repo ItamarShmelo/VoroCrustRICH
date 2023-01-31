@@ -48,7 +48,6 @@ double VoroCrustFace::calcArea(){
     return std::abs(calcSignedArea());
 }
 
-
 void VoroCrustFace::flipOrientation(){
     std::reverse(vertices.begin(), vertices.end());
 }
