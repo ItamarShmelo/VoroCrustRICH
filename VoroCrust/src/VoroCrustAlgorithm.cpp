@@ -13,7 +13,9 @@ VoroCrustAlgorithm::VoroCrustAlgorithm( PL_Complex const& plc_,
                                                                     maxRadius(maxRadius_),
                                                                     L_Lipschitz(L_Lipschitz_),
                                                                     trees(),
-                                                                    maximal_num_iter(15){
+                                                                    maximal_num_iter(15),
+                                                                    uni01_gen(  boost::mt19937(std::time(nullptr)), 
+                                                                                boost::random::uniform_01<>())  {
 
     if(sharpTheta > M_PI_2){
         std::cout << "ERROR: sharpTheta > pi/2" << std::endl;

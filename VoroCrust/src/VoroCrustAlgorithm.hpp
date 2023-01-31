@@ -4,6 +4,7 @@
 #include "PLC/PL_Complex.hpp"
 #include "trees.hpp"
 #include <sstream>
+#include <boost/random.hpp>
 using EligbleVertex = Vector3D;
 
 class VoroCrustAlgorithm {
@@ -17,6 +18,7 @@ class VoroCrustAlgorithm {
         double const L_Lipschitz;
         std::size_t const maximal_num_iter;
 
+        boost::variate_generator<boost::mt19937, boost::uniform_01<>> uni01_gen;
         std::vector<EligbleVertex> eligble_vertices;
 
         VoroCrustAlgorithm( PL_Complex const& plc_,
