@@ -62,6 +62,16 @@ void VoroCrustFace::orientWithRespectTo(Face const& face){
         flipOrientation();
     }
 }
+
+Vector3D VoroCrustFace::calculateCenteroid() const {
+    Vector3D res(0.0, 0.0, 0.0);
+    for(Vertex const& vertex : vertices){
+        res += vertex->vertex;
+    }
+
+    return res / 3.0;
+}
+
 std::string VoroCrustFace::repr() const
 {
     std::ostringstream s;

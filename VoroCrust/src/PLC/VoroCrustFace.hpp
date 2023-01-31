@@ -46,6 +46,9 @@ class VoroCrustFace
         void flipOrientation();
 
         void orientWithRespectTo(Face const& face);
+
+        Vector3D calculateCenteroid() const;
+
         std::string repr() const;
 
 };
