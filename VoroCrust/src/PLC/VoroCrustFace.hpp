@@ -45,6 +45,7 @@ class VoroCrustFace
         //! \brief flips the orientation of the face i.e. reverse the vector `vertices`
         void flipOrientation();
 
+        void orientWithRespectTo(Face const& face);
         std::string repr() const;
 
 };

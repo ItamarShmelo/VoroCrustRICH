@@ -53,6 +53,15 @@ void VoroCrustFace::flipOrientation(){
     std::reverse(vertices.begin(), vertices.end());
 }
 
+void VoroCrustFace::orientWithRespectTo(Face const& face){
+    Vector3D const& n1 = this->calcNormal();
+    Vector3D const& n2 = face->calcNormal();
+    
+    if(ScalarProd(n1, n2) < 0){
+        std::cout << "flips orientation of Face " << index << ", because of Face " << face->index << "\n";
+        flipOrientation();
+    }
+}
 std::string VoroCrustFace::repr() const
 {
     std::ostringstream s;
