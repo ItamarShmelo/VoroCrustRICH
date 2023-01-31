@@ -17,7 +17,7 @@ class VoroCrustAlgorithm {
         double const L_Lipschitz;
         std::size_t const maximal_num_iter;
 
-        std::vector<Vertex> eligble_vertices;
+        std::vector<EligbleVertex> eligble_vertices;
 
         VoroCrustAlgorithm( PL_Complex const& plc_,
                             double const sharpTheta_,
@@ -32,13 +32,13 @@ class VoroCrustAlgorithm {
 
         /*! \brief samples a vertex from the `eligble_vertices` and returns it 
             together with its index then erase it from the vector */
-        std::pair<unsigned int, Vertex> sampleEligbleVertices();
+        std::pair<unsigned int, EligbleVertex> sampleEligbleVertices();
 
         /*! \brief RMPS on the vertices, creates the initial balls on the sharp corners*/
         void RMPS_Vertices();
 
         /*! \brief calculates the initial radius of a vertex ball */
-        double calculateInitialRadiusOfVertex(Vertex const& vertex);
+        double calculateInitialRadiusOfVertex(EligbleVertex const& vertex);
 
         /*! \brief enforces the Lipschitzness for a strata ball_tree*/
         void enforceLipschitzness(VoroCrust_KD_Tree_Ball& ball_tree);

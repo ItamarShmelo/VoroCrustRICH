@@ -44,7 +44,9 @@ void VoroCrustAlgorithm::run() {
     trees.loadPLC(plc, 1e5, 1e6);    
 
     //! TODO: init eligable edges vertices and faces
-    eligble_vertices = plc.sharp_corners;
+    for(std::size_t i=0; i<plc.sharp_corners.size(); ++i){
+        eligble_vertices.push_back(plc.sharp_corners[i]->vertex);
+    }
     RMPS_Vertices();
     enforceLipschitzness(trees.ball_kd_vertices);
     
@@ -58,7 +60,7 @@ void VoroCrustAlgorithm::run() {
 
 }
 
-std::pair<unsigned int, Vertex> VoroCrustAlgorithm::sampleEligbleVertices(){
+std::pair<unsigned int, EligbleVertex> VoroCrustAlgorithm::sampleEligbleVertices(){
     // create a random number generator
     boost::mt19937 rng(std::time(nullptr));
     boost::random::uniform_int_distribution<> int_distribution(0, eligble_vertices.size());
@@ -66,7 +68,7 @@ std::pair<unsigned int, Vertex> VoroCrustAlgorithm::sampleEligbleVertices(){
 
     // sample a random index
     unsigned int index = rand_gen();
-    std::pair<unsigned int, Vertex> pair(index, eligble_vertices[index]);
+    std::pair<unsigned int, EligbleVertex> pair(index, eligble_vertices[index]);
     
     // erase vertex from eligable vertices after it was sampled.
     eligble_vertices.erase(eligble_vertices.begin()+index);
@@ -78,7 +80,7 @@ void VoroCrustAlgorithm::RMPS_Vertices(){
     // while there are eligble vertices
     while(not eligble_vertices.empty()){
         // sample a vertex
-        std::pair<unsigned int, Vertex> const sample = sampleEligbleVertices();
+        std::pair<unsigned int, EligbleVertex> const sample = sampleEligbleVertices();
         
         double radius;
         // determine a radius
@@ -87,24 +89,24 @@ void VoroCrustAlgorithm::RMPS_Vertices(){
         else
             radius = maxRadius;
 
-        trees.ball_kd_vertices.insert(sample.second->vertex, radius);
+        trees.ball_kd_vertices.insert(sample.second, radius);
     }
 }
 
-double VoroCrustAlgorithm::calculateInitialRadiusOfVertex(Vertex const& vertex){
+double VoroCrustAlgorithm::calculateInitialRadiusOfVertex(EligbleVertex const& vertex){
 
     // fined nearest ball center
-    int nearsetBall_index = trees.ball_kd_vertices.nearestNeighbor(vertex->vertex);
+    int nearsetBall_index = trees.ball_kd_vertices.nearestNeighbor(vertex);
 
     Vector3D const& nearsetBallCenter = trees.ball_kd_vertices.points[nearsetBall_index];
-    double const dist_q = distance(vertex->vertex, nearsetBallCenter); // ||p-q||
+    double const dist_q = distance(vertex, nearsetBallCenter); // ||p-q||
     double const r_q = trees.ball_kd_vertices.ball_radii[nearsetBall_index]; 
 
     // find nearest sharp corner
-    int nearsetSharpCorner_index = trees.VC_kd_sharp_corners.kNearestNeighbors(vertex->vertex, 2)[1];
+    int nearsetSharpCorner_index = trees.VC_kd_sharp_corners.kNearestNeighbors(vertex, 2)[1];
     Vector3D const& nearestSharpCorner = trees.VC_kd_sharp_corners.points[nearsetSharpCorner_index];
 
-    double const dist_q_prime = distance(vertex->vertex, nearestSharpCorner); // ||p-q^*||
+    double const dist_q_prime = distance(vertex, nearestSharpCorner); // ||p-q^*||
     
     return std::min<double>({maxRadius, 0.49*dist_q_prime, r_q + L_Lipschitz*dist_q}); // min {sz, 0.49*||r-q^*||, r_q + L * ||p - q||}
 }
