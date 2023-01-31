@@ -12,4 +12,5 @@ VoroCrust/CMakeCache.txt
 VoroCrust/VoroCrust.out
 VoroCrust/Makefile
 VoroCrust/*.vtu
+VoroCrust/*.vtp
 VoroCrust/output.txt
