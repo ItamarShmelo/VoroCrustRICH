@@ -39,6 +39,7 @@ void write_kNearestNeighbors(std::filesystem::path const& filename,
                              Vector3D const& query, 
                              int k);
 
+/*! \brief writes `tree.points` and `query` and paints query and all the points up to a distance of radius from query in different colors*/
 void write_radiusSearch(std::filesystem::path const& filename,
                         VoroCrust_KD_Tree const& tree,
                         Vector3D const& query,
