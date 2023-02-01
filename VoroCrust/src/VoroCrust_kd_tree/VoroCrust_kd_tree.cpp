@@ -142,6 +142,34 @@ void VoroCrust_KD_Tree::kNearestNeighborsRecursive(Vector3D const& query, int co
     }
 }
 
+std::vector<int> VoroCrust_KD_Tree::radiusSearch(Vector3D const& query, double const radius) const {
+    std::vector<int> indices;
+    radiusSearchRecursive(query, radius, root, indices);
+    return indices;
+}
+
+void VoroCrust_KD_Tree::radiusSearchRecursive(Vector3D const& query, double const radius, NodePtr const& node, std::vector<int> &indices) const {
+    if(node.get() == nullptr) return;
+
+    Vector3D const& train = points[node->index];
+    
+    double const dist = distance(query, train);
+
+    if(dist < radius) indices.push_back(node->index);
+
+    int const axis = node->axis;
+    NodePtr node_first = query[axis] < train[axis] ? node->left : node->right;
+
+    radiusSearchRecursive(query, radius, node_first, indices);
+
+    double const diff = fabs(query[axis] - train[axis]);
+    
+    if (diff < radius){
+        NodePtr const& node_second = query[axis] < train[axis] ? node->right : node->left;
+        radiusSearchRecursive(query, radius, node_second, indices);
+    }
+}
+
 
 void VoroCrust_KD_Tree::insert(Vector3D const& point){
     if (root == nullptr)
