@@ -39,6 +39,11 @@ void write_kNearestNeighbors(std::filesystem::path const& filename,
                              Vector3D const& query, 
                              int k);
 
+void write_radiusSearch(std::filesystem::path const& filename,
+                        VoroCrust_KD_Tree const& tree,
+                        Vector3D const& query,
+                        double const radius);
+
 /*! \brief writes a ball tree as spheres each has a center `b_tree.points[i]` and radius `b_tree.ball_radii[i]` */
 void write_ballTree(std::filesystem::path const& filename, 
                     VoroCrust_KD_Tree_Ball const& b_tree);
