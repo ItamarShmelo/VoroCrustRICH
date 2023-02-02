@@ -466,6 +466,92 @@ void write_radiusSearch(std::filesystem::path const& filename,
     writer->Write();
 }
 
+void write_nearestNeighborToSegment(std::filesystem::path const& filename,
+                                    VoroCrust_KD_Tree const& tree,
+                                    std::array<Vector3D, 2> const& segment,
+                                    std::size_t const num_points_on_segment){
+    
+    if(filename.extension() != ".vtu"){
+        std::cout << "file extension for `filename` in `write_nearestNeighborToSegment` must be '.vtu'!!!" << std::endl;
+        exit(1);
+    }
+
+    std::vector<Vector3D> const& coord_points = tree.points;
+
+    std::size_t const num_points_tree = coord_points.size();
+    std::size_t const num_points = num_points_tree + num_points_on_segment;
+
+    vtkNew<vtkUnstructuredGrid> ugrid;
+
+    vtkNew<vtkPoints> points;   
+
+    points->SetNumberOfPoints(num_points);
+
+    for(std::size_t p = 0; p < num_points_tree; ++p){
+        Vector3D const& point = coord_points[p];
+        points->SetPoint(p, point.x, point.y, point.z);
+    }
+
+    Vector3D const& x0 = segment[0];
+    Vector3D const& v  = segment[1] - segment[0];
+    double step = 1.0 / static_cast<double>(num_points_on_segment-1);
+    for(std::size_t p = 0; p < num_points_on_segment; ++p){
+        Vector3D const& point = x0 + step*p*v;
+        points->SetPoint(p+num_points_tree, point.x, point.y, point.z);
+    }
+
+    ugrid->SetPoints(points);
+
+    ugrid->Allocate(num_points);
+
+    // define Points as Cells
+    std::vector<vtkIdType> point_array_in_cell;
+    for(std::size_t point_index=0; point_index < num_points; ++point_index){
+        vtkNew<vtkIdList> point_vtk;
+        point_array_in_cell.clear();
+
+        auto point = points->GetPoint(point_index);
+
+        point_vtk->InsertNextId(1);
+        point_vtk->InsertNextId(point_index);
+        point_array_in_cell.push_back(point_index);
+
+        std::sort(point_array_in_cell.begin(), point_array_in_cell.end());
+
+        point_array_in_cell = unique(point_array_in_cell);
+        
+        vtkIdType* ptIds = &point_array_in_cell[0];
+        ugrid->InsertNextCell(VTK_POLYHEDRON, point_array_in_cell.size(), ptIds, 1, point_vtk->GetPointer(0));        
+    }
+
+    vtkNew<vtkIntArray> data;
+    data->SetName("Data");
+    data->SetNumberOfComponents(1);
+    data->SetNumberOfValues(num_points);
+
+    // set default color for points
+    for(std::size_t p = 0; p < num_points_tree; ++p){
+        data->SetValue(p, 0);
+    }
+
+    // set color of line 
+    for(std::size_t p = num_points_tree; p < num_points; ++p){
+        data->SetValue(p, 1);
+    }
+
+    std::size_t nn_index = tree.nearestNeighborToSegment(segment);
+    data->SetValue(nn_index, 2);
+
+    ugrid->GetCellData()->AddArray(data);
+        
+    // write
+    vtkNew<vtkXMLUnstructuredGridWriter> writer;
+    writer->SetCompressionLevel(1);
+    writer->SetFileName(filename.c_str());
+    writer->SetInputData(ugrid);
+    writer->Write();
+}
+
 void write_ballTree(std::filesystem::path const& filename, 
                     VoroCrust_KD_Tree_Ball const& b_tree){
                         

@@ -45,6 +45,12 @@ void write_radiusSearch(std::filesystem::path const& filename,
                         Vector3D const& query,
                         double const radius);
 
+/*! \brief writes `tree.points` and `segment` (where segment is made from equidistributed `num_points_on_segment` points) and finds the closest point to segment*/
+void write_nearestNeighborToSegment(std::filesystem::path const& filename,
+                                    VoroCrust_KD_Tree const& tree,
+                                    std::array<Vector3D, 2> const& segment,
+                                    std::size_t const num_points_on_segment);
+
 /*! \brief writes a ball tree as spheres each has a center `b_tree.points[i]` and radius `b_tree.ball_radii[i]` */
 void write_ballTree(std::filesystem::path const& filename, 
                     VoroCrust_KD_Tree_Ball const& b_tree);
