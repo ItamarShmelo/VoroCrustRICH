@@ -177,6 +177,44 @@ int VoroCrust_KD_Tree::nearestNeighborToSegment(std::array<Vector3D, 2> const& s
     nearestNeighborToSegmentRecursive(segment, root, guess, minDist);
     return guess;
 }
+
+void VoroCrust_KD_Tree::nearestNeighborToSegmentRecursive(std::array<Vector3D, 2> const& segment, NodePtr const& node, int &guess, double &minDist) const{
+    if(node.get() == nullptr) return;
+
+    Vector3D const& train = points[node->index];
+
+    double const dist = distancePointToSegment(segment, train);
+
+    if(dist < minDist){
+        minDist = dist;
+        guess = node->index;
+    }
+
+    int const axis = node->axis;
+
+    Vector3D const& point0 = segment[0];
+    Vector3D const& point1 = segment[1];
+
+    double const diff = std::min({fabs(point0[axis] - train[axis]), fabs(point1[axis] - train[axis])});
+
+    if(point0[axis] <= train[axis] && point1[axis] <= train[axis]){
+        nearestNeighborToSegmentRecursive(segment, node->left, guess, minDist);
+
+        if(diff < minDist){
+            nearestNeighborToSegmentRecursive(segment, node->right, guess, minDist);
+        }
+    } else if(point0[axis] >= train[axis] && point1[axis] >= train[axis]){
+        nearestNeighborToSegmentRecursive(segment, node->right, guess, minDist);
+
+        if(diff < minDist){
+            nearestNeighborToSegmentRecursive(segment, node->left, guess, minDist);
+        }
+    } else {
+        nearestNeighborToSegmentRecursive(segment, node->left, guess, minDist);
+        nearestNeighborToSegmentRecursive(segment, node->right, guess, minDist);
+    }
+}
+
 double VoroCrust_KD_Tree::distancePointToSegment(std::array<Vector3D, 2> const& segment, Vector3D const& point) const {
     // taken from https://mathworld.wolfram.com/Point-LineDistance3-Dimensional.html
 

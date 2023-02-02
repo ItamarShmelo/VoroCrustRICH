@@ -82,6 +82,9 @@ class VoroCrust_KD_Tree {
         //! \brief finds the nearest point in the tree to some given `segment`
         int nearestNeighborToSegment(std::array<Vector3D, 2> const& segment) const;
 
+        //! \brief finds the nearest point in the tree for some given `segment` recursively
+        void nearestNeighborToSegmentRecursive(std::array<Vector3D, 2> const& segment, NodePtr const& node, int &guess, double &minDist) const;
+
         //! \brief checks if two trees are equal
         bool operator==(VoroCrust_KD_Tree const& tree) const;
         
