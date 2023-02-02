@@ -47,14 +47,8 @@ class VoroCrust_KD_Tree {
         //! \brief clear and erase the tree
         void clear();
 
-        //! \brief builds the tree recursively
-        NodePtr buildRecursive(int *indices, int npoints, int depth);
-
         //! \brief insert a new point to the tree
         void insert(Vector3D const& point);
-
-        //! \brief recursively checks where to insert the new point
-        void insertRecursive(Vector3D const& point, NodePtr const& node);
 
         //! \brief remakes the tree (used after a lot of new insertions)
         void remakeTree();
@@ -62,38 +56,44 @@ class VoroCrust_KD_Tree {
         //! \brief finds nearest neighbor in tree to `query`
         int nearestNeighbor(Vector3D const& query) const;
 
-        //! \brief finds nearest neighbor recursively in tree to `query`
-        void nearestNeighborRecursive(Vector3D const& query, NodePtr const& node, int *guess, double *minDist) const;
-
         /*! \brief finds the `k` nearest neighbors to `query` in the tree 
             \param query
             \param k number of nearest neighbors */
         std::vector<int> kNearestNeighbors(Vector3D const& query, int const k) const;
         
-        //! \brief finds the `k` nearest neighbors in the tree recursively
-        void kNearestNeighborsRecursive(Vector3D const& query, int const k, NodePtr const& node, std::vector<int>& indices, std::vector<double> &minDist) const;
-        
         //! \brief finds all points with a distance to query that is less than radius
         std::vector<int> radiusSearch(Vector3D const& query, double const radius) const;
-
-        //! \brief finds all points with a distance to query that is less than radius recursively
-        void radiusSearchRecursive(Vector3D const& query, double const radius, NodePtr const& node, std::vector<int> &indices) const;
 
         //! \brief finds the nearest point in the tree to some given `segment`
         int nearestNeighborToSegment(std::array<Vector3D, 2> const& segment) const;
 
-        //! \brief finds the nearest point in the tree for some given `segment` recursively
-        void nearestNeighborToSegmentRecursive(std::array<Vector3D, 2> const& segment, NodePtr const& node, int &guess, double &minDist) const;
-
         //! \brief checks if two trees are equal
         bool operator==(VoroCrust_KD_Tree const& tree) const;
+
+    private:
+        //! \brief builds the tree recursively
+        NodePtr buildRecursive(int *indices, int npoints, int depth);
+
+        //! \brief recursively checks where to insert the new point
+        void insertRecursive(Vector3D const& point, NodePtr const& node);
+
+        //! \brief finds nearest neighbor recursively in tree to `query`
+        void nearestNeighborRecursive(Vector3D const& query, NodePtr const& node, int *guess, double *minDist) const;
+        
+        //! \brief finds the `k` nearest neighbors in the tree recursively
+        void kNearestNeighborsRecursive(Vector3D const& query, int const k, NodePtr const& node, std::vector<int>& indices, std::vector<double> &minDist) const;        
+        
+        //! \brief finds all points with a distance to query that is less than radius recursively
+        void radiusSearchRecursive(Vector3D const& query, double const radius, NodePtr const& node, std::vector<int> &indices) const;
+
+        //! \brief finds the nearest point in the tree for some given `segment` recursively
+        void nearestNeighborToSegmentRecursive(std::array<Vector3D, 2> const& segment, NodePtr const& node, int &guess, double &minDist) const;
+        
+        //! \brief calculates the distance of the `point` from a `segment`
+        double distancePointToSegment(std::array<Vector3D, 2> const& segment, Vector3D const& point) const;
         
         //! \brief checks if two trees are equal recursively
         bool equalRecursive(NodePtr const& node1, NodePtr const& node2, VoroCrust_KD_Tree const& t) const;
-
-        private:
-            //! \brief calculates the distance of the `point` from a `segment`
-            double distancePointToSegment(std::array<Vector3D, 2> const& segment, Vector3D const& point) const;
 };
 
 //! \brief a boundary tree for F_C, F_E and T_S
