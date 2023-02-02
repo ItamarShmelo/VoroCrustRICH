@@ -170,6 +170,13 @@ void VoroCrust_KD_Tree::radiusSearchRecursive(Vector3D const& query, double cons
     }
 }
 
+int VoroCrust_KD_Tree::nearestNeighborToSegment(std::array<Vector3D, 2> const& segment) const {
+    int guess = 0;
+    double minDist = std::numeric_limits<double>::max();
+
+    nearestNeighborToSegmentRecursive(segment, root, guess, minDist);
+    return guess;
+}
 double VoroCrust_KD_Tree::distancePointToSegment(std::array<Vector3D, 2> const& segment, Vector3D const& point) const {
     // taken from https://mathworld.wolfram.com/Point-LineDistance3-Dimensional.html
 

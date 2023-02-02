@@ -79,6 +79,9 @@ class VoroCrust_KD_Tree {
         //! \brief finds all points with a distance to query that is less than radius recursively
         void radiusSearchRecursive(Vector3D const& query, double const radius, NodePtr const& node, std::vector<int> &indices) const;
 
+        //! \brief finds the nearest point in the tree to some given `segment`
+        int nearestNeighborToSegment(std::array<Vector3D, 2> const& segment) const;
+
         //! \brief checks if two trees are equal
         bool operator==(VoroCrust_KD_Tree const& tree) const;
         
