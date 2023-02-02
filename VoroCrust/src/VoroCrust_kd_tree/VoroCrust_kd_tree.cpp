@@ -170,6 +170,28 @@ void VoroCrust_KD_Tree::radiusSearchRecursive(Vector3D const& query, double cons
     }
 }
 
+double VoroCrust_KD_Tree::distancePointToSegment(std::array<Vector3D, 2> const& segment, Vector3D const& point) const {
+    // taken from https://mathworld.wolfram.com/Point-LineDistance3-Dimensional.html
+
+    Vector3D const& v1 = segment[0] - point; // x1-p
+    Vector3D const& v2 = segment[1] - segment[0]; // x2-x1
+
+    // proj_{segment}(p) = x1 + (x2-x1)*t
+    double const t = - ScalarProd(v1, v2) / ScalarProd(v2, v2);
+
+    // if t >= 1 than the projection is after x2 so return the distance to x2
+    if(t >= 1){
+        return distance(point, segment[1]);
+    }
+    
+    // if t <= 0 than the projection is before x1 so return the distance to x1
+    if(t <= 0){
+        return distance(point, segment[0]);
+    }
+    
+    // if 0<t<1 then the projection is on the segment, return the abs(p-proj(p)) (i.e the magnitude of the perpinicular part)
+    return abs(CrossProduct(v1, v2))/ abs(v2);
+}
 
 void VoroCrust_KD_Tree::insert(Vector3D const& point){
     if (root == nullptr)

@@ -84,6 +84,10 @@ class VoroCrust_KD_Tree {
         
         //! \brief checks if two trees are equal recursively
         bool equalRecursive(NodePtr const& node1, NodePtr const& node2, VoroCrust_KD_Tree const& t) const;
+
+        private:
+            //! \brief calculates the distance of the `point` from a `segment`
+            double distancePointToSegment(std::array<Vector3D, 2> const& segment, Vector3D const& point) const;
 };
 
 //! \brief a boundary tree for F_C, F_E and T_S
