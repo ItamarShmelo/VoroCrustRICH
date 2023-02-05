@@ -10,6 +10,24 @@ void CornersRMPS::loadCorners(std::vector<Vertex> const& sharp_corners){
         eligble_corners.push_back(corner_ptr->vertex);
 }
 
+void CornersRMPS::doSampling(VoroCrust_KD_Tree_Ball &corner_ball_tree, VoroCrust_KD_Tree_Boundary &corner_boundry_tree){
+    Vector3D const empty_vector(0, 0, 0);
+
+    while(not eligble_corners.empty()){
+        // sample a vertex
+        std::pair<std::size_t, EligbleCorner> const sample = newSample();
+
+        double radius;
+
+        if(not corner_ball_tree.points.empty())
+            radius = calculateInitialRadius(sample.second, corner_ball_tree, corner_boundry_tree);
+        else
+            radius = maxRadius;
+        
+        corner_ball_tree.insert(sample.second, empty_vector, radius, corner_ball_tree.points.size());
+    }
+}
+
 std::pair<std::size_t, EligbleCorner> CornersRMPS::newSample(){
     // create a random number generator to sample from 0 - (eligble_corners.size()-1)
     boost::mt19937 rng(std::time(nullptr));
