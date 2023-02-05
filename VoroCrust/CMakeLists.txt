@@ -27,11 +27,13 @@ file(GLOB MISC "../source/misc/utils.cpp" "../source/misc/serializable.cpp" "../
 find_package(VTK COMPONENTS
     CommonColor
     CommonCore
-    CommonDataModel 
+    CommonDataModel
+    CommonTransforms
+    FiltersGeneral
+    FiltersSources
     IOXML 
     IOParallelXML
     ParallelMPI 
-    FiltersSources
     InteractionStyle
     NO_MODULE
     PATHS ${VTK_DIRECTORY} NO_DEFAULT_PATH
