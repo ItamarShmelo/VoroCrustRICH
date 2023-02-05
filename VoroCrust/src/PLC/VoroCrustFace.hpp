@@ -25,7 +25,9 @@ class VoroCrustFace
 
         //! \brief true if Face was already assigned to a Patch
         bool isPatched;
-        
+
+        std::size_t patch_index;
+
         VoroCrustFace(std::vector<Vertex> const& vertices_, std::size_t const index_);
         
         ~VoroCrustFace() = default;

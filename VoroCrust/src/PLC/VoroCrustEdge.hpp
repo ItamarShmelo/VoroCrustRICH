@@ -29,6 +29,8 @@ public:
     //! \brief true if edge is already assigned to a Crease
     bool isCreased; 
 
+    std::size_t crease_index;
+
     /*! \brief Constructs an Edge starting at `v1` and ending at `v2`.
         \param v1 start Vertex of Edge.
         \param v2 end Vertex of Edge.
