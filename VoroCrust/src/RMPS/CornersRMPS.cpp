@@ -10,6 +10,21 @@ void CornersRMPS::loadCorners(std::vector<Vertex> const& sharp_corners){
         eligble_corners.push_back(corner_ptr->vertex);
 }
 
+std::pair<std::size_t, EligbleCorner> CornersRMPS::newSample(){
+    // create a random number generator to sample from 0 - (eligble_corners.size()-1)
+    boost::mt19937 rng(std::time(nullptr));
+    boost::random::uniform_int_distribution<> int_distribution(0, eligble_corners.size() - 1);
+    boost::variate_generator<boost::mt19937, boost::random::uniform_int_distribution<>> rand_gen(rng, int_distribution);
+
+    // sample a random index;
+    std::size_t const index = rand_gen();
+    std::pair<std::size_t, EligbleCorner> pair(index, eligble_corners[index]);
+
+    eligble_corners.erase(eligble_corners.begin() + index);
+
+    return pair;
+}
+
 double CornersRMPS::calculateInitialRadius(EligbleCorner const& corner, VoroCrust_KD_Tree_Ball const& corner_ball_tree, VoroCrust_KD_Tree_Boundary const& corner_boundary_tree){
     // find nearest ball center
     int nearestBall_index = corner_ball_tree.nearestNeighbor(corner);
