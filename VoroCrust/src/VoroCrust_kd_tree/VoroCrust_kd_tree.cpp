@@ -336,4 +336,18 @@ void VoroCrust_KD_Tree_Ball::insert(Vector3D const& point, Vector3D const& vec, 
     ball_radii.push_back(radius);
     feature_index.push_back(index);
 }
+
+std::vector<std::size_t> VoroCrust_KD_Tree_Ball::getOverlappingBalls(Vector3D const& center, double const radius, double const r_max) const {
+    
+    std::vector<int> suspects = radiusSearch(center, r_max);
+
+    std::vector<std::size_t> overlapping_balls_indices;
+
+    for(std::size_t const i : suspects){
+        if(abs(center - points[i]) < radius + ball_radii[i]){
+            overlapping_balls_indices.push_back(i);
+        }
+    }
+
+    return overlapping_balls_indices;
 }

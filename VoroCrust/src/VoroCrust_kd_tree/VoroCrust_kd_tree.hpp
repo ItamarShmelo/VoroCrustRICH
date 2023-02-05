@@ -124,6 +124,8 @@ class VoroCrust_KD_Tree_Ball : public VoroCrust_KD_Tree_Boundary {
         ~VoroCrust_KD_Tree_Ball() = default;
 
         void insert(Vector3D const& point, Vector3D const& vec, double radius, std::size_t const index);
+
+        std::vector<std::size_t> getOverlappingBalls(Vector3D const& center, double const radius, double const r_max) const;
 };
 
 
