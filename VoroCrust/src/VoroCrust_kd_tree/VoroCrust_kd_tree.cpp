@@ -317,16 +317,23 @@ void VoroCrust_KD_Tree_Boundary::insert(Vector3D const& point, Vector3D const& v
 }
 
 /* BALL KD TREE */
-VoroCrust_KD_Tree_Ball::VoroCrust_KD_Tree_Ball() : VoroCrust_KD_Tree(), ball_radii() {}
+VoroCrust_KD_Tree_Ball::VoroCrust_KD_Tree_Ball() : VoroCrust_KD_Tree_Boundary(), ball_radii(), feature_index() {}
 
-VoroCrust_KD_Tree_Ball::VoroCrust_KD_Tree_Ball(std::vector<Vector3D> const& points, std::vector<double> const& radii) : VoroCrust_KD_Tree(points), ball_radii(radii) {
+VoroCrust_KD_Tree_Ball::VoroCrust_KD_Tree_Ball(std::vector<Vector3D> const& points, std::vector<Vector3D> const& vecs, std::vector<double> const& radii, std::vector<std::size_t> const& feature_index_) : VoroCrust_KD_Tree_Boundary(points, vecs), ball_radii(radii), feature_index(feature_index_) {
     if (points.size() != ball_radii.size()){
         std::cout << "ERROR : points.size() !=  ball_redii.size() in initialization of VoroCrust_KD_Tree_Ball" << std::endl;
         exit(1);
     }
+    
+    if (points.size() != feature_index.size()){
+        std::cout << "ERROR : points.size() !=  feature_index.size() in initialization of VoroCrust_KD_Tree_Ball" << std::endl;
+        exit(1);
+    }
 }
 
-void VoroCrust_KD_Tree_Ball::insert(Vector3D const& point, double radius){
-    this->VoroCrust_KD_Tree::insert(point);
+void VoroCrust_KD_Tree_Ball::insert(Vector3D const& point, Vector3D const& vec, double radius, std::size_t const index){
+    this->VoroCrust_KD_Tree_Boundary::insert(point, vec);
     ball_radii.push_back(radius);
+    feature_index.push_back(index);
+}
 }
