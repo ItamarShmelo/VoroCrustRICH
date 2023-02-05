@@ -275,6 +275,7 @@ void PL_Complex::buildCreases()
 
         for (Edge const &crease_edge : new_crease)
         {
+            crease_edge->crease_index = creases.size() - 1;
             std::cout << crease_edge->index << " -> ";
         }
 
@@ -347,6 +348,7 @@ void PL_Complex::buildSurfacePatches()
         std::cout << "Faces : ";
 
         for(Face const& patch_face : new_patch){
+            patch_face->patch_index = patches.size()-1;
             std::cout << patch_face->index << ", ";
         } 
         std::cout << std::endl;        
