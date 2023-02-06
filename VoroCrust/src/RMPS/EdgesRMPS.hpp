@@ -38,25 +38,37 @@ class EdgesRMPS {
         EdgesRMPS(double const maxRadius_, double const L_Lipschitz_, double const alpha_);
         ~EdgesRMPS() = default;
 
+        //! \brief loads the sharp edges vector to the eligble edge vector
         void loadEdges(std::vector<Edge> const& sharp_edges);
 
+        //! \brief do the RMPS sampling stage until there are no more eligble edges 
         void doSampling(VoroCrust_KD_Tree_Ball &edges_ball_tree, Trees const& trees);
 
     private:
 
+        /*! \brief calculates the current total length of the eligble edges and the start len for each edge
+            \return returns a pair <total_length, start_length> where start_length is a vector with the same size as the eligble edges
+        */
         std::pair<double const, std::vector<double> const> calculateTotalLengthAndStartLengthOfEligbleEdges();
 
+        //! \brief divides the eligble edges to two eligble edges at the midpoint
         void divideEligbleEdges();
 
+        //! \brief checks if `p` is deeply covered by any ball in edges_ball_tree
         bool checkIfPointIsDeeplyCovered(Vector3D const& p, VoroCrust_KD_Tree_Ball const& edges_ball_tree) const;
 
+        /*! \brief sample the eligble edges
+            \return <success, sample> where success is a bool flag and is false if sampling failed
+        */
         std::pair<bool, Vector3D> sampleEligbleEdges(double const total_len, std::vector<double> const& start_len);
 
+        //! \brief discard any eligble edges that meet the critrea for discardtion 
         void discardEligbleEdges(Trees const& trees);
 
+        //! \brief discard any eligble edge fully contained inside a corner ball
         void discardEligbleEdgesContainedInCornerBalls(VoroCrust_KD_Tree_Ball const& corners_ball_tree);
 
-        bool isEdgeBallCoSmoothWithEligbleEdge(EligbleEdge const& edge, std::size_t const ball_index);
+        //! \brief checks if `edge` is co smooth with ball at ball_index;
 
         
 };
