@@ -69,8 +69,9 @@ class EdgesRMPS {
         void discardEligbleEdgesContainedInCornerBalls(VoroCrust_KD_Tree_Ball const& corners_ball_tree);
 
         //! \brief checks if `edge` is co smooth with ball at ball_index;
+        bool isEdgeBallCoSmoothWithEligbleEdge(EligbleEdge const& edge, VoroCrust_KD_Tree_Ball const& edges_ball_tree, std::size_t const ball_index);
 
-        
+
 };
 
 #endif // EDGES_RMPS
