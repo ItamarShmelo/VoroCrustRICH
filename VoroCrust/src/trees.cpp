@@ -15,12 +15,12 @@ void Trees::loadPLC(PL_Complex const& plc, std::size_t const Nsample_edges, std:
     std::size_t const Npoints = plc.vertices.size();
     
     std::vector<Vector3D> const sharp_corners_points = pointsFromVertices(plc.sharp_corners);
-    auto const result_edges = superSampleEdges(plc.sharp_edges, Nsample_edges);
-    auto const result_faces = superSampleFaces(plc.faces, Nsample_faces);
+    auto const& [p_edges, v_edges, i_edges] = superSampleEdges(plc.sharp_edges, Nsample_edges);
+    auto const& [p_faces, v_faces, i_faces] = superSampleFaces(plc.faces, Nsample_faces);
     
     VC_kd_sharp_corners = VoroCrust_KD_Tree_Boundary(sharp_corners_points);
-    VC_kd_sharp_edges = VoroCrust_KD_Tree_Boundary(result_edges.first, result_edges.second);
-    VC_kd_faces = VoroCrust_KD_Tree_Boundary(result_faces.first, result_faces.second);
+    VC_kd_sharp_edges = VoroCrust_KD_Tree_Boundary(p_edges, v_edges, i_edges);
+    VC_kd_faces = VoroCrust_KD_Tree_Boundary(p_faces, v_faces, i_faces);
     
 }
 
@@ -35,7 +35,7 @@ std::vector<Vector3D> Trees::pointsFromVertices(std::vector<Vertex> const& verti
     return points;
 }
 
-std::pair<std::vector<Vector3D>, std::vector<Vector3D>> Trees::superSampleEdges(std::vector<Edge> const& edges, std::size_t const Nsample){
+std::tuple<std::vector<Vector3D>, std::vector<Vector3D>, std::vector<std::size_t>> Trees::superSampleEdges(std::vector<Edge> const& edges, std::size_t const Nsample){
     // generate a random number generator
     boost::mt19937 rng(std::time(nullptr));
     boost::random::uniform_01<> zeroone;
@@ -57,6 +57,7 @@ std::pair<std::vector<Vector3D>, std::vector<Vector3D>> Trees::superSampleEdges(
     std::cout << "\nEdge Samples : \n---------------------\n";
     std::vector<Vector3D> points(Nsample, {0, 0, 0});
     std::vector<Vector3D> parallel(Nsample, {0, 0, 0});
+    std::vector<std::size_t> feature_index(Nsample, 0);
 
     for(std::size_t i=0; i<Nsample; ++i){
         double const sample = rand_gen()*total_len; // sample a point uniformly [0, total_length)
@@ -80,13 +81,13 @@ std::pair<std::vector<Vector3D>, std::vector<Vector3D>> Trees::superSampleEdges(
 
         points[i] = point;
         parallel[i] = (edge_vec / abs(edge_vec));
-
+        feature_index[i] = edge->crease_index;
     }
 
-    return std::pair<std::vector<Vector3D>, std::vector<Vector3D>>(points, parallel);
+    return std::tuple<std::vector<Vector3D>, std::vector<Vector3D>, std::vector<std::size_t>>(points, parallel, feature_index);
 }
 
-std::pair<std::vector<Vector3D>, std::vector<Vector3D>> Trees::superSampleFaces(std::vector<Face> const& faces, std::size_t const Nsample){
+std::tuple<std::vector<Vector3D>, std::vector<Vector3D>, std::vector<std::size_t>> Trees::superSampleFaces(std::vector<Face> const& faces, std::size_t const Nsample){
     // generate a random number generator
     boost::mt19937 rng(std::time(nullptr));
     boost::random::uniform_01<> zeroone;
@@ -108,6 +109,7 @@ std::pair<std::vector<Vector3D>, std::vector<Vector3D>> Trees::superSampleFaces(
     std::cout << "\nFace Samples: \n---------------------\n";
     std::vector<Vector3D> points(Nsample, {0, 0, 0});
     std::vector<Vector3D> normals(Nsample, {0, 0, 0});
+    std::vector<std::size_t> feature_index(Nsample, 0);
 
     for(std::size_t i = 0; i<Nsample; ++i){
         double const sample_area = rand_gen()*total_area; // sample a number uniformly in [0, total_area)
@@ -144,12 +146,8 @@ std::pair<std::vector<Vector3D>, std::vector<Vector3D>> Trees::superSampleFaces(
 
         points[i] = point;
         normals[i] = face->calcNormal();
+        feature_index[i] = face->patch_index;
     }
 
-    return std::pair<std::vector<Vector3D>, std::vector<Vector3D>>(points, normals);
-}
-
-Vector3D Trees::findNearsetNonSmoothPoint(Vector3D const& point, double const thetaSharp){
-    
-    return Vector3D({0, 0, 0});
+    return std::tuple<std::vector<Vector3D>, std::vector<Vector3D>, std::vector<std::size_t>>(points, normals, feature_index);
 }
