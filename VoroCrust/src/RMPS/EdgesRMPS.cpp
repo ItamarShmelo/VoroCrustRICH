@@ -41,3 +41,26 @@ void EdgesRMPS::divideEligbleEdges(){
 
     eligble_edges = new_eligble_edges;
 }
+
+bool EdgesRMPS::checkIfPointIsDeeplyCovered(Vector3D const& p, VoroCrust_KD_Tree_Ball const& edges_ball_tree) const {
+    std::size_t const nn_index = edges_ball_tree.nearestNeighbor(p);
+
+    Vector3D const& q = edges_ball_tree.points[nn_index];
+    double const r_q = edges_ball_tree.ball_radii[nn_index];
+
+    double const r_max = (r_q + L_Lipschitz*distance(p, q)) / (1.0 - L_Lipschitz); 
+    
+    std::vector<int> suspects = edges_ball_tree.radiusSearch(p, r_max);
+    
+    for(int const i : suspects){
+        Vector3D const& center = edges_ball_tree.points[i];
+        double const r = edges_ball_tree.ball_radii[i];
+
+        double const dist = distance(p, q);
+        if(dist <= r*(1.0 - alpha)){
+            return true;
+        }
+    }
+
+    return false;
+}
