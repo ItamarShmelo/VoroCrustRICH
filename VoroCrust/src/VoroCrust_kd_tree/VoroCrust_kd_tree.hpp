@@ -100,22 +100,23 @@ class VoroCrust_KD_Tree {
 class VoroCrust_KD_Tree_Boundary : public VoroCrust_KD_Tree {
     public:
         std::vector<Vector3D> vectors;
+        std::vector<std::size_t> feature_index;
 
         VoroCrust_KD_Tree_Boundary();
 
         VoroCrust_KD_Tree_Boundary(std::vector<Vector3D> const& points) : VoroCrust_KD_Tree(points) {}
 
-        VoroCrust_KD_Tree_Boundary(std::vector<Vector3D> const& points, std::vector<Vector3D> const& vecs);
+        VoroCrust_KD_Tree_Boundary(std::vector<Vector3D> const& points, std::vector<Vector3D> const& vecs, std::vector<std::size_t> const& feature_index_);
 
         ~VoroCrust_KD_Tree_Boundary() = default;
 
-        void insert(Vector3D const& point, Vector3D const& vec);
+        void insert(Vector3D const& point, Vector3D const& vec, std::size_t feature_index);
+
 };
 
 class VoroCrust_KD_Tree_Ball : public VoroCrust_KD_Tree_Boundary {
     public:
         std::vector<double> ball_radii;
-        std::vector<std::size_t> feature_index;
 
         VoroCrust_KD_Tree_Ball();
 
