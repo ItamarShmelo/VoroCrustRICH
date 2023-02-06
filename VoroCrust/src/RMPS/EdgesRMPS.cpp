@@ -1,6 +1,6 @@
 #include "EdgesRMPS.hpp"
 
-EdgesRMPS::EdgesRMPS(double const maxRadius_, double const L_Lipschitz_, double const alpha_) : maxRadius(maxRadius_), L_Lipschitz(L_Lipschitz_), alpha(alpha_), uni01_gen(boost::mt19937(std::time(nullptr)), boost::random::uniform_01<>()) {}
+EdgesRMPS::EdgesRMPS(double const maxRadius_, double const L_Lipschitz_, double const alpha_, double const sharpTheta_) : maxRadius(maxRadius_), L_Lipschitz(L_Lipschitz_), alpha(alpha_), sharpTheta(sharpTheta_), uni01_gen(boost::mt19937(std::time(nullptr)), boost::random::uniform_01<>()) {}
 
 void EdgesRMPS::loadEdges(std::vector<Edge> const& sharp_edges){
     for(Edge const& edge : sharp_edges)

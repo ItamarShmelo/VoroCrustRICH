@@ -30,12 +30,13 @@ class EdgesRMPS {
         double const maxRadius;
         double const L_Lipschitz;
         double const alpha;
+        double const sharpTheta;
 
         boost::variate_generator<boost::mt19937, boost::uniform_01<>> uni01_gen;
         
         std::vector<EligbleEdge> eligble_edges;
 
-        EdgesRMPS(double const maxRadius_, double const L_Lipschitz_, double const alpha_);
+        EdgesRMPS(double const maxRadius_, double const L_Lipschitz_, double const alpha_, double const sharpTheta_);
         ~EdgesRMPS() = default;
 
         //! \brief loads the sharp edges vector to the eligble edge vector
