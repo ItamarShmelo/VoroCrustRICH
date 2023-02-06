@@ -16,16 +16,17 @@ class VoroCrustAlgorithm {
         double const flatTheta;
         double const maxRadius;
         double const L_Lipschitz;
+        double const alpha;
         std::size_t const maximal_num_iter;
 
-        boost::variate_generator<boost::mt19937, boost::uniform_01<>> uni01_gen;
-        std::vector<EligbleVertex> eligble_vertices;
+        CornersRMPS cornersDriver;
 
         VoroCrustAlgorithm( PL_Complex const& plc_,
                             double const sharpTheta_,
                             double const flatTheta_,
                             double const maxRadius_,
-                            double const L_Lipschitz_);
+                            double const L_Lipschitz_,
+                            double const alpha_);
 
         ~VoroCrustAlgorithm() = default;
 
