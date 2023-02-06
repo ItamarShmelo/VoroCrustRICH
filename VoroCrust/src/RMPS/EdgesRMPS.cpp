@@ -82,3 +82,25 @@ std::pair<bool, Vector3D> EdgesRMPS::sampleEligbleEdges(double const total_len, 
 
     return std::pair<bool, Vector3D>(true, point);
 }
+
+void EdgesRMPS::discardEligbleEdgesContainedInCornerBalls(VoroCrust_KD_Tree_Ball const& corners_ball_tree){
+    std::vector<std::size_t> to_discard;
+
+    std::size_t const num_of_eligble_edges = eligble_edges.size();
+    for(std::size_t i=0 ; i<num_of_eligble_edges; ++i){
+        EligbleEdge const& edge = eligble_edges[i];
+        std::size_t const nn_index = corners_ball_tree.nearestNeighborToSegment(edge.edge);
+
+        Vector3D const& center = corners_ball_tree.points[nn_index];
+        double const r = corners_ball_tree.ball_radii[nn_index];
+
+        if(distance(edge[0], center) <= r && distance(edge[1], center) <= r){
+            to_discard.push_back(i);
+        }
+    }
+
+    for(std::size_t i=to_discard.size()-1; i>=0; --i){
+        std::size_t const ind_to_discard = to_discard[i];
+        eligble_edges.erase(eligble_edges.begin() + ind_to_discard);
+    }
+}
