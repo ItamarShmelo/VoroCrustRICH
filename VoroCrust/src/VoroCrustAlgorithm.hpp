@@ -3,9 +3,9 @@
 
 #include "PLC/PL_Complex.hpp"
 #include "trees.hpp"
+#include "RMPS/CornersRMPS.hpp"
 #include <sstream>
-#include <boost/random.hpp>
-using EligbleVertex = Vector3D;
+
 
 class VoroCrustAlgorithm {
     public:
