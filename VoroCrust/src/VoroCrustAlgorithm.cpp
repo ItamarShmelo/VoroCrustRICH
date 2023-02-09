@@ -60,6 +60,7 @@ void VoroCrustAlgorithm::run() {
     
     trees.ball_kd_vertices.remakeTree();
 
+    // sliver elimination loop
     for(std::size_t iteration = 0; iteration < maximal_num_iter; ++iteration){
         edgesDriver.doSampling(trees.ball_kd_edges, trees);
         break;
