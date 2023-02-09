@@ -570,10 +570,20 @@ void write_ballTree(std::filesystem::path const& filename,
     
     sphere->SetCenter(centers[0].x, centers[0].y, centers[0].z);
     sphere->SetRadius(ball_radii[0]);
-    sphere->SetPhiResolution(20);
-    sphere->SetThetaResolution(20);
-    sphere->Update();
+    sphere->SetPhiResolution(7);
+    sphere->SetThetaResolution(7);
     
+    vtkNew<vtkDoubleArray> data_first;
+    data_first->SetName("radius");
+    data_first->SetNumberOfComponents(1);
+    sphere->Update();
+
+    std::size_t const num_of_cells = sphere->GetOutput()->GetNumberOfCells();
+    for(std::size_t j = 0; j<num_of_cells; ++j)
+        data_first->InsertNextValue(ball_radii[0]);
+
+    sphere->GetOutput()->GetCellData()->SetScalars(data_first);
+
     appender->SetInputData(sphere->GetOutput());
 
     for(unsigned int i=1; i < centers.size(); ++i){
@@ -581,10 +591,19 @@ void write_ballTree(std::filesystem::path const& filename,
 
         sphere_input->SetCenter(centers[i].x, centers[i].y, centers[i].z);
         sphere_input->SetRadius(ball_radii[i]);
-        sphere_input->SetPhiResolution(20);
-        sphere_input->SetThetaResolution(20);
+        sphere_input->SetPhiResolution(7);
+        sphere_input->SetThetaResolution(7);
         sphere_input->Update();
         
+        vtkNew<vtkDoubleArray> data;
+        data->SetName("radius");
+        data->SetNumberOfComponents(1);
+        std::size_t const num_of_cells = sphere_input->GetOutput()->GetNumberOfCells();
+        for(std::size_t j = 0; j<num_of_cells; ++j)
+            data->InsertNextValue(ball_radii[i]);
+    
+        sphere_input->GetOutput()->GetCellData()->SetScalars(data);
+
         appender->AddInputData(sphere_input->GetOutput());
     }
     appender->Update();
