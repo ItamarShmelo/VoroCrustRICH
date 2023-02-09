@@ -6,46 +6,35 @@
 #include <fstream>
 #include <cmath>
 #include <algorithm>
+#include <array>
 
 std::vector<Vector3D> read_vertices(std::string filename);
 std::vector<std::vector<unsigned int>> read_faces(std::string filename);
 
 int main(int argc, char *argv[]){
-    
     // std::vector<Vector3D> vertices{ Vector3D(0, 0, 0), 
     //                                 Vector3D(1, 0, 0), 
-    //                                 Vector3D(1, 1, 0), 
-    //                                 Vector3D(0, 1, 0), 
-    //                                 Vector3D(0, 2, 0),
-    //                                 Vector3D(1, 2, 0)};
+    //                                 Vector3D(1, 1, 0)};
 
-    // PL_Complex plc = PL_Complex(vertices);
-    // plc.addFace(std::vector<unsigned int>{0,1,2,3});
-    // plc.addFace(std::vector<unsigned int>{2,3,4,5});
+    // PL_Complex plc_triangle = PL_Complex(vertices);
+    // plc_triangle.addFace(std::vector<unsigned int>{0,1,2});
+    // std::cout << plc_triangle.repr() << std::endl;
 
-    // std::cout << plc.repr() << std::endl;
-
-    // std::cout << "\n\nchange one vertex" << std::endl;
-    // plc.vertices[2]->vertex.x = 2;
-    // std::cout << plc.repr() << std::endl;
-
-    // std::cout << "\n\nCheck VoroCrustAlgorithm " << std::endl;
-    // std::cout << "--------------------------------------------" << std::endl;
-
-    // plc.vertices[2]->vertex.x = 1;
-    // VoroCrustAlgorithm alg(plc, M_PI/10.0, M_PI_4, 1., 0.8);
-
-    // std::cout << alg.repr() << std::endl;
-
-    // std::cout << "\n\nWrite VTK File for PLC\n-------------------------" << std::endl;
+    // VoroCrustAlgorithm alg_triangle(plc_triangle, M_PI*0.1, M_PI*0.1, 0.1, 0.3, 0.13);
     
-    // vorocrust_vtk::write_vtu_PL_Complex("plc.vtu", plc);
-    // alg.run();
-    
-    // std::cout << "\n\nFINISH PART ONE\n" << std::endl;
+    // alg_triangle.run();
 
+    //vorocrust_vtk::write_vtu_PL_Complex("triangle.vtu", alg_triangle.plc);
+    //vorocrust_vtk::write_vtu_trees("triangle_trees.vtu", alg_triangle.trees);
+    //vorocrust_vtk::write_ballTree("triangle_sharp_corners_sampling.vtp", alg_triangle.trees.ball_kd_vertices);
+    //vorocrust_vtk::write_ballTree("triangle_sharp_edges_sampling.vtp", alg_triangle.trees.ball_kd_edges);
+
+    std::cout << "\n\nFINISH PART ONE\n" << std::endl;
+    
+    // getchar();
+    
     std::cout << "\nRead From File\n------------------------\n\n" << std::endl;
-    auto vertices_from_file = read_vertices("data/vertices.txt");
+    auto vertices_from_file = read_vertices("data/fox/vertices.txt");
 
     PL_Complex plc_from_file(vertices_from_file);
 
@@ -53,7 +42,7 @@ int main(int argc, char *argv[]){
         std::cout << "vertex " << vertex->index << ": " << vertex->repr() << "\n";
     }
 
-    auto faces_from_file = read_faces("data/faces.txt");
+    auto faces_from_file = read_faces("data/fox/faces.txt");
 
     int i = 0;
     for(auto& face_indices : faces_from_file){
@@ -66,23 +55,67 @@ int main(int argc, char *argv[]){
 
     std::cout << std::endl;
 
-    VoroCrustAlgorithm alg_cat(plc_from_file, M_PI*0.1, M_PI*0.1, 1., 0.8);
+    VoroCrustAlgorithm alg_fox(plc_from_file, M_PI*0.1, M_PI*0.1, 10., 0.3, 0.13);
     
-    std::cout << alg_cat.repr() << std::endl;
+    std::cout << alg_fox.repr() << std::endl;
 
-    alg_cat.run();
+    alg_fox.run();
     
-    vorocrust_vtk::write_vtu_PL_Complex("cat.vtu", alg_cat.plc);
-    vorocrust_vtk::write_vtu_trees("cat_trees.vtu", alg_cat.trees);
+
     
     Vector3D query(100, 250, 50);
-    vorocrust_vtk::write_nearestNeighbor("cat_nearest_vertices.vtu", alg_cat.trees.VC_kd_vertices, query);
-    vorocrust_vtk::write_nearestNeighbor("cat_nearest_edges.vtu", alg_cat.trees.VC_kd_edges, query);
-    vorocrust_vtk::write_nearestNeighbor("cat_nearest_faces.vtu", alg_cat.trees.VC_kd_faces, query);
 
-    std::cout << "\n\nFINISH PART TWO\n" << std::endl;
+    int search_NN = alg_fox.trees.VC_kd_sharp_corners.nearestNeighbor(query);
+    int search_kNN = alg_fox.trees.VC_kd_sharp_corners.kNearestNeighbors(query, 1)[0];
 
+    if(search_kNN != search_NN){
+        std::cout << "\nNN != kNN when k=1\n" << std::endl;
+
+        exit(1);
+    }
+
+
+    std::vector<Vector3D> centeroids(alg_fox.plc.faces.size(), {0, 0, 0});
+    std::vector<Vector3D> normals(alg_fox.plc.faces.size(), {0, 0, 0});
+
+    for(std::size_t i=0; i<alg_fox.plc.faces.size(); ++i){
+        centeroids[i] = alg_fox.plc.faces[i]->calculateCenteroid();
+        normals[i] = -1*alg_fox.plc.faces[i]->calcNormal();
+    }
+
+    
+    std::vector<Vector3D> vertex1(alg_fox.plc.sharp_edges.size(), {0, 0, 0});
+    std::vector<Vector3D> edge_vectors(alg_fox.plc.sharp_edges.size(), {0, 0, 0});
+
+    for(std::size_t i=0; i<alg_fox.plc.sharp_edges.size(); ++i){
+        vertex1[i] = alg_fox.plc.sharp_edges[i]->vertex1->vertex;
+        edge_vectors[i] = alg_fox.plc.sharp_edges[i]->vertex2->vertex - alg_fox.plc.sharp_edges[i]->vertex1->vertex;
+    }
+    // vorocrust_vtk::write_vtu_PL_Complex("fox.vtu", alg_fox.plc);
+    
+    // vorocrust_vtk::write_arbitrary_oriented_vectors("fox_face_noramls.vtp", centeroids,  normals, "normals", 10.0);
+    
+    // vorocrust_vtk::write_arbitrary_oriented_vectors("fox_face_creases.vtp", vertex1,  edge_vectors, "creases", 1.0);
+
+    // vorocrust_vtk::write_vtu_trees("fox_trees.vtu", alg_fox.trees);
+    
+    // vorocrust_vtk::write_nearestNeighbor("fox_nearest_vertices.vtu", alg_fox.trees.VC_kd_sharp_corners, query);
+    // vorocrust_vtk::write_kNearestNeighbors("fox_k_nearest_vertices.vtu", alg_fox.trees.VC_kd_sharp_corners, query, 25);
+    // vorocrust_vtk::write_radiusSearch("fox_radius_10.vtu", alg_fox.trees.VC_kd_faces, query, 10.0);
+    // vorocrust_vtk::write_radiusSearch("fox_radius_20.vtu", alg_fox.trees.VC_kd_faces, query, 20.0);
+
+    // vorocrust_vtk::write_nearestNeighborToSegment("fox_nearest_to_segment.vtu", alg_fox.trees.VC_kd_sharp_corners, {Vector3D(-200, 250, 0), Vector3D(200, 250, 0)}, 1e3);
+
+    // vorocrust_vtk::write_nearestNeighbor("fox_nearest_edges.vtu", alg_fox.trees.VC_kd_sharp_edges, query);
+    // vorocrust_vtk::write_nearestNeighbor("fox_nearest_faces.vtu", alg_fox.trees.VC_kd_faces, query);
+
+    // vorocrust_vtk::write_ballTree("fox_sharp_corners_sampling.vtp", alg_fox.trees.ball_kd_vertices);
+    // vorocrust_vtk::write_ballTree("fox_sharp_edges_sampling.vtp", alg_fox.trees.ball_kd_edges);
+
+    std::cout << "\n\nFINISH PART TWO\n\n CLICK TO END " << std::endl;
+    getchar();
     return 0;
+
 }
 
 std::vector<Vector3D> read_vertices(std::string filename){
