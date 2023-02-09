@@ -42,7 +42,10 @@ void EdgesRMPS::divideEligbleEdges(){
     eligble_edges = new_eligble_edges;
 }
 
-bool EdgesRMPS::checkIfPointIsDeeplyCovered(Vector3D const& p, VoroCrust_KD_Tree_Ball const& edges_ball_tree) const {
+bool EdgesRMPS::checkIfPointIsDeeplyCovered(Vector3D const& p, VoroCrust_KD_Tree_Ball const& edges_ball_tree, VoroCrust_KD_Tree_Ball const& corners_ball_tree) const {
+
+    if(edges_ball_tree.points.empty()) return false;
+
     std::size_t const nn_index = edges_ball_tree.nearestNeighbor(p);
 
     Vector3D const& q = edges_ball_tree.points[nn_index];
