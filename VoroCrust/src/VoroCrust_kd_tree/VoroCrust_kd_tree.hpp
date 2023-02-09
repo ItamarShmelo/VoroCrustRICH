@@ -110,7 +110,7 @@ class VoroCrust_KD_Tree_Boundary : public VoroCrust_KD_Tree {
 
         ~VoroCrust_KD_Tree_Boundary() = default;
 
-        void insert(Vector3D const& point, Vector3D const& vec, std::size_t feature_index);
+        void insert(Vector3D const& point, Vector3D const& vec, std::size_t f_index);
 
 };
 
