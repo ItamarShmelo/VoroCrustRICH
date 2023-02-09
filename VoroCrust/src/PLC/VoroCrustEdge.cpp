@@ -83,7 +83,7 @@ double VoroCrustEdge::calcDihedralAngle(){
 }
 
 void VoroCrustEdge::flipOrientation() {
-    Vertex const& temp = vertex1;
+    Vertex const temp = vertex1;
     vertex1 = vertex2;
     vertex2 = temp;
 }
