@@ -63,6 +63,7 @@ void VoroCrustAlgorithm::run() {
             std::cout << "\nEdgesRMPS\n--------------\n" << std::endl;
             edgesDriver.loadEdges(plc.sharp_edges);
             edgesDriver.doSampling(trees.ball_kd_edges, trees);
+            trees.ball_kd_edges.remakeTree();
         } while(enforceLipschitzness(trees.ball_kd_edges));
         
         break;
