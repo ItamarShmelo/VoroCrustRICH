@@ -35,8 +35,10 @@ class VoroCrustAlgorithm {
         /*! \brief runs the VoroCrust Algorithm*/
         void run();
 
-        /*! \brief enforces the Lipschitzness for a strata ball_tree*/
-        void enforceLipschitzness(VoroCrust_KD_Tree_Ball& ball_tree);
+        /*! \brief enforces the Lipschitzness for a strata ball_tree
+            \return true if some ball shrunk
+        */
+        bool enforceLipschitzness(VoroCrust_KD_Tree_Ball& ball_tree);
 
         std::string repr() const;
 };

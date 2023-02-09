@@ -67,9 +67,10 @@ void VoroCrustAlgorithm::run() {
 
 }
 
-void VoroCrustAlgorithm::enforceLipschitzness(VoroCrust_KD_Tree_Ball& ball_tree){
+bool VoroCrustAlgorithm::enforceLipschitzness(VoroCrust_KD_Tree_Ball& ball_tree){
     std::size_t num_of_points = ball_tree.points.size();
 
+    bool isBallsShrunk = false;
     // go through all pairs i != j and enforce r_i <= r_j + L * ||p_i - p_j||
     for(std::size_t i = 0; i<num_of_points; ++i){
         for(std::size_t j = 0; j<num_of_points; ++j){
@@ -77,10 +78,13 @@ void VoroCrustAlgorithm::enforceLipschitzness(VoroCrust_KD_Tree_Ball& ball_tree)
             double const dist = distance(ball_tree.points[i], ball_tree.points[j]);
             if(ball_tree.ball_radii[i] > ball_tree.ball_radii[j] + L_Lipschitz*dist){
                 std::cout << "Enforce Lipschitzness ball " << i << std::endl;
+                isBallsShrunk = true;
             }
             ball_tree.ball_radii[i] = std::min({ball_tree.ball_radii[i], ball_tree.ball_radii[j] + L_Lipschitz*dist}); 
         }
     }
+
+    return isBallsShrunk;
 }
 
 std::string VoroCrustAlgorithm::repr() const {
