@@ -73,14 +73,14 @@ bool EdgesRMPS::checkIfPointIsDeeplyCovered(Vector3D const& p, VoroCrust_KD_Tree
     return distance(p, center) < radius*(1.0-alpha);
 }
 
-std::pair<bool, Vector3D> EdgesRMPS::sampleEligbleEdges(double const total_len, std::vector<double> const& start_len) {
+std::tuple<bool, std::size_t const, Vector3D const> EdgesRMPS::sampleEligbleEdges(double const total_len, std::vector<double> const& start_len) {
     double const sample = uni01_gen()*total_len;
 
     auto const iter_lower_bound = std::lower_bound(start_len.begin(), start_len.end(), sample);
     std::size_t edge_index = std::distance(start_len.begin(), iter_lower_bound) - 1;
     
     if(std::abs(start_len[edge_index] - sample) < 1e-14){
-        return std::pair<bool, Vector3D>(false, Vector3D(0.0, 0.0, 0.0));
+        return std::tuple<bool, std::size_t const, Vector3D const>(false, 0, Vector3D(0.0, 0.0, 0.0));
     }
     
     EligbleEdge const& edge = eligble_edges[edge_index];
@@ -88,7 +88,7 @@ std::pair<bool, Vector3D> EdgesRMPS::sampleEligbleEdges(double const total_len, 
     double const factor = (sample - start_len[edge_index]) / abs(edge_vec);
     Vector3D const& point = edge[0] + factor*edge_vec;
 
-    return std::pair<bool, Vector3D>(true, point);
+    return std::tuple<bool, std::size_t const, Vector3D const>(true, edge_index, point);
 }
 
 void EdgesRMPS::discardEligbleEdgesContainedInCornerBalls(VoroCrust_KD_Tree_Ball const& corners_ball_tree){
