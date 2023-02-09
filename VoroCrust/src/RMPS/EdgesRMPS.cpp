@@ -178,8 +178,76 @@ double EdgesRMPS::calculateInitialRadius(Vector3D const& point, std::size_t cons
     return std::min({maxRadius, r_smooth, r_q + L_Lipschitz*dist});
 }
 
+void EdgesRMPS::doSampling(VoroCrust_KD_Tree_Ball &edges_ball_tree, Trees const& trees){
+    double total_len;
+    std::vector<double> start_len;
+    auto const& res = calculateTotalLengthAndStartLengthOfEligbleEdges();
+    total_len = res.first;
+    start_len = res.second; 
+    
+    std::cout << "total_len = " << total_len << ", num_of_eligble_edges = " << eligble_edges.size() << std::endl;
 
+    int miss_counter = 0;
 
+    while(not eligble_edges.empty()){
+        if(eligble_edges.size() > 100000){ 
+            EligbleEdge f_edge = eligble_edges[0];
+            std::cout << "eligble_edge[0][0] = " << f_edge[0].x << ", " << f_edge[0].y << ", " << f_edge[0].z << std::endl;
+            break;
+        }
+        auto const [success, edge_index, p] = sampleEligbleEdges(total_len, start_len);
 
+        if(!success) continue;
 
+        if(miss_counter >= 100){
+            divideEligbleEdges();
+            discardEligbleEdges(edges_ball_tree, trees);
+    
+            auto const& res = calculateTotalLengthAndStartLengthOfEligbleEdges();
+            total_len = res.first;
+            start_len = res.second;             
+            miss_counter = 0;
+
+            std::cout << "total_len = " << total_len << ", num_of_eligble_edges = " << eligble_edges.size() << std::endl;
+            continue;
+        }
+
+        if(checkIfPointIsDeeplyCovered(p, edges_ball_tree, trees.ball_kd_vertices)){
+            miss_counter += 1;
+            continue;
+        }
+
+        EligbleEdge const& edge = eligble_edges[edge_index];
+        
+        double radius = calculateInitialRadius(p, edge_index, edges_ball_tree, trees.VC_kd_sharp_edges);
+
+        int nn_corner = trees.ball_kd_vertices.nearestNeighbor(p);
+        Vector3D const& center_corner = trees.ball_kd_vertices.points[nn_corner];
+
+        radius = std::min({radius, 0.49*distance(p, center_corner)});
+
+        std::vector<int> const& centers_in_new_ball_indices = edges_ball_tree.radiusSearch(p, radius);
+
+        if(not centers_in_new_ball_indices.empty()){
+            if(uni01_gen() < rejection_probability) continue;
+
+            for(int const center_index : centers_in_new_ball_indices){
+                Vector3D const& center_in = edges_ball_tree.points[center_index];
+                radius = std::min({radius, distance(p, center_in) / (1. - alpha)});
+            }
+        }
+
+        if(radius < 1e-8){
+            std::cout << "trying to create a ball which is too small" << std::endl;
+            std::cout << "at p = " << p.x << ", " << p.y << ", " << p.z << std::endl;
+            std::cout << "radius = " << radius << std::endl;
+            //! TODO: EXIT HERE
+            break; 
+        }
+
+        edges_ball_tree.insert(p, edge[1]-edge[0], radius, edge.crease_index);
+        
+        
+        miss_counter = 0;
+    }
 }
