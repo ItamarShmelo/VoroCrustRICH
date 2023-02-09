@@ -133,6 +133,32 @@ bool EdgesRMPS::isEligbleEdgeIsDeeplyCoveredInEdgeBall(EligbleEdge const& edge, 
     return (distance(center, edge[0]) <= r_deeply) && (distance(center, edge[1]) <= r_deeply);
 }
 
+void EdgesRMPS::discardEligbleEdges(VoroCrust_KD_Tree_Ball &edges_ball_tree, Trees const& trees){
+    discardEligbleEdgesContainedInCornerBalls(trees.ball_kd_vertices);
+
+    for(long i = eligble_edges.size()-1; i >= 0; --i){
+        EligbleEdge const& edge = eligble_edges[i];
+        
+        std::size_t const i_nn_edge_ball = trees.ball_kd_edges.nearestNeighborToSegment(edge.edge);
+        Vector3D const& nn_edge_ball_center = trees.ball_kd_edges.points[i_nn_edge_ball];
+        double const nn_edge_ball_radius = trees.ball_kd_edges.ball_radii[i_nn_edge_ball];
+
+        double const r_max = 2.0 / (1.0 - L_Lipschitz) * nn_edge_ball_radius;
+
+        std::vector<std::size_t> const balls_to_check_edges = trees.ball_kd_edges.getOverlappingBalls(nn_edge_ball_center, nn_edge_ball_radius, r_max);
+
+        bool discard = false;
+        for(std::size_t const ball_index : balls_to_check_edges){
+            if(edge.crease_index == trees.ball_kd_edges.feature_index[ball_index]){
+                discard = discard || isEligbleEdgeIsDeeplyCoveredInEdgeBall(edge, edges_ball_tree, ball_index);
+            }
+        }
+
+        if(discard){
+            eligble_edges.erase(eligble_edges.begin()+i);
+        }
+    }
+}
 
 
 
