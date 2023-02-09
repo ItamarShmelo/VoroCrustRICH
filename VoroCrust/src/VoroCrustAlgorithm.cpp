@@ -49,14 +49,7 @@ void VoroCrustAlgorithm::run() {
 
     //! TODO: init eligable edges vertices and faces
     cornersDriver.loadCorners(plc.sharp_corners);
-
-    // initialize eligble edges to be the sharp edges (we lose the smart pointer)
-    eligble_edges_crease_index = std::vector<std::size_t>(plc.sharp_edges.size(), 0);
-    for(std::size_t i=0; i < plc.sharp_edges.size(); ++i){
-        Edge const& edge = plc.sharp_edges[i];
-        eligble_edges.push_back({edge->vertex1->vertex, edge->vertex2->vertex});
-        eligble_edges_crease_index[i] = edge->crease_index;
-    }
+    edgesDriver.loadEdges(plc.sharp_edges);
 
     cornersDriver.doSampling(trees.ball_kd_vertices, trees.VC_kd_sharp_corners);
     
@@ -66,8 +59,9 @@ void VoroCrustAlgorithm::run() {
     enforceLipschitzness(trees.ball_kd_vertices);
     
     trees.ball_kd_vertices.remakeTree();
+
     for(std::size_t iteration = 0; iteration < maximal_num_iter; ++iteration){
-        
+        edgesDriver.doSampling(trees.ball_kd_edges, trees);
         break;
     }
 
