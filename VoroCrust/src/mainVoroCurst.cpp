@@ -51,7 +51,6 @@ int main(int argc, char *argv[]){
         plc_from_file.addFace(face_indices);
     }
 
-    std::cout << plc_from_file.repr() << std::endl;
 
     std::cout << std::endl;
 
