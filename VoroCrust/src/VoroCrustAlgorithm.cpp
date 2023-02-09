@@ -44,7 +44,8 @@ void VoroCrustAlgorithm::run() {
     plc.detectFeatures(sharpTheta, flatTheta);
 
     //! TODO: make sampling size a user input!
-    trees.loadPLC(plc, 1e5, 1e6);    
+    //! IMPORTANT: sampling size can effect the convergence of the algorithm because the radius is determined using proximity to the sampled points on different features. Make sure that the sampling size is compatible to the size of the smallest polygon in the data. One wants the sampling to be "dense" in the edges and faces.
+    trees.loadPLC(plc, 1e6, 1e6);    
 
     //! TODO: init eligable edges vertices and faces
     cornersDriver.loadCorners(plc.sharp_corners);
