@@ -56,7 +56,7 @@ bool EdgesRMPS::checkIfPointIsDeeplyCovered(Vector3D const& p, VoroCrust_KD_Tree
         Vector3D const& center = edges_ball_tree.points[i];
         double const r = edges_ball_tree.ball_radii[i];
 
-        double const dist = distance(p, q);
+        double const dist = distance(p, center);
         if(dist <= r*(1.0 - alpha)){
             return true;
         }
