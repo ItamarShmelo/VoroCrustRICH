@@ -160,7 +160,23 @@ void EdgesRMPS::discardEligbleEdges(VoroCrust_KD_Tree_Ball &edges_ball_tree, Tre
     }
 }
 
+double EdgesRMPS::calculateInitialRadius(Vector3D const& point, std::size_t const edge_index, VoroCrust_KD_Tree_Ball const& edges_ball_tree, VoroCrust_KD_Tree_Boundary const& edges_boundary_tree) const {
+    
+    EligbleEdge const& edge = eligble_edges[edge_index];
+    
+    double const r_smooth = calculateSmoothnessLimitation(point, edge[1]-edge[0], edge.crease_index, edges_boundary_tree);
 
+    if(edges_ball_tree.points.empty()){
+        return std::min({maxRadius, r_smooth});
+    }
+
+    std::size_t const nn_edge_ball = edges_ball_tree.nearestNeighbor(point);
+    Vector3D const& q = edges_ball_tree.points[nn_edge_ball];
+    double const r_q = edges_ball_tree.ball_radii[nn_edge_ball];
+
+    double const dist = distance(point, q);
+    return std::min({maxRadius, r_smooth, r_q + L_Lipschitz*dist});
+}
 
 
 
