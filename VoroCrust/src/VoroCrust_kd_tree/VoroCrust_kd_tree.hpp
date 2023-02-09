@@ -112,6 +112,12 @@ class VoroCrust_KD_Tree_Boundary : public VoroCrust_KD_Tree {
 
         void insert(Vector3D const& point, Vector3D const& vec, std::size_t f_index);
 
+        int nearestNonCosmoothPoint(Vector3D const& query, Vector3D const& vec, std::size_t const f_index, double const angle) const;
+
+    private:
+
+        void nearestNonCosmoothPointRecursive(Vector3D const& query, Vector3D const& vec, std::size_t const f_index, double const angle, NodePtr node, int &guess, double &minDist) const;
+
 };
 
 class VoroCrust_KD_Tree_Ball : public VoroCrust_KD_Tree_Boundary {
