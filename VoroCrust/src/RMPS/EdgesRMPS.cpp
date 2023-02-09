@@ -50,7 +50,7 @@ bool EdgesRMPS::checkIfPointIsDeeplyCovered(Vector3D const& p, VoroCrust_KD_Tree
 
     double const r_max = (r_q + L_Lipschitz*distance(p, q)) / (1.0 - L_Lipschitz); 
     
-    std::vector<int> suspects = edges_ball_tree.radiusSearch(p, r_max);
+    std::vector<int> const suspects = edges_ball_tree.radiusSearch(p, r_max);
     
     for(int const i : suspects){
         Vector3D const& center = edges_ball_tree.points[i];
