@@ -50,13 +50,8 @@ void VoroCrustAlgorithm::run() {
     //! TODO: init eligable edges vertices and faces
     cornersDriver.loadCorners(plc.sharp_corners);
     cornersDriver.doSampling(trees.ball_kd_vertices, trees.VC_kd_sharp_corners);
-    
-    enforceLipschitzness(trees.ball_kd_vertices);
-    std::cout << "\nRun enforceLipschitzness again\n--------------\n" << std::endl;
-    enforceLipschitzness(trees.ball_kd_vertices);
-    
+    enforceLipschitzness(trees.ball_kd_vertices);    
     trees.ball_kd_vertices.remakeTree();
-
     // sliver elimination loop
     for(std::size_t iteration = 0; iteration < maximal_num_iter; ++iteration){
         do {
