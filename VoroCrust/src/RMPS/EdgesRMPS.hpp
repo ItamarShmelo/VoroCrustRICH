@@ -31,6 +31,7 @@ class EdgesRMPS {
         double const L_Lipschitz;
         double const alpha;
         double const sharpTheta;
+        double const rejection_probability = 0.1;
 
         boost::variate_generator<boost::mt19937, boost::uniform_01<>> uni01_gen;
         
