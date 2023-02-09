@@ -332,6 +332,7 @@ int VoroCrust_KD_Tree_Boundary::nearestNonCosmoothPoint(Vector3D const& query, V
 }
 
 
+//! \brief calculates the angles assuming v1, v2 have the same orientation
 double CalcAngleAssumedSameOrientation(Vector3D const& v1, Vector3D const& v2){
     return acos(std::abs(ScalarProd(v1, v2)) / abs(v1) / abs(v2));
 }
@@ -354,6 +355,8 @@ void VoroCrust_KD_Tree_Boundary::nearestNonCosmoothPointRecursive(Vector3D const
             //! FORDEBUGGING: should be in the if 
             double const angle_v_pq_v_sigma_q = CalcAngleAssumedSameOrientation(v_sigma_q, v_pq);
             double const angle_v_sigma_q_v_tau_p = CalcAngleAssumedSameOrientation(v_sigma_q, v_tau_p);
+            
+            // cosmoothness test
             if(angle_v_sigma_q_v_tau_p > angle || angle_v_pq_v_sigma_q > angle){
                 minDist = dist;
                 guess = node->index;
