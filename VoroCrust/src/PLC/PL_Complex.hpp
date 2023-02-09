@@ -88,6 +88,7 @@ class PL_Complex
         std::string repr() const;
 
         private:
+            //! \brief Orders the crease s.t. crease[0]->vertex1 is the start and crease[end]->vertex2 is the end and crease[i]->vertex2 == crease[i+1]->vertex1
             void orderCrease(Crease &crease);
 };
 
