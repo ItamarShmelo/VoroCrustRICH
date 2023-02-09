@@ -123,3 +123,12 @@ double EdgesRMPS::calculateSmoothnessLimitation(Vector3D const& center, Vector3D
 
     return 0.49*dist;
 }
+
+void EdgesRMPS::enforceEdgeBallCoSmoothWithEligbleEdge(VoroCrust_KD_Tree_Boundary const& edges_boundary_tree, VoroCrust_KD_Tree_Ball & edges_ball_tree, std::size_t const ball_index){
+    // Assumes that the ball center comes from a sample on the same Crease as edge
+
+    double const r_new = std::min({edges_ball_tree.ball_radii[ball_index], calculateSmoothnessLimitation(edges_ball_tree.points[ball_index], edges_ball_tree.vectors[ball_index], edges_ball_tree.feature_index[ball_index], edges_boundary_tree)});
+    
+    //! BADCODINGALERT: this changes edges_ball_tree so it can't be a const reference
+    edges_ball_tree.ball_radii[ball_index] = r_new; 
+}
