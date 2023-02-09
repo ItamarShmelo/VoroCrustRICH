@@ -283,6 +283,44 @@ void PL_Complex::buildCreases()
     }
 }
 
+void PL_Complex::orderCrease(Crease &crease){
+    Edge start;
+    bool foundStart;
+    for(std::size_t i=0; i<crease.size(); ++i){
+        start = crease[i];
+        foundStart = true;
+        
+        for(std::size_t j=0; j<crease.size(); ++j){
+            if(start->vertex1->index == crease[j]->vertex2->index){
+                foundStart = false;
+            }
+        }
+
+        if(foundStart) break;
+    }
+
+    Crease orderedCrease;
+
+    orderedCrease.push_back(start);
+
+    for(std::size_t i=0; i<crease.size()-1; ++i){
+        bool found = false;
+        for(std::size_t j=0; j<crease.size(); ++j){
+            if(orderedCrease[i]->vertex2->index == crease[j]->vertex1->index){
+                orderedCrease.push_back(crease[j]);
+                found = true;
+                break;
+            }
+        }
+        if(not found){
+            std::cout << "ERROR IN ORDERING THE CREASES" << std::endl;
+            exit(1);
+        }
+    }
+
+    crease = orderedCrease;
+}
+
 Crease PL_Complex::createCrease(Edge const &edge)
 {
     /* Creates the Creases using the flood fill algorithm across vertices which are not sharp corners */
@@ -330,6 +368,8 @@ Crease PL_Complex::createCrease(Edge const &edge)
             }
         }
     }
+
+    orderCrease(crease);
 
     return crease;
 }

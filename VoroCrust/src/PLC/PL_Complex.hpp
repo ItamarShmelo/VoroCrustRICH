@@ -87,6 +87,8 @@ class PL_Complex
         
         std::string repr() const;
 
+        private:
+            void orderCrease(Crease &crease);
 };
 
 
