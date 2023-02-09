@@ -112,10 +112,12 @@ class VoroCrust_KD_Tree_Boundary : public VoroCrust_KD_Tree {
 
         void insert(Vector3D const& point, Vector3D const& vec, std::size_t f_index);
 
+        //! \brief finds the nearest point in the tree wthat is not cosmooth with `query`
         int nearestNonCosmoothPoint(Vector3D const& query, Vector3D const& vec, std::size_t const f_index, double const angle) const;
 
     private:
 
+        //! \brief finds the nearest non cosmooth point to `query` recursively 
         void nearestNonCosmoothPointRecursive(Vector3D const& query, Vector3D const& vec, std::size_t const f_index, double const angle, NodePtr node, int &guess, double &minDist) const;
 
 };
@@ -132,6 +134,7 @@ class VoroCrust_KD_Tree_Ball : public VoroCrust_KD_Tree_Boundary {
 
         void insert(Vector3D const& point, Vector3D const& vec, double radius, std::size_t const index);
 
+        //! \brief returns the overlapping balls of ball defined by `center` `radius`, only overlapping balls with centers up to `r_max`
         std::vector<std::size_t> getOverlappingBalls(Vector3D const& center, double const radius, double const r_max) const;
 };
 
