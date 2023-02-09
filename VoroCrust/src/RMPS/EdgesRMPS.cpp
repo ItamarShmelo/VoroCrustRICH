@@ -62,7 +62,12 @@ bool EdgesRMPS::checkIfPointIsDeeplyCovered(Vector3D const& p, VoroCrust_KD_Tree
         }
     }
 
-    return false;
+    std::size_t const nn_corner_index = corners_ball_tree.nearestNeighbor(p);
+
+    Vector3D const& center = corners_ball_tree.points[nn_corner_index];
+    double const radius = corners_ball_tree.ball_radii[nn_corner_index];
+
+    return distance(p, center) < radius*(1.0-alpha);
 }
 
 std::pair<bool, Vector3D> EdgesRMPS::sampleEligbleEdges(double const total_len, std::vector<double> const& start_len) {
