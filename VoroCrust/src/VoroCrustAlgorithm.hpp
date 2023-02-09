@@ -4,6 +4,7 @@
 #include "PLC/PL_Complex.hpp"
 #include "trees.hpp"
 #include "RMPS/CornersRMPS.hpp"
+#include "RMPS/EdgesRMPS.hpp"
 #include <sstream>
 
 
@@ -20,6 +21,7 @@ class VoroCrustAlgorithm {
         std::size_t const maximal_num_iter;
 
         CornersRMPS cornersDriver;
+        EdgesRMPS edgesDriver;
 
         VoroCrustAlgorithm( PL_Complex const& plc_,
                             double const sharpTheta_,
