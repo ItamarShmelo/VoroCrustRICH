@@ -70,14 +70,14 @@ class EdgesRMPS {
         //! \brief discard any eligble edge fully contained inside a corner ball
         void discardEligbleEdgesContainedInCornerBalls(VoroCrust_KD_Tree_Ball const& corners_ball_tree);
 
-        //
+        //! \brief returns the maximal radius satisfying the cosmoothness limitation
         double calculateSmoothnessLimitation(Vector3D const& center, Vector3D const& parallel, std::size_t const feature_index, VoroCrust_KD_Tree_Boundary const& edges_boundary_tree) const;
 
+        //! \brief return true if eligble edge is deeply covered by edge ball 
         bool isEligbleEdgeIsDeeplyCoveredInEdgeBall(EligbleEdge const& edge, VoroCrust_KD_Tree_Ball const& edges_ball_tree, std::size_t const ball_index);
 
+        //! \brief retunrs the initial radius of a new sample defined by point
         double calculateInitialRadius(Vector3D const& point, std::size_t const edge_index, VoroCrust_KD_Tree_Ball const& edges_ball_tree, VoroCrust_KD_Tree_Boundary const& edges_boundary_tree) const;
-
-        bool isBallContainesExistingSample(Vector3D const& center, double const radius, VoroCrust_KD_Tree_Ball const& edges_ball_tree) const;
 };
 
 #endif // EDGES_RMPS
