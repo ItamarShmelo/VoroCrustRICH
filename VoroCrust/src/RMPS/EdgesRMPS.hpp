@@ -70,9 +70,6 @@ class EdgesRMPS {
         //! \brief discard any eligble edge fully contained inside a corner ball
         void discardEligbleEdgesContainedInCornerBalls(VoroCrust_KD_Tree_Ball const& corners_ball_tree);
 
-        //! \brief enfoce that the ball is co smooth with with every point on the crease that is in its radius.
-        void enforceEdgeBallCoSmoothWithEligbleEdge(VoroCrust_KD_Tree_Boundary const& edges_boundary_tree, VoroCrust_KD_Tree_Ball &edges_ball_tree, std::size_t const ball_index);
-
         //
         double calculateSmoothnessLimitation(Vector3D const& center, Vector3D const& parallel, std::size_t const feature_index, VoroCrust_KD_Tree_Boundary const& edges_boundary_tree) const;
 
