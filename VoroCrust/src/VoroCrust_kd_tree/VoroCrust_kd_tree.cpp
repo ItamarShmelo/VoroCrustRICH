@@ -322,6 +322,63 @@ void VoroCrust_KD_Tree_Boundary::insert(Vector3D const& point, Vector3D const& v
     feature_index.push_back(index);
 }
 
+int VoroCrust_KD_Tree_Boundary::nearestNonCosmoothPoint(Vector3D const& query, Vector3D const& vec, std::size_t const f_index, double const angle) const {
+    int guess = 0;
+    double minDist = std::numeric_limits<double>::max();
+
+    nearestNonCosmoothPointRecursive(query, vec, f_index, angle, root, guess, minDist);
+
+    return guess;
+}
+
+
+double CalcAngleAssumedSameOrientation(Vector3D const& v1, Vector3D const& v2){
+    return acos(std::abs(ScalarProd(v1, v2)) / abs(v1) / abs(v2));
+}
+
+void VoroCrust_KD_Tree_Boundary::nearestNonCosmoothPointRecursive(Vector3D const& query, Vector3D const& vec, std::size_t const f_index, double const angle, NodePtr node, int &guess, double &minDist) const {
+    //! WARNING: ONLY FOR EDGES FOR NOW
+    //! TODO: ADD IMPLEMENTATION FOR SURFACE PATCHES
+    if(node.get() == nullptr) return;
+
+    Vector3D const& train = points[node->index];
+
+    double const dist = distance(train, query);
+    
+    if(dist < minDist){
+        if(f_index == feature_index[node->index]){
+            Vector3D const& v_pq = query - train;
+            Vector3D const& v_sigma_q = vectors[node->index];
+            Vector3D const& v_tau_p = vec;
+
+            //! FORDEBUGGING: should be in the if 
+            double const angle_v_pq_v_sigma_q = CalcAngleAssumedSameOrientation(v_sigma_q, v_pq);
+            double const angle_v_sigma_q_v_tau_p = CalcAngleAssumedSameOrientation(v_sigma_q, v_tau_p);
+            if(angle_v_sigma_q_v_tau_p > angle || angle_v_pq_v_sigma_q > angle){
+                minDist = dist;
+                guess = node->index;
+            }
+        } else {
+            minDist = dist;
+            guess = node->index;
+        }
+    }
+
+    int const axis = node->axis;
+
+    NodePtr const& node_first = query[axis] < train[axis] ? node->left : node->right;
+
+    nearestNonCosmoothPointRecursive(query, vec, f_index, angle, node_first, guess, minDist);
+    
+    double const diff = fabs(query[axis] - train[axis]);
+    // if distance to current dividing axis to other node is `more` then `minDist` 
+    // then we can discard this subtree 
+    if(diff < minDist){
+        NodePtr const& node_second = query[axis] < train[axis] ? node->right : node->left;
+        nearestNonCosmoothPointRecursive(query, vec, f_index, angle, node_second, guess, minDist);
+    }
+}
+
 /* BALL KD TREE */
 VoroCrust_KD_Tree_Ball::VoroCrust_KD_Tree_Ball() : VoroCrust_KD_Tree_Boundary(), ball_radii() {}
 
