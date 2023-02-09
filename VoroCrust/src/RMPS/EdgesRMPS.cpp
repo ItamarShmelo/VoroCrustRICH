@@ -107,7 +107,7 @@ void EdgesRMPS::discardEligbleEdgesContainedInCornerBalls(VoroCrust_KD_Tree_Ball
         }
     }
 
-    for(std::size_t i=to_discard.size()-1; i>=0; --i){
+    for(long i=to_discard.size()-1; i>=0; --i){
         std::size_t const ind_to_discard = to_discard[i];
         eligble_edges.erase(eligble_edges.begin() + ind_to_discard);
     }
