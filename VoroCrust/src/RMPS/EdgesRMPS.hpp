@@ -65,10 +65,10 @@ class EdgesRMPS {
         std::tuple<bool, std::size_t const, Vector3D const> sampleEligbleEdges(double const total_len, std::vector<double> const& start_len);
 
         //! \brief discard any eligble edges that meet the critrea for discardtion 
-        void discardEligbleEdges(VoroCrust_KD_Tree_Ball &edges_ball_tree, Trees const& trees);
+        bool discardEligbleEdges(VoroCrust_KD_Tree_Ball &edges_ball_tree, Trees &trees, PL_Complex const& plc);
 
         //! \brief discard any eligble edge fully contained inside a corner ball
-        void discardEligbleEdgesContainedInCornerBalls(VoroCrust_KD_Tree_Ball const& corners_ball_tree);
+        void discardEligbleEdgesContainedInCornerBalls(VoroCrust_KD_Tree_Ball const& corners_ball_tree, PL_Complex const& plc);
 
         //! \brief returns the maximal radius satisfying the cosmoothness limitation
         double calculateSmoothnessLimitation(Vector3D const& center, Vector3D const& parallel, std::size_t const feature_index, VoroCrust_KD_Tree_Boundary const& edges_boundary_tree) const;
