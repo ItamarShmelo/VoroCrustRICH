@@ -181,7 +181,6 @@ bool EdgesRMPS::discardEligbleEdges(VoroCrust_KD_Tree_Ball &edges_ball_tree, Tre
         std::vector<int> balls_to_check_corners = trees.ball_kd_vertices.radiusSearch(edge[0], maxRadius + abs(edge[1]-edge[0]));
 
         Crease const& crease = plc.creases[edge.crease_index];
-        std::size_t const crease_last = crease.size();
         // remove the start of the crease from the balls to check
         // if it is present
         if(crease.front()->vertex1->isSharp){
