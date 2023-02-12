@@ -225,6 +225,39 @@ bool EdgesRMPS::discardEligbleEdges(VoroCrust_KD_Tree_Ball &edges_ball_tree, Tre
 
     return shrunkOtherStrataBalls;
 }
+
+bool EdgesRMPS::checkIfVerticesBallsCover(EligbleEdge const& edge, std::vector<int> const& balls_to_check_corners, VoroCrust_KD_Tree_Ball & corners_ball_tree){
+    bool shrunkBalls = false;
+
+    for(std::size_t const ball_index : balls_to_check_corners){
+
+        double dist = std::numeric_limits<double>::max();
+        //! TODO: maybe move to a function
+        // same function as in VoroCrust_KD_Tree::distancePointToSegment
+        // maybe copy documentation
+        //! CODEDUPLICATION: I don't like this!
+        Vector3D const& point = corners_ball_tree.points[ball_index];
+        Vector3D const& v1 = edge[0] - point;
+        Vector3D const& v2 = edge[1] - edge[0];   
+        
+        double const t = - ScalarProd(v1, v2) / ScalarProd(v2, v2);
+
+        if(t >= 1) {
+            dist = distance(point, edge[1]);
+        } else if (t <= 0){
+            dist = distance(point, edge[0]);
+        } else {
+            dist = abs(CrossProduct(v1, v2))/ abs(v2);
+        }
+
+        if(dist < corners_ball_tree.ball_radii[ball_index]){
+            corners_ball_tree.ball_radii[ball_index] = dist;
+            std::cout << "shrunk corner ball " << ball_index << std::endl;
+            shrunkBalls = true;
+        }
+    }
+
+    return shrunkBalls;
 }
 
 double EdgesRMPS::calculateInitialRadius(Vector3D const& point, std::size_t const edge_index, VoroCrust_KD_Tree_Ball const& edges_ball_tree, VoroCrust_KD_Tree_Boundary const& edges_boundary_tree) const {
