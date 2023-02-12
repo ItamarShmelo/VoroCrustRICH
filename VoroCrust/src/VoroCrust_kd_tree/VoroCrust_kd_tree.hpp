@@ -59,7 +59,7 @@ class VoroCrust_KD_Tree {
         /*! \brief finds the `k` nearest neighbors to `query` in the tree 
             \param query
             \param k number of nearest neighbors */
-        std::vector<int> kNearestNeighbors(Vector3D const& query, int const k) const;
+        std::vector<int> kNearestNeighbors(Vector3D const& query, unsigned int const k) const;
         
         //! \brief finds all points with a distance to query that is less than radius
         std::vector<int> radiusSearch(Vector3D const& query, double const radius) const;

@@ -81,7 +81,6 @@ namespace vorocrust_vtk {
         data->SetNumberOfValues(num_faces);
         
         for(std::size_t face_index=0; face_index < num_faces; ++face_index){
-            Face const& face = faces[face_index];
             data->SetValue(face_index, -2);
         }
         
@@ -201,8 +200,6 @@ namespace vorocrust_vtk {
             vtkNew<vtkIdList> point_vtk;
             point_array_in_cell.clear();
 
-            auto point = points->GetPoint(point_index);
-
             point_vtk->InsertNextId(1);
             point_vtk->InsertNextId(point_index);
             point_array_in_cell.push_back(point_index);
@@ -276,8 +273,6 @@ namespace vorocrust_vtk {
             vtkNew<vtkIdList> point_vtk;
             point_array_in_cell.clear();
 
-            auto point = points->GetPoint(point_index);
-
             point_vtk->InsertNextId(1);
             point_vtk->InsertNextId(point_index);
             point_array_in_cell.push_back(point_index);
@@ -349,8 +344,6 @@ void write_kNearestNeighbors(std::filesystem::path const& filename,
     for(std::size_t point_index=0; point_index < num_points+1; ++point_index){
         vtkNew<vtkIdList> point_vtk;
         point_array_in_cell.clear();
-
-        auto point = points->GetPoint(point_index);
 
         point_vtk->InsertNextId(1);
         point_vtk->InsertNextId(point_index);
@@ -425,8 +418,6 @@ void write_radiusSearch(std::filesystem::path const& filename,
     for(std::size_t point_index=0; point_index < num_points+1; ++point_index){
         vtkNew<vtkIdList> point_vtk;
         point_array_in_cell.clear();
-
-        auto point = points->GetPoint(point_index);
 
         point_vtk->InsertNextId(1);
         point_vtk->InsertNextId(point_index);
@@ -509,8 +500,6 @@ void write_nearestNeighborToSegment(std::filesystem::path const& filename,
     for(std::size_t point_index=0; point_index < num_points; ++point_index){
         vtkNew<vtkIdList> point_vtk;
         point_array_in_cell.clear();
-
-        auto point = points->GetPoint(point_index);
 
         point_vtk->InsertNextId(1);
         point_vtk->InsertNextId(point_index);

@@ -8,15 +8,15 @@ VoroCrustAlgorithm::VoroCrustAlgorithm( PL_Complex const& plc_,
                                         double const maxRadius_,
                                         double const L_Lipschitz_,
                                         double const alpha_): plc(plc_), 
-                                                                    sharpTheta(sharpTheta_),
-                                                                    flatTheta(flatTheta_),
-                                                                    maxRadius(maxRadius_),
-                                                                    L_Lipschitz(L_Lipschitz_),
-                                                                    alpha(alpha_),
-                                                                    trees(),
-                                                                    maximal_num_iter(15),
-                                                                    cornersDriver(maxRadius_, L_Lipschitz_),
-                                                                    edgesDriver(maxRadius, L_Lipschitz_, alpha_, sharpTheta_) {
+                                                              trees(),
+                                                              sharpTheta(sharpTheta_),
+                                                              flatTheta(flatTheta_),
+                                                              maxRadius(maxRadius_),
+                                                              L_Lipschitz(L_Lipschitz_),
+                                                              alpha(alpha_),
+                                                              maximal_num_iter(15),
+                                                              cornersDriver(maxRadius_, L_Lipschitz_),
+                                                              edgesDriver(maxRadius, L_Lipschitz_, alpha_, sharpTheta_) {
 
     if(sharpTheta > M_PI_2){
         std::cout << "ERROR: sharpTheta > pi/2" << std::endl;
@@ -57,7 +57,7 @@ void VoroCrustAlgorithm::run() {
     bool redoVertices = false;
     for(std::size_t iteration = 0; iteration < maximal_num_iter; ++iteration){
         while(true){
-            bool resample = false;
+            redoVertices = false;
             // enfore lipchitzness on vertices
             std::cout << "\nCorners Lipchitzness\n--------------\n" << std::endl;
             enforceLipschitzness(trees.ball_kd_vertices);    

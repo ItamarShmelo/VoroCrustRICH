@@ -12,8 +12,6 @@ Trees::Trees(): VC_kd_sharp_corners(),
 
 void Trees::loadPLC(PL_Complex const& plc, std::size_t const Nsample_edges, std::size_t const Nsample_faces){
     
-    std::size_t const Npoints = plc.vertices.size();
-    
     std::vector<Vector3D> const sharp_corners_points = pointsFromVertices(plc.sharp_corners);
     auto const& [p_edges, v_edges, i_edges] = superSampleEdges(plc.sharp_edges, Nsample_edges);
     auto const& [p_faces, v_faces, i_faces] = superSampleFaces(plc.faces, Nsample_faces);

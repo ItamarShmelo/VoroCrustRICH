@@ -16,7 +16,7 @@ NodePtr newNode(int index, int axis){
 
 VoroCrust_KD_Tree::VoroCrust_KD_Tree() : root(nullptr), points() {}
 
-VoroCrust_KD_Tree::VoroCrust_KD_Tree(std::vector<Vector3D> const& points) : points(points), root(nullptr) {
+VoroCrust_KD_Tree::VoroCrust_KD_Tree(std::vector<Vector3D> const& points) : root(nullptr), points(points) {
     makeTree(points);
 }
 
@@ -95,7 +95,7 @@ void VoroCrust_KD_Tree::nearestNeighborRecursive(Vector3D const& query, NodePtr 
     }
 }
 
-std::vector<int> VoroCrust_KD_Tree::kNearestNeighbors(Vector3D const& query, int const k) const {
+std::vector<int> VoroCrust_KD_Tree::kNearestNeighbors(Vector3D const& query, unsigned int const k) const {
     if(k > points.size()){
         std::cout << "Error: kNearestNeighbors, `k` can't be larger then number of points" << std::endl;
         exit(1);
