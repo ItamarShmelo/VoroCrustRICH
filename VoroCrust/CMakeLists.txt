@@ -12,6 +12,8 @@ message("Build Type: " ${CMAKE_BUILD_TYPE})
 
 message("CMAKE_CXX_FLAGS = " ${CMAKE_CXX_FLAGS})
 message("CMAKE_CXX_FLAGS_RELEASE = " ${CMAKE_CXX_FLAGS_RELEASE})
+
+set(CMAKE_CXX_FLAGS_DEBUG "-g -Wall")
 message("CMAKE_CXX_FLAGS_DEBUG = " ${CMAKE_CXX_FLAGS_DEBUG})
 message("CMAKE_Fortran_FLAGS = " ${CMAKE_Fortran_FLAGS})
 message("CMAKE_Fortran_FLAGS_RELEASE = " ${CMAKE_Fortran_FLAGS_RELEASE})
