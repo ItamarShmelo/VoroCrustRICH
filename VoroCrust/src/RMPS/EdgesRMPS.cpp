@@ -95,19 +95,35 @@ std::tuple<bool, std::size_t const, Vector3D const> EdgesRMPS::sampleEligbleEdge
     return std::tuple<bool, std::size_t const, Vector3D const>(true, edge_index, point);
 }
 
-void EdgesRMPS::discardEligbleEdgesContainedInCornerBalls(VoroCrust_KD_Tree_Ball const& corners_ball_tree){
+void EdgesRMPS::discardEligbleEdgesContainedInCornerBalls(VoroCrust_KD_Tree_Ball const& corners_ball_tree, PL_Complex const& plc){
     std::vector<std::size_t> to_discard;
 
     std::size_t const num_of_eligble_edges = eligble_edges.size();
     for(std::size_t i=0 ; i<num_of_eligble_edges; ++i){
         EligbleEdge const& edge = eligble_edges[i];
-        std::size_t const nn_index = corners_ball_tree.nearestNeighborToSegment(edge.edge);
 
-        Vector3D const& center = corners_ball_tree.points[nn_index];
-        double const r = corners_ball_tree.ball_radii[nn_index];
+        Crease const& edge_crease = plc.creases[edge.crease_index];
+        
+        if(edge_crease.front()->vertex1->isSharp){        
+            std::size_t const nn_index = corners_ball_tree.nearestNeighbor(edge_crease.front()->vertex1->vertex);
 
-        if(distance(edge[0], center) <= r && distance(edge[1], center) <= r){
-            to_discard.push_back(i);
+            Vector3D const& center = corners_ball_tree.points[nn_index];
+            double const r = corners_ball_tree.ball_radii[nn_index];
+
+            if(distance(edge[0], center) <= r && distance(edge[1], center) <= r){
+                to_discard.push_back(i);
+            }
+        }
+        
+        if(edge_crease.back()->vertex2->isSharp){        
+            std::size_t const nn_index = corners_ball_tree.nearestNeighbor(edge_crease.back()->vertex2->vertex);
+
+            Vector3D const& center = corners_ball_tree.points[nn_index];
+            double const r = corners_ball_tree.ball_radii[nn_index];
+
+            if(distance(edge[0], center) <= r && distance(edge[1], center) <= r){
+                to_discard.push_back(i);
+            }
         }
     }
 
