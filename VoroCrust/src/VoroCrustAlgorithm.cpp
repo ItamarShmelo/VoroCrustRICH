@@ -52,17 +52,27 @@ void VoroCrustAlgorithm::run() {
     //! TODO: init eligable edges vertices and faces
     cornersDriver.loadCorners(plc.sharp_corners);
     cornersDriver.doSampling(trees.ball_kd_vertices, trees.VC_kd_sharp_corners);
-    enforceLipschitzness(trees.ball_kd_vertices);    
     trees.ball_kd_vertices.remakeTree();
     // sliver elimination loop
+    bool redoVertices = false;
     for(std::size_t iteration = 0; iteration < maximal_num_iter; ++iteration){
-        do {
-            std::cout << "\nEdgesRMPS\n--------------\n" << std::endl;
-            edgesDriver.loadEdges(plc.sharp_edges);
-            edgesDriver.doSampling(trees.ball_kd_edges, trees);
-            trees.ball_kd_edges.remakeTree();
-        } while(enforceLipschitzness(trees.ball_kd_edges));
-        
+        while(true){
+            bool resample = false;
+            // enfore lipchitzness on vertices
+            std::cout << "\nCorners Lipchitzness\n--------------\n" << std::endl;
+            enforceLipschitzness(trees.ball_kd_vertices);    
+            
+            do {
+                std::cout << "\nEdgesRMPS\n--------------\n" << std::endl;
+                edgesDriver.loadEdges(plc.sharp_edges);
+                redoVertices = edgesDriver.doSampling(trees.ball_kd_edges, trees, plc);
+                trees.ball_kd_edges.remakeTree();
+            } while(enforceLipschitzness(trees.ball_kd_edges) && !redoVertices);
+            
+            if(redoVertices) continue; // if vertices enforce lipschitzness again
+
+            break;
+        }
         break;
     }
 
