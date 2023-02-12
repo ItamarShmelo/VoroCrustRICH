@@ -282,7 +282,10 @@ double EdgesRMPS::calculateInitialRadius(Vector3D const& point, std::size_t cons
     return std::min({maxRadius, r_smooth, r_q + L_Lipschitz*dist});
 }
 
-void EdgesRMPS::doSampling(VoroCrust_KD_Tree_Ball &edges_ball_tree, Trees const& trees){
+bool EdgesRMPS::doSampling(VoroCrust_KD_Tree_Ball &edges_ball_tree, Trees &trees, PL_Complex const& plc){
+
+    bool resample = false;
+
     double total_len;
     std::vector<double> start_len;
     auto const& res = calculateTotalLengthAndStartLengthOfEligbleEdges();
@@ -306,7 +309,8 @@ void EdgesRMPS::doSampling(VoroCrust_KD_Tree_Ball &edges_ball_tree, Trees const&
 
         if(miss_counter >= 100){
             divideEligbleEdges();
-            discardEligbleEdges(edges_ball_tree, trees);
+            //! IMPORTANT: resample needs to be on the right of the ||!!!!
+            resample = discardEligbleEdges(edges_ball_tree, trees, plc) || resample;
     
             auto const& res = calculateTotalLengthAndStartLengthOfEligbleEdges();
             total_len = res.first;
@@ -317,7 +321,7 @@ void EdgesRMPS::doSampling(VoroCrust_KD_Tree_Ball &edges_ball_tree, Trees const&
             continue;
         }
 
-        if(checkIfPointIsDeeplyCovered(p, edges_ball_tree, trees.ball_kd_vertices)){
+        if(checkIfPointIsDeeplyCovered(p, edge_index, edges_ball_tree, trees.ball_kd_vertices)){
             miss_counter += 1;
             continue;
         }
@@ -355,4 +359,6 @@ void EdgesRMPS::doSampling(VoroCrust_KD_Tree_Ball &edges_ball_tree, Trees const&
         
         miss_counter = 0;
     }
+
+    return resample;
 }
