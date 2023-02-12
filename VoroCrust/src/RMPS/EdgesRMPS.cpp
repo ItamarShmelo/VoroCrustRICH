@@ -178,6 +178,46 @@ bool EdgesRMPS::discardEligbleEdges(VoroCrust_KD_Tree_Ball &edges_ball_tree, Tre
             }                             
         }
 
+        std::vector<int> balls_to_check_corners = trees.ball_kd_vertices.radiusSearch(edge[0], maxRadius + abs(edge[1]-edge[0]));
+
+        Crease const& crease = plc.creases[edge.crease_index];
+        std::size_t const crease_last = crease.size();
+        // remove the start of the crease from the balls to check
+        // if it is present
+        if(crease.front()->vertex1->isSharp){
+            long index = -1;
+            for(std::size_t j=0; j < balls_to_check_corners.size(); ++j){
+                std::size_t ball_index = balls_to_check_corners[j];
+                Vector3D const& center = trees.ball_kd_vertices.points[ball_index];
+                //! IDONTLIKETHIS: floating point compare of vectors
+                if(center == crease[0]->vertex1->vertex){
+                    index = j;
+                }
+            }
+
+            if(index >= 0){
+                balls_to_check_corners.erase(balls_to_check_corners.begin()+index);
+            }
+        }
+        // remove the end of the crease form the balls to check if it is present
+        if(crease.back()->vertex2->isSharp){
+            long index = -1;
+            for(std::size_t j=0; j < balls_to_check_corners.size(); ++j){
+                std::size_t ball_index = balls_to_check_corners[j];
+                Vector3D const& center = trees.ball_kd_vertices.points[ball_index];
+                //! IDONTLIKETHIS: floating point compare of vectors
+                if(center == crease.back()->vertex2->vertex){
+                    index = j;
+                }
+            }
+
+            if(index >= 0){
+                balls_to_check_corners.erase(balls_to_check_corners.begin()+index);
+            }
+        }
+
+        shrunkOtherStrataBalls = checkIfVerticesBallsCover(edge, balls_to_check_corners, trees.ball_kd_vertices) || shrunkOtherStrataBalls;
+
         if(discard){
             eligble_edges.erase(eligble_edges.begin()+i);
         }
