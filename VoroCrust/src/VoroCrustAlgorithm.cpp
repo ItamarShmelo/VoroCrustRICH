@@ -51,7 +51,7 @@ void VoroCrustAlgorithm::run() {
 
     //! TODO: init eligable edges vertices and faces
     cornersDriver.loadCorners(plc->sharp_corners);
-    cornersDriver.doSampling(trees.ball_kd_vertices, trees.VC_kd_sharp_corners);
+    cornersDriver.doSampling(trees.ball_kd_vertices, trees);
     trees.ball_kd_vertices.remakeTree();
     // sliver elimination loop
     bool redoVertices = false;
