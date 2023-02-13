@@ -38,19 +38,19 @@ VoroCrustAlgorithm::VoroCrustAlgorithm( PL_Complex const& plc_,
 void VoroCrustAlgorithm::run() {
     
     //! TODO: Maybe all this need to be in the plc under detect features?
-    if(not plc.checkAllVerticesAreOnFace()) exit(1);
+    if(not plc->checkAllVerticesAreOnFace()) exit(1);
 
-    if(not plc.checkIfALLFacesAreFlat()) exit(1);
+    if(not plc->checkIfALLFacesAreFlat()) exit(1);
 
-    plc.detectFeatures(sharpTheta, flatTheta);
+    plc->detectFeatures(sharpTheta, flatTheta);
 
-    std::cout << plc.repr() << std::endl;
+    std::cout << plc->repr() << std::endl;
     //! TODO: make sampling size a user input!
     //! IMPORTANT: sampling size can effect the convergence of the algorithm because the radius is determined using proximity to the sampled points on different features. Make sure that the sampling size is compatible to the size of the smallest polygon in the data. One wants the sampling to be "dense" in the edges and faces.
-    trees.loadPLC(plc, 1e6, 1e6);    
+    trees.loadPLC(*plc, 1e5, 1e6);    
 
     //! TODO: init eligable edges vertices and faces
-    cornersDriver.loadCorners(plc.sharp_corners);
+    cornersDriver.loadCorners(plc->sharp_corners);
     cornersDriver.doSampling(trees.ball_kd_vertices, trees.VC_kd_sharp_corners);
     trees.ball_kd_vertices.remakeTree();
     // sliver elimination loop
