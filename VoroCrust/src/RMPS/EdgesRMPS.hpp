@@ -59,7 +59,7 @@ class EdgesRMPS {
         void divideEligbleEdges();
 
         //! \brief checks if `p` is deeply covered by any ball in edges_ball_tree
-        bool checkIfPointIsDeeplyCovered(Vector3D const& p, std::size_t const edge_index, VoroCrust_KD_Tree_Ball const& edges_ball_tree, VoroCrust_KD_Tree_Ball const& corners_ball_tree) const;
+        bool checkIfPointIsDeeplyCovered(Vector3D const& p, std::size_t const edge_index, Trees const& trees) const;
 
         /*! \brief sample the eligble edges
             \return <success, sample> where success is a bool flag and is false if sampling failed
@@ -67,19 +67,19 @@ class EdgesRMPS {
         std::tuple<bool, std::size_t const, Vector3D const> sampleEligbleEdges(double const total_len, std::vector<double> const& start_len);
 
         //! \brief discard any eligble edges that meet the critrea for discardtion 
-        bool discardEligbleEdges(VoroCrust_KD_Tree_Ball &edges_ball_tree, Trees &trees);
+        bool discardEligbleEdges(VoroCrust_KD_Tree_Ball &edges_ball_tree, Trees const& trees);
 
         //! \brief discard any eligble edge fully contained inside a corner ball
-        void discardEligbleEdgesContainedInCornerBalls(VoroCrust_KD_Tree_Ball const& corners_ball_tree);
+        void discardEligbleEdgesContainedInCornerBalls(Trees const& trees);
 
         //! \brief returns the maximal radius satisfying the cosmoothness limitation
-        double calculateSmoothnessLimitation(Vector3D const& center, Vector3D const& parallel, std::size_t const feature_index, VoroCrust_KD_Tree_Boundary const& edges_boundary_tree) const;
+        double calculateSmoothnessLimitation(Vector3D const& center, Vector3D const& parallel, std::size_t const feature_index, Trees const& trees) const;
 
         //! \brief return true if eligble edge is deeply covered by edge ball 
-        bool isEligbleEdgeIsDeeplyCoveredInEdgeBall(EligbleEdge const& edge, VoroCrust_KD_Tree_Ball const& edges_ball_tree, std::size_t const ball_index);
+        bool isEligbleEdgeIsDeeplyCoveredInEdgeBall(EligbleEdge const& edge, Trees const& trees, std::size_t const ball_index);
 
         //! \brief retunrs the initial radius of a new sample defined by point
-        double calculateInitialRadius(Vector3D const& point, std::size_t const edge_index, VoroCrust_KD_Tree_Ball const& edges_ball_tree, VoroCrust_KD_Tree_Boundary const& edges_boundary_tree) const;
+        double calculateInitialRadius(Vector3D const& point, std::size_t const edge_index, Trees const& trees) const;
 
         bool checkIfVerticesBallsCover(EligbleEdge const& edge, std::vector<int> const& balls_to_check_corners, VoroCrust_KD_Tree_Ball &corners_ball_tree);
     

@@ -44,7 +44,9 @@ void EdgesRMPS::divideEligbleEdges(){
     eligble_edges = new_eligble_edges;
 }
 
-bool EdgesRMPS::checkIfPointIsDeeplyCovered(Vector3D const& p, std::size_t const edge_index, VoroCrust_KD_Tree_Ball const& edges_ball_tree, VoroCrust_KD_Tree_Ball const& corners_ball_tree) const {
+bool EdgesRMPS::checkIfPointIsDeeplyCovered(Vector3D const& p, std::size_t const edge_index, Trees const& trees) const {
+    VoroCrust_KD_Tree_Ball const& corners_ball_tree = trees.ball_kd_vertices;
+    VoroCrust_KD_Tree_Ball const& edges_ball_tree = trees.ball_kd_edges;
 
     if(edges_ball_tree.points.empty()) return false;
 
@@ -97,7 +99,9 @@ std::tuple<bool, std::size_t const, Vector3D const> EdgesRMPS::sampleEligbleEdge
     return std::tuple<bool, std::size_t const, Vector3D const>(true, edge_index, point);
 }
 
-void EdgesRMPS::discardEligbleEdgesContainedInCornerBalls(VoroCrust_KD_Tree_Ball const& corners_ball_tree){
+void EdgesRMPS::discardEligbleEdgesContainedInCornerBalls(Trees const& trees){
+    VoroCrust_KD_Tree_Ball const& corners_ball_tree = trees.ball_kd_vertices;
+
     std::vector<std::size_t> to_discard;
 
     std::size_t const num_of_eligble_edges = eligble_edges.size();
@@ -136,7 +140,8 @@ void EdgesRMPS::discardEligbleEdgesContainedInCornerBalls(VoroCrust_KD_Tree_Ball
     }
 }
 
-double EdgesRMPS::calculateSmoothnessLimitation(Vector3D const& center, Vector3D const& parallel, std::size_t const feature_index, VoroCrust_KD_Tree_Boundary const& edges_boundary_tree) const {
+double EdgesRMPS::calculateSmoothnessLimitation(Vector3D const& center, Vector3D const& parallel, std::size_t const feature_index, Trees const& trees) const {
+    VoroCrust_KD_Tree_Boundary const& edges_boundary_tree = trees.VC_kd_sharp_edges;
     // Assumes that the ball center comes from a sample on the same Crease as edge
 
     int nn_non_cosmooth_index = edges_boundary_tree.nearestNonCosmoothPointEdge(center, parallel, feature_index, sharpTheta);
@@ -147,8 +152,9 @@ double EdgesRMPS::calculateSmoothnessLimitation(Vector3D const& center, Vector3D
     return 0.49*dist;
 }
 
-bool EdgesRMPS::isEligbleEdgeIsDeeplyCoveredInEdgeBall(EligbleEdge const& edge, VoroCrust_KD_Tree_Ball const& edges_ball_tree, std::size_t const ball_index){
-    
+bool EdgesRMPS::isEligbleEdgeIsDeeplyCoveredInEdgeBall(EligbleEdge const& edge, Trees const& trees, std::size_t const ball_index){
+    VoroCrust_KD_Tree_Ball const& edges_ball_tree = trees.ball_kd_edges;
+
     Vector3D const& center = edges_ball_tree.points[ball_index];
     double const r_deeply = edges_ball_tree.ball_radii[ball_index] * (1.0 - alpha);
 
@@ -156,10 +162,10 @@ bool EdgesRMPS::isEligbleEdgeIsDeeplyCoveredInEdgeBall(EligbleEdge const& edge, 
     return (distance(center, edge[0]) <= r_deeply) && (distance(center, edge[1]) <= r_deeply);
 }
 
-bool EdgesRMPS::discardEligbleEdges(VoroCrust_KD_Tree_Ball &edges_ball_tree, Trees & trees){
+bool EdgesRMPS::discardEligbleEdges(VoroCrust_KD_Tree_Ball &edges_ball_tree, Trees const& trees){
     bool shrunkOtherStrataBalls = false;
 
-    discardEligbleEdgesContainedInCornerBalls(trees.ball_kd_vertices);
+    discardEligbleEdgesContainedInCornerBalls(trees);
 
     // discard in reverse order bacause each erase changes the indices
     for(long i = eligble_edges.size()-1; i >= 0; --i){
@@ -176,7 +182,7 @@ bool EdgesRMPS::discardEligbleEdges(VoroCrust_KD_Tree_Ball &edges_ball_tree, Tre
         bool discard = false;
         for(std::size_t const ball_index : balls_to_check_edges){
             if(edge.crease_index == trees.ball_kd_edges.feature_index[ball_index]){
-                discard = discard || isEligbleEdgeIsDeeplyCoveredInEdgeBall(edge, edges_ball_tree, ball_index);
+                discard = discard || isEligbleEdgeIsDeeplyCoveredInEdgeBall(edge, trees, ball_index);
             }                             
         }
 
@@ -217,7 +223,7 @@ bool EdgesRMPS::discardEligbleEdges(VoroCrust_KD_Tree_Ball &edges_ball_tree, Tre
             }
         }
 
-        shrunkOtherStrataBalls = checkIfVerticesBallsCover(edge, balls_to_check_corners, trees.ball_kd_vertices) || shrunkOtherStrataBalls;
+        // shrunkOtherStrataBalls = checkIfVerticesBallsCover(edge, balls_to_check_corners, trees) || shrunkOtherStrataBalls;
 
         if(discard){
             eligble_edges.erase(eligble_edges.begin()+i);
@@ -261,12 +267,14 @@ bool EdgesRMPS::checkIfVerticesBallsCover(EligbleEdge const& edge, std::vector<i
     return shrunkBalls;
 }
 
-double EdgesRMPS::calculateInitialRadius(Vector3D const& point, std::size_t const edge_index, VoroCrust_KD_Tree_Ball const& edges_ball_tree, VoroCrust_KD_Tree_Boundary const& edges_boundary_tree) const {
+double EdgesRMPS::calculateInitialRadius(Vector3D const& point, std::size_t const edge_index, Trees const& trees) const {
+
+    VoroCrust_KD_Tree_Ball const& edges_ball_tree = trees.ball_kd_edges;
     
     EligbleEdge const& edge = eligble_edges[edge_index];
     
     // limitation from cosmoothness
-    double const r_smooth = calculateSmoothnessLimitation(point, edge[1]-edge[0], edge.crease_index, edges_boundary_tree);
+    double const r_smooth = calculateSmoothnessLimitation(point, edge[1]-edge[0], edge.crease_index, trees);
 
     if(edges_ball_tree.points.empty()){
         return std::min({maxRadius, r_smooth});
@@ -322,14 +330,14 @@ bool EdgesRMPS::doSampling(VoroCrust_KD_Tree_Ball &edges_ball_tree, Trees &trees
             continue;
         }
 
-        if(checkIfPointIsDeeplyCovered(p, edge_index, edges_ball_tree, trees.ball_kd_vertices)){
+        if(checkIfPointIsDeeplyCovered(p, edge_index, trees)){
             miss_counter += 1;
             continue;
         }
 
         EligbleEdge const& edge = eligble_edges[edge_index];
         
-        double radius = calculateInitialRadius(p, edge_index, edges_ball_tree, trees.VC_kd_sharp_edges);
+        double radius = calculateInitialRadius(p, edge_index, trees);
 
         // limitation from proximity to a sharp corner 
         int nn_corner = trees.ball_kd_vertices.nearestNeighbor(p);
