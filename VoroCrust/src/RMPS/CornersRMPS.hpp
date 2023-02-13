@@ -5,7 +5,7 @@
 #include "../../../source/3D/GeometryCommon/Vector3D.hpp"
 #include "../VoroCrust_kd_tree/VoroCrust_kd_tree.hpp"
 
-using EligbleCorner = Vector3D;
+using EligbleCorner = Vertex;
 
 class CornersRMPS {
     public:
