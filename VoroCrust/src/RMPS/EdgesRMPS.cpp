@@ -139,7 +139,7 @@ void EdgesRMPS::discardEligbleEdgesContainedInCornerBalls(VoroCrust_KD_Tree_Ball
 double EdgesRMPS::calculateSmoothnessLimitation(Vector3D const& center, Vector3D const& parallel, std::size_t const feature_index, VoroCrust_KD_Tree_Boundary const& edges_boundary_tree) const {
     // Assumes that the ball center comes from a sample on the same Crease as edge
 
-    int nn_non_cosmooth_index = edges_boundary_tree.nearestNonCosmoothPoint(center, parallel, feature_index, sharpTheta);
+    int nn_non_cosmooth_index = edges_boundary_tree.nearestNonCosmoothPointEdge(center, parallel, feature_index, sharpTheta);
 
     Vector3D const& nn_non_cosmooth_p = edges_boundary_tree.points[nn_non_cosmooth_index];
     double const dist = distance(center, nn_non_cosmooth_p);
