@@ -348,26 +348,40 @@ void VoroCrust_KD_Tree_Boundary::nearestNonCosmoothPointEdgeRecursive(Vector3D c
 
     Vector3D const& train = points[node->index];
 
-    double const dist = distance(train, query);
+    if(f_index == feature_index[node->index]){    
+        double const dist = distance(train, query);
     
-    if(dist < minDist){
-        if(f_index == feature_index[node->index]){
+        if(dist < minDist){
             Vector3D const& v_pq = query - train;
             Vector3D const& v_sigma_q = vectors[node->index];
             Vector3D const& v_tau_p = vec;
 
             //! FORDEBUGGING: should be in the if 
-            double const angle_v_pq_v_sigma_q = CalcAngleAssumedSameOrientation(v_sigma_q, v_pq);
-            double const angle_v_sigma_q_v_tau_p = CalcAngleAssumedSameOrientation(v_sigma_q, v_tau_p);
+            // double const angle_v_pq_v_sigma_q = CalcAngleAssumedSameOrientation(v_sigma_q, v_pq);
+            double const angle_v_sigma_q_v_tau_p = CalcAngle(v_sigma_q, v_tau_p);
             
             // cosmoothness test
-            if(angle_v_sigma_q_v_tau_p > angle || angle_v_pq_v_sigma_q > angle){
+            if(angle_v_sigma_q_v_tau_p > angle){
                 minDist = dist;
                 guess = node->index;
             }
-        } else {
-            minDist = dist;
-            guess = node->index;
+        }
+    }
+
+    int const axis = node->axis;
+
+    NodePtr const& node_first = query[axis] < train[axis] ? node->left : node->right;
+
+    nearestNonCosmoothPointEdgeRecursive(query, vec, f_index, angle, node_first, guess, minDist);
+    
+    double const diff = fabs(query[axis] - train[axis]);
+    // if distance to current dividing axis to other node is `more` then `minDist` 
+    // then we can discard this subtree 
+    if(diff < minDist){
+        NodePtr const& node_second = query[axis] < train[axis] ? node->right : node->left;
+        nearestNonCosmoothPointEdgeRecursive(query, vec, f_index, angle, node_second, guess, minDist);
+    }
+}
         }
     }
 
