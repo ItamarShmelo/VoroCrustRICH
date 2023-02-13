@@ -18,16 +18,11 @@ void CornersRMPS::doSampling(VoroCrust_KD_Tree_Ball &corner_ball_tree, Trees con
         std::cout << "corner sample " << corner_ball_tree.points.size() << std::endl;
 
         // sample a vertex
-        std::pair<std::size_t, EligbleCorner> const sample = newSample();
+        EligbleCorner const sample = newSample();
 
-        double radius;
-
-        if(not corner_ball_tree.points.empty())
-            radius = calculateInitialRadius(sample.second, corner_ball_tree, corner_boundry_tree);
-        else
-            radius = maxRadius;
+        double const radius = calculateInitialRadius(sample, trees);
         
-        corner_ball_tree.insert(sample.second, empty_vector, radius, corner_ball_tree.points.size());
+        corner_ball_tree.insert(sample->vertex, empty_vector, radius, corner_ball_tree.points.size(), sample->index);
     }
 }
 
