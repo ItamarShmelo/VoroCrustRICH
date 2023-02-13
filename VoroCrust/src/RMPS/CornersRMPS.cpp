@@ -15,6 +15,8 @@ void CornersRMPS::doSampling(VoroCrust_KD_Tree_Ball &corner_ball_tree, Trees con
     Vector3D const empty_vector(0, 0, 0);
 
     while(not eligble_corners.empty()){
+        std::cout << "corner sample " << corner_ball_tree.points.size() << std::endl;
+
         // sample a vertex
         std::pair<std::size_t, EligbleCorner> const sample = newSample();
 
