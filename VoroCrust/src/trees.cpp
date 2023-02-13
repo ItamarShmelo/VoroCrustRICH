@@ -12,28 +12,30 @@ Trees::Trees(): VC_kd_sharp_corners(),
 
 void Trees::loadPLC(PL_Complex const& plc, std::size_t const Nsample_edges, std::size_t const Nsample_faces){
     
-    std::vector<Vector3D> const sharp_corners_points = pointsFromVertices(plc.sharp_corners);
-    auto const& [p_edges, v_edges, i_edges] = superSampleEdges(plc.sharp_edges, Nsample_edges);
-    auto const& [p_faces, v_faces, i_faces] = superSampleFaces(plc.faces, Nsample_faces);
+    auto const& [sharp_corners_points, i_corners] = pointsFromVertices(plc.sharp_corners);
+    auto const& [p_edges, v_edges, i_feature_edges, i_plc_edges] = superSampleEdges(plc.sharp_edges, Nsample_edges);
+    auto const& [p_faces, v_faces, i_feature_faces, i_plc_faces] = superSampleFaces(plc.faces, Nsample_faces);
     
     VC_kd_sharp_corners = VoroCrust_KD_Tree_Boundary(sharp_corners_points);
-    VC_kd_sharp_edges = VoroCrust_KD_Tree_Boundary(p_edges, v_edges, i_edges);
-    VC_kd_faces = VoroCrust_KD_Tree_Boundary(p_faces, v_faces, i_faces);
+    VC_kd_sharp_edges = VoroCrust_KD_Tree_Boundary(p_edges, v_edges, i_feature_edges, i_plc_edges);
+    VC_kd_faces = VoroCrust_KD_Tree_Boundary(p_faces, v_faces, i_feature_faces, i_plc_faces);
     
 }
 
-std::vector<Vector3D> Trees::pointsFromVertices(std::vector<Vertex> const& vertices){
+std::tuple<std::vector<Vector3D>, std::vector<std::size_t>> Trees::pointsFromVertices(std::vector<Vertex> const& vertices){
     std::size_t const Npoints = vertices.size();
     std::vector<Vector3D> points(Npoints, {0, 0, 0});
+    std::vector<std::size_t> plc_index(Npoints, 0);
 
     for(std::size_t i = 0; i<Npoints; ++i){
         points[i] = vertices[i]->vertex;
+        plc_index[i] = vertices[i]->index;
     }
     
-    return points;
+    return std::tuple<std::vector<Vector3D>, std::vector<std::size_t>>(points, plc_index);
 }
 
-std::tuple<std::vector<Vector3D>, std::vector<Vector3D>, std::vector<std::size_t>> Trees::superSampleEdges(std::vector<Edge> const& edges, std::size_t const Nsample){
+std::tuple<std::vector<Vector3D>, std::vector<Vector3D>, std::vector<std::size_t>, std::vector<std::size_t>> Trees::superSampleEdges(std::vector<Edge> const& edges, std::size_t const Nsample){
     // generate a random number generator
     boost::mt19937 rng(std::time(nullptr));
     boost::random::uniform_01<> zeroone;
@@ -56,6 +58,7 @@ std::tuple<std::vector<Vector3D>, std::vector<Vector3D>, std::vector<std::size_t
     std::vector<Vector3D> points(Nsample, {0, 0, 0});
     std::vector<Vector3D> parallel(Nsample, {0, 0, 0});
     std::vector<std::size_t> feature_index(Nsample, 0);
+    std::vector<std::size_t> plc_index(Nsample, 0);
 
     for(std::size_t i=0; i<Nsample; ++i){
         double const sample = rand_gen()*total_len; // sample a point uniformly [0, total_length)
@@ -80,12 +83,13 @@ std::tuple<std::vector<Vector3D>, std::vector<Vector3D>, std::vector<std::size_t
         points[i] = point;
         parallel[i] = (edge_vec / abs(edge_vec));
         feature_index[i] = edge->crease_index;
+        plc_index[i] = edge->index;
     }
 
-    return std::tuple<std::vector<Vector3D>, std::vector<Vector3D>, std::vector<std::size_t>>(points, parallel, feature_index);
+    return std::tuple<std::vector<Vector3D>, std::vector<Vector3D>, std::vector<std::size_t>, std::vector<std::size_t>>(points, parallel, feature_index, plc_index);
 }
 
-std::tuple<std::vector<Vector3D>, std::vector<Vector3D>, std::vector<std::size_t>> Trees::superSampleFaces(std::vector<Face> const& faces, std::size_t const Nsample){
+std::tuple<std::vector<Vector3D>, std::vector<Vector3D>, std::vector<std::size_t>, std::vector<std::size_t>> Trees::superSampleFaces(std::vector<Face> const& faces, std::size_t const Nsample){
     // generate a random number generator
     boost::mt19937 rng(std::time(nullptr));
     boost::random::uniform_01<> zeroone;
@@ -108,6 +112,7 @@ std::tuple<std::vector<Vector3D>, std::vector<Vector3D>, std::vector<std::size_t
     std::vector<Vector3D> points(Nsample, {0, 0, 0});
     std::vector<Vector3D> normals(Nsample, {0, 0, 0});
     std::vector<std::size_t> feature_index(Nsample, 0);
+    std::vector<std::size_t> plc_index(Nsample, 0);
 
     for(std::size_t i = 0; i<Nsample; ++i){
         double const sample_area = rand_gen()*total_area; // sample a number uniformly in [0, total_area)
@@ -145,7 +150,8 @@ std::tuple<std::vector<Vector3D>, std::vector<Vector3D>, std::vector<std::size_t
         points[i] = point;
         normals[i] = face->calcNormal();
         feature_index[i] = face->patch_index;
+        plc_index[i] = face->index;
     }
 
-    return std::tuple<std::vector<Vector3D>, std::vector<Vector3D>, std::vector<std::size_t>>(points, normals, feature_index);
+    return std::tuple<std::vector<Vector3D>, std::vector<Vector3D>, std::vector<std::size_t>, std::vector<std::size_t>>(points, normals, feature_index, plc_index);
 }
