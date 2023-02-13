@@ -25,6 +25,8 @@ class CornersRMPS {
 
     private:
         EligbleCorner newSample();
+
+        double calculateInitialRadius(EligbleCorner const& corner, Trees const& trees) const;
 };
 
 

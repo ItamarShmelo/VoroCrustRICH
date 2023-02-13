@@ -41,13 +41,25 @@ EligbleCorner CornersRMPS::newSample(){
     return sample;
 }
 
-double CornersRMPS::calculateInitialRadius(EligbleCorner const& corner, VoroCrust_KD_Tree_Ball const& corner_ball_tree, VoroCrust_KD_Tree_Boundary const& corner_boundary_tree){
-    // find nearest ball center
-    int nearestBall_index = corner_ball_tree.nearestNeighbor(corner);
+double CornersRMPS::calculateInitialRadius(EligbleCorner const& corner, Trees const& trees) const {
+    VoroCrust_KD_Tree_Ball const& corner_ball_tree = trees.ball_kd_vertices;
 
-    Vector3D const& nearestBallCenter = corner_ball_tree.points[nearestBall_index];
-    double const dist_q = distance(corner, nearestBallCenter); //||p-q||
-    double const r_q = corner_ball_tree.ball_radii[nearestBall_index];
+    double r_q = std::numeric_limits<double>::max();
+    double dist_q = 0.0;
+    
+    if(not corner_ball_tree.points.empty()){
+        // find nearest ball center
+        int nearestBall_index = corner_ball_tree.nearestNeighbor(corner->vertex);
+
+        Vector3D const& nearestBallCenter = corner_ball_tree.points[nearestBall_index];
+        dist_q = distance(corner->vertex, nearestBallCenter); //||p-q||
+        r_q = corner_ball_tree.ball_radii[nearestBall_index];
+    }
+    
+    double const dist_q_prime = calculateSmoothnessLimitation(corner, trees);
+
+    return std::min<double>({maxRadius, 0.49*dist_q_prime, r_q + L_Lipschitz*dist_q});
+}
 
     // find nearest sharp corner
     int nearestSharpCorner_index = corner_boundary_tree.kNearestNeighbors(corner, 2)[1];
