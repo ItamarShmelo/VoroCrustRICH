@@ -73,7 +73,7 @@ class EdgesRMPS {
         void discardEligbleEdgesContainedInCornerBalls(Trees const& trees);
 
         //! \brief returns the maximal radius satisfying the cosmoothness limitation
-        double calculateSmoothnessLimitation(Vector3D const& center, Vector3D const& parallel, std::size_t const feature_index, Trees const& trees) const;
+        double calculateSmoothnessLimitation(Vector3D const& center, EligbleEdge const& edge_sampled, Trees const& trees) const;
 
         //! \brief return true if eligble edge is deeply covered by edge ball 
         bool isEligbleEdgeIsDeeplyCoveredInEdgeBall(EligbleEdge const& edge, Trees const& trees, std::size_t const ball_index) const;

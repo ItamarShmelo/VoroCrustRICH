@@ -140,7 +140,7 @@ void EdgesRMPS::discardEligbleEdgesContainedInCornerBalls(Trees const& trees){
     }
 }
 
-double EdgesRMPS::calculateSmoothnessLimitation(Vector3D const& center, Vector3D const& parallel, std::size_t const feature_index, Trees const& trees) const {
+double EdgesRMPS::calculateSmoothnessLimitation(Vector3D const& p, EligbleEdge const& edge_sampled, Trees const& trees) const {
     VoroCrust_KD_Tree_Boundary const& edges_boundary_tree = trees.VC_kd_sharp_edges;
     // Assumes that the ball center comes from a sample on the same Crease as edge
 
