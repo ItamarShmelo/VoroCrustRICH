@@ -75,7 +75,7 @@ bool EdgesRMPS::checkIfPointIsDeeplyCovered(Vector3D const& p, std::size_t const
     Vector3D const& center = corners_ball_tree.points[nn_corner_index];
     double const radius = corners_ball_tree.ball_radii[nn_corner_index];
 
-    return distance(p, center) < radius*(1.0-alpha);
+    return distance(p, center) <= radius*(1.0-alpha);
 }
 
 std::tuple<bool, std::size_t const, Vector3D const> EdgesRMPS::sampleEligbleEdges(double const total_len, std::vector<double> const& start_len) {
