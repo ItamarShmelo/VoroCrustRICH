@@ -152,7 +152,7 @@ double EdgesRMPS::calculateSmoothnessLimitation(Vector3D const& center, Vector3D
     return 0.49*dist;
 }
 
-bool EdgesRMPS::isEligbleEdgeIsDeeplyCoveredInEdgeBall(EligbleEdge const& edge, Trees const& trees, std::size_t const ball_index){
+bool EdgesRMPS::isEligbleEdgeIsDeeplyCoveredInEdgeBall(EligbleEdge const& edge, Trees const& trees, std::size_t const ball_index) const {
     VoroCrust_KD_Tree_Ball const& edges_ball_tree = trees.ball_kd_edges;
 
     Vector3D const& center = edges_ball_tree.points[ball_index];
