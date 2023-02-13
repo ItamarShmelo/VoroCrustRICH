@@ -12,9 +12,10 @@
 struct EligbleEdge {
     std::array<Vector3D, 2> edge;
     std::size_t crease_index;
+    std::size_t plc_index;
 
-    EligbleEdge() : edge(), crease_index(0) {}
-    EligbleEdge(Vector3D const& v1, Vector3D const& v2, std::size_t const crease_index_) : edge({v1, v2}), crease_index(crease_index_) {}
+    EligbleEdge() : edge(), crease_index(0), plc_index(0) {}
+    EligbleEdge(Vector3D const& v1, Vector3D const& v2, std::size_t const crease_index_, std::size_t const plc_index_) : edge({v1, v2}), crease_index(crease_index_), plc_index(plc_index_) {}
 
     Vector3D const& operator [] (std::size_t const index) const {
         return edge[index];

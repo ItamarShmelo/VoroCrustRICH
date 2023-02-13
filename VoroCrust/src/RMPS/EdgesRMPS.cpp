@@ -4,7 +4,7 @@ EdgesRMPS::EdgesRMPS(double const maxRadius_, double const L_Lipschitz_, double 
 
 void EdgesRMPS::loadEdges(std::vector<Edge> const& sharp_edges){
     for(Edge const& edge : sharp_edges)
-        eligble_edges.push_back(EligbleEdge(edge->vertex1->vertex, edge->vertex2->vertex, edge->crease_index));
+        eligble_edges.push_back(EligbleEdge(edge->vertex1->vertex, edge->vertex2->vertex, edge->crease_index, edge->index));
 }
 
 std::pair<double const, std::vector<double> const> EdgesRMPS::calculateTotalLengthAndStartLengthOfEligbleEdges(){
@@ -23,7 +23,7 @@ std::pair<double const, std::vector<double> const> EdgesRMPS::calculateTotalLeng
 }
 
 void EdgesRMPS::divideEligbleEdges(){
-    std::vector<EligbleEdge> new_eligble_edges(2*eligble_edges.size(), EligbleEdge(Vector3D(0.0, 0.0, 0.0), Vector3D(0.0, 0.0, 0.0), 0));
+    std::vector<EligbleEdge> new_eligble_edges(2*eligble_edges.size(), EligbleEdge(Vector3D(0.0, 0.0, 0.0), Vector3D(0.0, 0.0, 0.0), 0, 0));
 
     std::size_t const num_of_eligble_edges = eligble_edges.size();
     for(std::size_t i=0; i<num_of_eligble_edges; ++i){
@@ -33,10 +33,12 @@ void EdgesRMPS::divideEligbleEdges(){
         new_eligble_edges[2*i][0] = edge[0];
         new_eligble_edges[2*i][1] = midpoint;
         new_eligble_edges[2*i].crease_index = edge.crease_index;
+        new_eligble_edges[2*i].plc_index = edge.plc_index;
 
         new_eligble_edges[2*i+1][0] = midpoint;
         new_eligble_edges[2*i+1][1] = edge[1];
         new_eligble_edges[2*i+1].crease_index = edge.crease_index;
+        new_eligble_edges[2*i+1].plc_index = edge.plc_index;
     }
 
     eligble_edges = new_eligble_edges;
@@ -354,7 +356,7 @@ bool EdgesRMPS::doSampling(VoroCrust_KD_Tree_Ball &edges_ball_tree, Trees &trees
             break; 
         }
 
-        edges_ball_tree.insert(p, edge[1]-edge[0], radius, edge.crease_index);
+        edges_ball_tree.insert(p, edge[1]-edge[0], radius, edge.crease_index, edge.plc_index);
         
         miss_counter = 0;
     }
