@@ -97,14 +97,14 @@ std::tuple<bool, std::size_t const, Vector3D const> EdgesRMPS::sampleEligbleEdge
     return std::tuple<bool, std::size_t const, Vector3D const>(true, edge_index, point);
 }
 
-void EdgesRMPS::discardEligbleEdgesContainedInCornerBalls(VoroCrust_KD_Tree_Ball const& corners_ball_tree, PL_Complex const& plc){
+void EdgesRMPS::discardEligbleEdgesContainedInCornerBalls(VoroCrust_KD_Tree_Ball const& corners_ball_tree){
     std::vector<std::size_t> to_discard;
 
     std::size_t const num_of_eligble_edges = eligble_edges.size();
     for(std::size_t i=0 ; i<num_of_eligble_edges; ++i){
         EligbleEdge const& edge = eligble_edges[i];
 
-        Crease const& edge_crease = plc.creases[edge.crease_index];
+        Crease const& edge_crease = plc->creases[edge.crease_index];
         
         if(edge_crease.front()->vertex1->isSharp){        
             std::size_t const nn_index = corners_ball_tree.nearestNeighbor(edge_crease.front()->vertex1->vertex);
@@ -156,10 +156,10 @@ bool EdgesRMPS::isEligbleEdgeIsDeeplyCoveredInEdgeBall(EligbleEdge const& edge, 
     return (distance(center, edge[0]) <= r_deeply) && (distance(center, edge[1]) <= r_deeply);
 }
 
-bool EdgesRMPS::discardEligbleEdges(VoroCrust_KD_Tree_Ball &edges_ball_tree, Trees & trees, PL_Complex const& plc){
+bool EdgesRMPS::discardEligbleEdges(VoroCrust_KD_Tree_Ball &edges_ball_tree, Trees & trees){
     bool shrunkOtherStrataBalls = false;
 
-    discardEligbleEdgesContainedInCornerBalls(trees.ball_kd_vertices, plc);
+    discardEligbleEdgesContainedInCornerBalls(trees.ball_kd_vertices);
 
     // discard in reverse order bacause each erase changes the indices
     for(long i = eligble_edges.size()-1; i >= 0; --i){
@@ -182,7 +182,7 @@ bool EdgesRMPS::discardEligbleEdges(VoroCrust_KD_Tree_Ball &edges_ball_tree, Tre
 
         std::vector<int> balls_to_check_corners = trees.ball_kd_vertices.radiusSearch(edge[0], maxRadius + abs(edge[1]-edge[0]));
 
-        Crease const& crease = plc.creases[edge.crease_index];
+        Crease const& crease = plc->creases[edge.crease_index];
         // remove the start of the crease from the balls to check
         // if it is present
         if(crease.front()->vertex1->isSharp){
@@ -283,7 +283,7 @@ double EdgesRMPS::calculateInitialRadius(Vector3D const& point, std::size_t cons
     return std::min({maxRadius, r_smooth, r_q + L_Lipschitz*dist});
 }
 
-bool EdgesRMPS::doSampling(VoroCrust_KD_Tree_Ball &edges_ball_tree, Trees &trees, PL_Complex const& plc){
+bool EdgesRMPS::doSampling(VoroCrust_KD_Tree_Ball &edges_ball_tree, Trees &trees){
 
     bool resample = false;
 
@@ -311,7 +311,7 @@ bool EdgesRMPS::doSampling(VoroCrust_KD_Tree_Ball &edges_ball_tree, Trees &trees
         if(miss_counter >= 100){
             divideEligbleEdges();
             //! IMPORTANT: resample needs to be on the right of the ||!!!!
-            resample = discardEligbleEdges(edges_ball_tree, trees, plc) || resample;
+            resample = discardEligbleEdges(edges_ball_tree, trees) || resample;
     
             auto const& res = calculateTotalLengthAndStartLengthOfEligbleEdges();
             total_len = res.first;
