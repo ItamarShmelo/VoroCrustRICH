@@ -16,7 +16,7 @@ class CornersRMPS {
         std::shared_ptr<PL_Complex const> plc;
         std::vector<EligbleCorner> eligble_corners;
 
-        CornersRMPS(double const maxRadius_, double const L_Lipschitz_);
+        CornersRMPS(double const maxRadius_, double const L_Lipschitz_, double const sharpTheta, std::shared_ptr<PL_Complex> const& plc_);
         ~CornersRMPS() = default;
 
         void loadCorners(std::vector<Vertex> const& sharp_corners);

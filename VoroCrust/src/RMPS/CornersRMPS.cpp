@@ -1,7 +1,7 @@
 #include "CornersRMPS.hpp"
 #include <boost/random.hpp>
 
-CornersRMPS::CornersRMPS(double const maxRadius_, double const L_Lipschitz_) : maxRadius(maxRadius_), L_Lipschitz(L_Lipschitz_), eligble_corners() {}
+CornersRMPS::CornersRMPS(double const maxRadius_, double const L_Lipschitz_, double const sharpTheta_, std::shared_ptr<PL_Complex> const& plc_) : maxRadius(maxRadius_), L_Lipschitz(L_Lipschitz_), sharpTheta(sharpTheta_), plc(plc_), eligble_corners() {}
 
 
 void CornersRMPS::loadCorners(std::vector<Vertex> const& sharp_corners){
