@@ -26,7 +26,7 @@ void CornersRMPS::doSampling(VoroCrust_KD_Tree_Ball &corner_ball_tree, Trees con
     }
 }
 
-std::pair<std::size_t, EligbleCorner> CornersRMPS::newSample(){
+EligbleCorner CornersRMPS::newSample(){
     // create a random number generator to sample from 0 - (eligble_corners.size()-1)
     boost::mt19937 rng(std::time(nullptr));
     boost::random::uniform_int_distribution<> int_distribution(0, eligble_corners.size() - 1);
@@ -34,11 +34,11 @@ std::pair<std::size_t, EligbleCorner> CornersRMPS::newSample(){
 
     // sample a random index;
     std::size_t const index = rand_gen();
-    std::pair<std::size_t, EligbleCorner> pair(index, eligble_corners[index]);
+    EligbleCorner sample = eligble_corners[index];
 
     eligble_corners.erase(eligble_corners.begin() + index);
 
-    return pair;
+    return sample;
 }
 
 double CornersRMPS::calculateInitialRadius(EligbleCorner const& corner, VoroCrust_KD_Tree_Ball const& corner_ball_tree, VoroCrust_KD_Tree_Boundary const& corner_boundary_tree){

@@ -24,9 +24,7 @@ class CornersRMPS {
         void doSampling(VoroCrust_KD_Tree_Ball &corner_ball_tree, Trees const& trees);
 
     private:
-        std::pair<std::size_t, EligbleCorner> newSample();
-
-        double calculateInitialRadius(EligbleCorner const& corner, VoroCrust_KD_Tree_Ball const& corner_ball_tree, VoroCrust_KD_Tree_Boundary const& corner_boundary_tree);
+        EligbleCorner newSample();
 };
 
 
