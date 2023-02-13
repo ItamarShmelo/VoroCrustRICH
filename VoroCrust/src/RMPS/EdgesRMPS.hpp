@@ -81,8 +81,6 @@ class EdgesRMPS {
         //! \brief retunrs the initial radius of a new sample defined by point
         double calculateInitialRadius(Vector3D const& point, std::size_t const edge_index, Trees const& trees) const;
 
-        bool checkIfVerticesBallsCover(EligbleEdge const& edge, std::vector<int> const& balls_to_check_corners, VoroCrust_KD_Tree_Ball &corners_ball_tree);
-    
 };
 
 #endif // EDGES_RMPS
