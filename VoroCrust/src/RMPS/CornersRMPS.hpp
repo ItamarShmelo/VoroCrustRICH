@@ -11,6 +11,8 @@ class CornersRMPS {
     public:
         double const maxRadius;
         double const L_Lipschitz;
+        double const sharpTheta;
+        std::shared_ptr<PL_Complex const> plc;
         std::vector<EligbleCorner> eligble_corners;
 
         CornersRMPS(double const maxRadius_, double const L_Lipschitz_);
