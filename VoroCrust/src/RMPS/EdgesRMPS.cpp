@@ -262,6 +262,8 @@ bool EdgesRMPS::doSampling(VoroCrust_KD_Tree_Ball &edges_ball_tree, Trees &trees
             continue;
         }
 
+        std::cout << "edge sample " << edges_ball_tree.points.size() << std::endl;
+
         EligbleEdge const& edge = eligble_edges[edge_index];
         
         double radius = calculateInitialRadius(p, edge_index, trees);
