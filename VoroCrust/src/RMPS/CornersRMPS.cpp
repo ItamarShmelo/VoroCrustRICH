@@ -7,7 +7,7 @@ CornersRMPS::CornersRMPS(double const maxRadius_, double const L_Lipschitz_, dou
 void CornersRMPS::loadCorners(std::vector<Vertex> const& sharp_corners){
     eligble_corners.clear();
     for(Vertex const& corner_ptr : sharp_corners)
-        eligble_corners.push_back(corner_ptr->vertex);
+        eligble_corners.push_back(corner_ptr);
 }
 
 void CornersRMPS::doSampling(VoroCrust_KD_Tree_Ball &corner_ball_tree, VoroCrust_KD_Tree_Boundary &corner_boundry_tree){
