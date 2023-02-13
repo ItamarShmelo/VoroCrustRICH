@@ -162,7 +162,7 @@ bool EdgesRMPS::isEligbleEdgeIsDeeplyCoveredInEdgeBall(EligbleEdge const& edge, 
     return (distance(center, edge[0]) <= r_deeply) && (distance(center, edge[1]) <= r_deeply);
 }
 
-bool EdgesRMPS::discardEligbleEdges(VoroCrust_KD_Tree_Ball &edges_ball_tree, Trees const& trees){
+bool EdgesRMPS::discardEligbleEdges(Trees const& trees){
     bool shrunkOtherStrataBalls = false;
 
     discardEligbleEdgesContainedInCornerBalls(trees);

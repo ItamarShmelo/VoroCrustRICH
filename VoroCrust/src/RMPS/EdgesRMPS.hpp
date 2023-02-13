@@ -67,7 +67,7 @@ class EdgesRMPS {
         std::tuple<bool, std::size_t const, Vector3D const> sampleEligbleEdges(double const total_len, std::vector<double> const& start_len);
 
         //! \brief discard any eligble edges that meet the critrea for discardtion 
-        bool discardEligbleEdges(VoroCrust_KD_Tree_Ball &edges_ball_tree, Trees const& trees);
+        bool discardEligbleEdges(Trees const& trees);
 
         //! \brief discard any eligble edge fully contained inside a corner ball
         void discardEligbleEdgesContainedInCornerBalls(Trees const& trees);
