@@ -62,14 +62,14 @@ void VoroCrustAlgorithm::run() {
             std::cout << "\nCorners Lipchitzness\n--------------\n" << std::endl;
             enforceLipschitzness(trees.ball_kd_vertices);    
             
-            // do {
-            //     std::cout << "\nEdgesRMPS\n--------------\n" << std::endl;
-            //     edgesDriver.loadEdges(plc->sharp_edges);
-            //     redoVertices = edgesDriver.doSampling(trees.ball_kd_edges, trees, *plc);
-            //     trees.ball_kd_edges.remakeTree();
-            // } while(enforceLipschitzness(trees.ball_kd_edges) && !redoVertices);
+            do {
+                std::cout << "\nEdgesRMPS\n--------------\n" << std::endl;
+                edgesDriver.loadEdges(plc->sharp_edges);
+                redoVertices = edgesDriver.doSampling(trees.ball_kd_edges, trees);
+                trees.ball_kd_edges.remakeTree();
+            } while(enforceLipschitzness(trees.ball_kd_edges) && !redoVertices);
             
-            // if(redoVertices) continue; // if vertices enforce lipschitzness again
+            if(redoVertices) continue; // if vertices enforce lipschitzness again
 
             break;
         }
