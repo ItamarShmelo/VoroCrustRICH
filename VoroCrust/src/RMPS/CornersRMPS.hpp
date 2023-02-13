@@ -3,6 +3,7 @@
 
 #include "../PLC/PL_Complex.hpp"
 #include "../../../source/3D/GeometryCommon/Vector3D.hpp"
+#include "../trees.hpp"
 #include "../VoroCrust_kd_tree/VoroCrust_kd_tree.hpp"
 
 using EligbleCorner = Vertex;
