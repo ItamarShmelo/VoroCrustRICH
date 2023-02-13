@@ -16,7 +16,7 @@ VoroCrustAlgorithm::VoroCrustAlgorithm( PL_Complex const& plc_,
                                                               alpha(alpha_),
                                                               maximal_num_iter(15),
                                                               cornersDriver(maxRadius_, L_Lipschitz_, sharpTheta_, plc),
-                                                              edgesDriver(maxRadius, L_Lipschitz_, alpha_, sharpTheta_) {
+                                                              edgesDriver(maxRadius, L_Lipschitz_, alpha_, sharpTheta_, plc) {
 
     if(sharpTheta > M_PI_2){
         std::cout << "ERROR: sharpTheta > pi/2" << std::endl;
@@ -62,14 +62,14 @@ void VoroCrustAlgorithm::run() {
             std::cout << "\nCorners Lipchitzness\n--------------\n" << std::endl;
             enforceLipschitzness(trees.ball_kd_vertices);    
             
-            do {
-                std::cout << "\nEdgesRMPS\n--------------\n" << std::endl;
-                edgesDriver.loadEdges(plc.sharp_edges);
-                redoVertices = edgesDriver.doSampling(trees.ball_kd_edges, trees, plc);
-                trees.ball_kd_edges.remakeTree();
-            } while(enforceLipschitzness(trees.ball_kd_edges) && !redoVertices);
+            // do {
+            //     std::cout << "\nEdgesRMPS\n--------------\n" << std::endl;
+            //     edgesDriver.loadEdges(plc->sharp_edges);
+            //     redoVertices = edgesDriver.doSampling(trees.ball_kd_edges, trees, *plc);
+            //     trees.ball_kd_edges.remakeTree();
+            // } while(enforceLipschitzness(trees.ball_kd_edges) && !redoVertices);
             
-            if(redoVertices) continue; // if vertices enforce lipschitzness again
+            // if(redoVertices) continue; // if vertices enforce lipschitzness again
 
             break;
         }
@@ -102,7 +102,7 @@ std::string VoroCrustAlgorithm::repr() const {
     std::ostringstream s;
     
     s << "VoroCrustAlgorithm : \n--------------------------------\n\n";
-    s << "PLC : \n------------\n" << plc.repr() << std::endl;
+    s << "PLC : \n------------\n" << plc->repr() << std::endl;
 
     return s.str();
 }
