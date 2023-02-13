@@ -304,7 +304,7 @@ bool VoroCrust_KD_Tree::equalRecursive(NodePtr const& node1, NodePtr const& node
 /* BOUNDARY KD TREE */
 VoroCrust_KD_Tree_Boundary::VoroCrust_KD_Tree_Boundary() : VoroCrust_KD_Tree(), vectors() {}
 
-VoroCrust_KD_Tree_Boundary::VoroCrust_KD_Tree_Boundary(std::vector<Vector3D> const& points, std::vector<Vector3D> const& vecs, std::vector<std::size_t> const& feature_index_) : VoroCrust_KD_Tree(points), vectors(vecs), feature_index(feature_index_){
+VoroCrust_KD_Tree_Boundary::VoroCrust_KD_Tree_Boundary(std::vector<Vector3D> const& points, std::vector<Vector3D> const& vecs, std::vector<std::size_t> const& feature_index_, std::vector<std::size_t> const& plc_index_) : VoroCrust_KD_Tree(points), vectors(vecs), feature_index(feature_index_), plc_index(plc_index_) {
     if (points.size() != vecs.size()){
         std::cout << "ERROR : points.size() != vecs.size() in initialization of VoroCrust_KD_Tree_Boundary" << std::endl;
         exit(1);
@@ -314,12 +314,18 @@ VoroCrust_KD_Tree_Boundary::VoroCrust_KD_Tree_Boundary(std::vector<Vector3D> con
         std::cout << "ERROR : points.size() !=  feature_index.size() in initialization of VoroCrust_KD_Tree_Ball" << std::endl;
         exit(1);
     }
+    
+    if (points.size() != plc_index.size()){
+        std::cout << "ERROR : points.size() !=  plc_index.size() in initialization of VoroCrust_KD_Tree_Ball" << std::endl;
+        exit(1);
+    }
 }
 
-void VoroCrust_KD_Tree_Boundary::insert(Vector3D const& point, Vector3D const& vec, std::size_t const index){
+void VoroCrust_KD_Tree_Boundary::insert(Vector3D const& point, Vector3D const& vec, std::size_t const f_index, std::size_t const plc_index_){
     this->VoroCrust_KD_Tree::insert(point);
     vectors.push_back(vec);
-    feature_index.push_back(index);
+    feature_index.push_back(f_index);
+    plc_index.push_back(plc_index_);
 }
 
 int VoroCrust_KD_Tree_Boundary::nearestNonCosmoothPoint(Vector3D const& query, Vector3D const& vec, std::size_t const f_index, double const angle) const {
@@ -385,15 +391,16 @@ void VoroCrust_KD_Tree_Boundary::nearestNonCosmoothPointRecursive(Vector3D const
 /* BALL KD TREE */
 VoroCrust_KD_Tree_Ball::VoroCrust_KD_Tree_Ball() : VoroCrust_KD_Tree_Boundary(), ball_radii() {}
 
-VoroCrust_KD_Tree_Ball::VoroCrust_KD_Tree_Ball(std::vector<Vector3D> const& points, std::vector<Vector3D> const& vecs, std::vector<double> const& radii, std::vector<std::size_t> const& feature_index_) : VoroCrust_KD_Tree_Boundary(points, vecs, feature_index_), ball_radii(radii) {
+VoroCrust_KD_Tree_Ball::VoroCrust_KD_Tree_Ball(std::vector<Vector3D> const& points, std::vector<Vector3D> const& vecs, std::vector<double> const& radii, std::vector<std::size_t> const& feature_index_,
+std::vector<std::size_t> const& plc_index_) : VoroCrust_KD_Tree_Boundary(points, vecs, feature_index_, plc_index_), ball_radii(radii) {
     if (points.size() != ball_radii.size()){
         std::cout << "ERROR : points.size() !=  ball_redii.size() in initialization of VoroCrust_KD_Tree_Ball" << std::endl;
         exit(1);
     }
 }
 
-void VoroCrust_KD_Tree_Ball::insert(Vector3D const& point, Vector3D const& vec, double radius, std::size_t const index){
-    this->VoroCrust_KD_Tree_Boundary::insert(point, vec, index);
+void VoroCrust_KD_Tree_Ball::insert(Vector3D const& point, Vector3D const& vec, double radius, std::size_t const f_index, std::size_t const& plc_index_){
+    this->VoroCrust_KD_Tree_Boundary::insert(point, vec, f_index, plc_index_);
     ball_radii.push_back(radius);
 }
 

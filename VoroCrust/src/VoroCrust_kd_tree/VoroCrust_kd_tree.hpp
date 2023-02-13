@@ -101,16 +101,17 @@ class VoroCrust_KD_Tree_Boundary : public VoroCrust_KD_Tree {
     public:
         std::vector<Vector3D> vectors;
         std::vector<std::size_t> feature_index;
+        std::vector<std::size_t> plc_index;
 
         VoroCrust_KD_Tree_Boundary();
 
         VoroCrust_KD_Tree_Boundary(std::vector<Vector3D> const& points) : VoroCrust_KD_Tree(points) {}
 
-        VoroCrust_KD_Tree_Boundary(std::vector<Vector3D> const& points, std::vector<Vector3D> const& vecs, std::vector<std::size_t> const& feature_index_);
+        VoroCrust_KD_Tree_Boundary(std::vector<Vector3D> const& points, std::vector<Vector3D> const& vecs, std::vector<std::size_t> const& feature_index_, std::vector<std::size_t> const& plc_index_);
 
         ~VoroCrust_KD_Tree_Boundary() = default;
 
-        void insert(Vector3D const& point, Vector3D const& vec, std::size_t f_index);
+        void insert(Vector3D const& point, Vector3D const& vec, std::size_t f_index, std::size_t plc_index_);
 
         //! \brief finds the nearest point in the tree wthat is not cosmooth with `query`
         int nearestNonCosmoothPoint(Vector3D const& query, Vector3D const& vec, std::size_t const f_index, double const angle) const;
@@ -128,11 +129,11 @@ class VoroCrust_KD_Tree_Ball : public VoroCrust_KD_Tree_Boundary {
 
         VoroCrust_KD_Tree_Ball();
 
-        VoroCrust_KD_Tree_Ball(std::vector<Vector3D> const& points, std::vector<Vector3D> const& vecs, std::vector<double> const& radii, std::vector<size_t> const& feature_index_);
+        VoroCrust_KD_Tree_Ball(std::vector<Vector3D> const& points, std::vector<Vector3D> const& vecs, std::vector<double> const& radii, std::vector<std::size_t> const& feature_index_, std::vector<std::size_t> const& plc_index_);
 
         ~VoroCrust_KD_Tree_Ball() = default;
 
-        void insert(Vector3D const& point, Vector3D const& vec, double radius, std::size_t const index);
+        void insert(Vector3D const& point, Vector3D const& vec, double radius, std::size_t const f_index, std::size_t const& plc_index_);
 
         //! \brief returns the overlapping balls of ball defined by `center` `radius`, only overlapping balls with centers up to `r_max`
         std::vector<std::size_t> getOverlappingBalls(Vector3D const& center, double const radius, double const r_max) const;
