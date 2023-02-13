@@ -6,11 +6,12 @@
 #include "RMPS/CornersRMPS.hpp"
 #include "RMPS/EdgesRMPS.hpp"
 #include <sstream>
+#include <memory>
 
 
 class VoroCrustAlgorithm {
     public:
-        PL_Complex plc;
+        std::shared_ptr<PL_Complex> plc;
         Trees trees;
 
         double const sharpTheta;

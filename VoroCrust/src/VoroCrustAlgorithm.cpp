@@ -7,7 +7,7 @@ VoroCrustAlgorithm::VoroCrustAlgorithm( PL_Complex const& plc_,
                                         double const flatTheta_, 
                                         double const maxRadius_,
                                         double const L_Lipschitz_,
-                                        double const alpha_): plc(plc_), 
+                                        double const alpha_): plc(std::make_shared<PL_Complex>(plc_)), 
                                                               trees(),
                                                               sharpTheta(sharpTheta_),
                                                               flatTheta(flatTheta_),
@@ -15,7 +15,7 @@ VoroCrustAlgorithm::VoroCrustAlgorithm( PL_Complex const& plc_,
                                                               L_Lipschitz(L_Lipschitz_),
                                                               alpha(alpha_),
                                                               maximal_num_iter(15),
-                                                              cornersDriver(maxRadius_, L_Lipschitz_),
+                                                              cornersDriver(maxRadius_, L_Lipschitz_, sharpTheta_, plc),
                                                               edgesDriver(maxRadius, L_Lipschitz_, alpha_, sharpTheta_) {
 
     if(sharpTheta > M_PI_2){
