@@ -186,85 +186,12 @@ bool EdgesRMPS::discardEligbleEdges(Trees const& trees){
             }                             
         }
 
-        std::vector<int> balls_to_check_corners = trees.ball_kd_vertices.radiusSearch(edge[0], maxRadius + abs(edge[1]-edge[0]));
-
-        Crease const& crease = plc->creases[edge.crease_index];
-        // remove the start of the crease from the balls to check
-        // if it is present
-        if(crease.front()->vertex1->isSharp){
-            long index = -1;
-            for(std::size_t j=0; j < balls_to_check_corners.size(); ++j){
-                std::size_t ball_index = balls_to_check_corners[j];
-                Vector3D const& center = trees.ball_kd_vertices.points[ball_index];
-                //! IDONTLIKETHIS: floating point compare of vectors
-                if(center == crease[0]->vertex1->vertex){
-                    index = j;
-                }
-            }
-
-            if(index >= 0){
-                balls_to_check_corners.erase(balls_to_check_corners.begin()+index);
-            }
-        }
-        // remove the end of the crease form the balls to check if it is present
-        if(crease.back()->vertex2->isSharp){
-            long index = -1;
-            for(std::size_t j=0; j < balls_to_check_corners.size(); ++j){
-                std::size_t ball_index = balls_to_check_corners[j];
-                Vector3D const& center = trees.ball_kd_vertices.points[ball_index];
-                //! IDONTLIKETHIS: floating point compare of vectors
-                if(center == crease.back()->vertex2->vertex){
-                    index = j;
-                }
-            }
-
-            if(index >= 0){
-                balls_to_check_corners.erase(balls_to_check_corners.begin()+index);
-            }
-        }
-
-        // shrunkOtherStrataBalls = checkIfVerticesBallsCover(edge, balls_to_check_corners, trees) || shrunkOtherStrataBalls;
-
         if(discard){
             eligble_edges.erase(eligble_edges.begin()+i);
         }
     }
 
     return shrunkOtherStrataBalls;
-}
-
-bool EdgesRMPS::checkIfVerticesBallsCover(EligbleEdge const& edge, std::vector<int> const& balls_to_check_corners, VoroCrust_KD_Tree_Ball & corners_ball_tree){
-    bool shrunkBalls = false;
-
-    for(std::size_t const ball_index : balls_to_check_corners){
-
-        double dist = std::numeric_limits<double>::max();
-        //! TODO: maybe move to a function
-        // same function as in VoroCrust_KD_Tree::distancePointToSegment
-        // maybe copy documentation
-        //! CODEDUPLICATION: I don't like this!
-        Vector3D const& point = corners_ball_tree.points[ball_index];
-        Vector3D const& v1 = edge[0] - point;
-        Vector3D const& v2 = edge[1] - edge[0];   
-        
-        double const t = - ScalarProd(v1, v2) / ScalarProd(v2, v2);
-
-        if(t >= 1) {
-            dist = distance(point, edge[1]);
-        } else if (t <= 0){
-            dist = distance(point, edge[0]);
-        } else {
-            dist = abs(CrossProduct(v1, v2))/ abs(v2);
-        }
-
-        if(dist < corners_ball_tree.ball_radii[ball_index]){
-            corners_ball_tree.ball_radii[ball_index] = dist;
-            std::cout << "shrunk corner ball " << ball_index << std::endl;
-            shrunkBalls = true;
-        }
-    }
-
-    return shrunkBalls;
 }
 
 double EdgesRMPS::calculateInitialRadius(Vector3D const& point, std::size_t const edge_index, Trees const& trees) const {
