@@ -61,11 +61,69 @@ double CornersRMPS::calculateInitialRadius(EligbleCorner const& corner, Trees co
     return std::min<double>({maxRadius, 0.49*dist_q_prime, r_q + L_Lipschitz*dist_q});
 }
 
+double CornersRMPS::calculateSmoothnessLimitation(EligbleCorner const& corner, Trees const& trees) const {
+    VoroCrust_KD_Tree_Boundary const& corner_boundary_tree = trees.VC_kd_sharp_corners;
+    VoroCrust_KD_Tree_Boundary const& edges_boundary_tree = trees.VC_kd_sharp_edges;
+    VoroCrust_KD_Tree_Boundary const& faces_boundary_tree = trees.VC_kd_faces;
+
     // find nearest sharp corner
-    int nearestSharpCorner_index = corner_boundary_tree.kNearestNeighbors(corner, 2)[1];
+    int nearestSharpCorner_index = corner_boundary_tree.kNearestNeighbors(corner->vertex, 2)[1];
     Vector3D const& nearestSharpCorner = corner_boundary_tree.points[nearestSharpCorner_index];
 
-    double const dist_q_prime = distance(corner, nearestSharpCorner); //||p-q^*||
+    double const dist_nearest_corner = distance(corner->vertex, nearestSharpCorner); //||p-q^*||
+    double dist_nearest_non_cosmooth_edge = std::numeric_limits<double>::max();
+    double dist_nearest_non_cosmooth_face = std::numeric_limits<double>::max();
 
-    return std::min<double>({maxRadius, 0.49*dist_q_prime, r_q + L_Lipschitz*dist_q});
+    // find neareset non cosmooth point on the edges
+    std::vector<std::size_t> creases_exclude;
+    for(Edge const& edge : corner->edges){
+        std::size_t const crease_index = edge->crease_index;
+        creases_exclude.push_back(crease_index);
+
+        long nn_noncosmooth_on_edge_index = edges_boundary_tree.nearestNonCosmoothPointEdge(corner->vertex, edge->vertex2->vertex - edge->vertex1->vertex, crease_index, sharpTheta);
+
+        // no noncosmooth point on the crease (very likely)
+        if(nn_noncosmooth_on_edge_index < 0) continue;
+
+        Vector3D const& nn_non_cosmooth_p = edges_boundary_tree.points[nn_noncosmooth_on_edge_index];
+
+        dist_nearest_non_cosmooth_edge = std::min(dist_nearest_non_cosmooth_edge, distance(corner->vertex, nn_non_cosmooth_p));
+    }
+
+    long const nn_different_crease = edges_boundary_tree.nearestNeighborExcludingFeatures(corner->vertex, creases_exclude);
+    // found any nearest neighbors
+    if(nn_different_crease >= 0){
+        Vector3D const& nn_different_crease_p = edges_boundary_tree.points[nn_different_crease];
+
+        dist_nearest_non_cosmooth_edge = std::min(dist_nearest_non_cosmooth_edge, distance(corner->vertex, nn_different_crease_p));
+    }
+    
+
+    //find neareset non cosmooth point on the face
+    std::vector<std::size_t> patches_to_exclude;
+    for(Face const& face : corner->faces){
+        std::size_t const patch_index = face->patch_index;
+        patches_to_exclude.push_back(patch_index); // might have multiple times the same patch
+
+
+        long const nn_noncosmooth_on_face_index = faces_boundary_tree.nearestNonCosmoothPointFace(corner->vertex, face->calcNormal(), patch_index, sharpTheta, M_PI_2-sharpTheta);
+
+        // no noncosmooth point on the patch (very likely)
+        if(nn_noncosmooth_on_face_index < 0) continue;
+
+        Vector3D const& nn_non_cosmooth_p = faces_boundary_tree.points[nn_noncosmooth_on_face_index];
+        
+        dist_nearest_non_cosmooth_face = std::min(dist_nearest_non_cosmooth_face, distance(corner->vertex, nn_non_cosmooth_p));
+    }
+
+    long const nn_different_patch = faces_boundary_tree.nearestNeighborExcludingFeatures(corner->vertex, patches_to_exclude);
+
+    // found any nearest neighbors
+    if(nn_different_patch >= 0){
+        Vector3D const& nn_different_patch_p = faces_boundary_tree.points[nn_different_patch];
+
+        dist_nearest_non_cosmooth_face = std::min(dist_nearest_non_cosmooth_face, distance(corner->vertex, nn_different_patch_p));
+    }
+
+    return std::min({dist_nearest_corner, dist_nearest_non_cosmooth_edge, dist_nearest_non_cosmooth_face});
 }

@@ -27,6 +27,9 @@ class CornersRMPS {
         EligbleCorner newSample();
 
         double calculateInitialRadius(EligbleCorner const& corner, Trees const& trees) const;
+
+        double calculateSmoothnessLimitation(EligbleCorner const& corner, Trees const& trees) const;
+        
 };
 
 
