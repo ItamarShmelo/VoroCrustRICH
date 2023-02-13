@@ -10,7 +10,8 @@ void CornersRMPS::loadCorners(std::vector<Vertex> const& sharp_corners){
         eligble_corners.push_back(corner_ptr);
 }
 
-void CornersRMPS::doSampling(VoroCrust_KD_Tree_Ball &corner_ball_tree, VoroCrust_KD_Tree_Boundary &corner_boundry_tree){
+void CornersRMPS::doSampling(VoroCrust_KD_Tree_Ball &corner_ball_tree, Trees const& trees){
+
     Vector3D const empty_vector(0, 0, 0);
 
     while(not eligble_corners.empty()){

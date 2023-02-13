@@ -21,7 +21,7 @@ class CornersRMPS {
 
         void loadCorners(std::vector<Vertex> const& sharp_corners);
 
-        void doSampling(VoroCrust_KD_Tree_Ball &corner_ball_tree, VoroCrust_KD_Tree_Boundary &corner_boundary_tree);
+        void doSampling(VoroCrust_KD_Tree_Ball &corner_ball_tree, Trees const& trees);
 
     private:
         std::pair<std::size_t, EligbleCorner> newSample();
