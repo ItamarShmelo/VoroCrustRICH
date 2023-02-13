@@ -424,21 +424,44 @@ void VoroCrust_KD_Tree_Boundary::nearestNonCosmoothPointFaceRecursive(Vector3D c
 
 }
 
+
+int VoroCrust_KD_Tree_Boundary::nearestNeighborExcludingFeatures(Vector3D const& query, std::vector<std::size_t> const& to_exclude) const {
+    int guess = -1;
+    double minDist = std::numeric_limits<double>::max();
+
+    nearestNeighborExcludingFeaturesRecursive(query, to_exclude, root, guess, minDist);
+
+    return guess;
+}
+
+void VoroCrust_KD_Tree_Boundary::nearestNeighborExcludingFeaturesRecursive(Vector3D const& query, std::vector<std::size_t> const& to_exclude, NodePtr const& node, int &guess, double &minDist) const {
+    
+    if(node.get() == nullptr) return;
+
+    int const index = node->index;
+    Vector3D const& train = points[index];
+
+    if(std::find(to_exclude.begin(), to_exclude.end(), feature_index[index]) == to_exclude.end()){
+        double const dist = distance(train, query);
+
+        if(dist < minDist){
+            minDist = dist;
+            guess = index;
         }
     }
 
     int const axis = node->axis;
 
     NodePtr const& node_first = query[axis] < train[axis] ? node->left : node->right;
-
-    nearestNonCosmoothPointRecursive(query, vec, f_index, angle, node_first, guess, minDist);
+    
+    nearestNeighborExcludingFeaturesRecursive(query, to_exclude, node_first, guess, minDist);
     
     double const diff = fabs(query[axis] - train[axis]);
     // if distance to current dividing axis to other node is `more` then `minDist` 
     // then we can discard this subtree 
     if(diff < minDist){
         NodePtr const& node_second = query[axis] < train[axis] ? node->right : node->left;
-        nearestNonCosmoothPointRecursive(query, vec, f_index, angle, node_second, guess, minDist);
+        nearestNeighborExcludingFeaturesRecursive(query, to_exclude, node_second, guess, minDist);
     }
 }
 
