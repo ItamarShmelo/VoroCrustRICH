@@ -328,11 +328,11 @@ void VoroCrust_KD_Tree_Boundary::insert(Vector3D const& point, Vector3D const& v
     plc_index.push_back(plc_index_);
 }
 
-int VoroCrust_KD_Tree_Boundary::nearestNonCosmoothPoint(Vector3D const& query, Vector3D const& vec, std::size_t const f_index, double const angle) const {
-    int guess = 0;
+int VoroCrust_KD_Tree_Boundary::nearestNonCosmoothPointEdge(Vector3D const& query, Vector3D const& vec, std::size_t const f_index, double const angle) const {
+    int guess = -1;
     double minDist = std::numeric_limits<double>::max();
 
-    nearestNonCosmoothPointRecursive(query, vec, f_index, angle, root, guess, minDist);
+    nearestNonCosmoothPointEdgeRecursive(query, vec, f_index, angle, root, guess, minDist);
 
     return guess;
 }
@@ -343,9 +343,7 @@ double CalcAngleAssumedSameOrientation(Vector3D const& v1, Vector3D const& v2){
     return acos(std::abs(ScalarProd(v1, v2)) / abs(v1) / abs(v2));
 }
 
-void VoroCrust_KD_Tree_Boundary::nearestNonCosmoothPointRecursive(Vector3D const& query, Vector3D const& vec, std::size_t const f_index, double const angle, NodePtr node, int &guess, double &minDist) const {
-    //! WARNING: ONLY FOR EDGES FOR NOW
-    //! TODO: ADD IMPLEMENTATION FOR SURFACE PATCHES
+void VoroCrust_KD_Tree_Boundary::nearestNonCosmoothPointEdgeRecursive(Vector3D const& query, Vector3D const& vec, std::size_t const f_index, double const angle, NodePtr const& node, int &guess, double &minDist) const {
     if(node.get() == nullptr) return;
 
     Vector3D const& train = points[node->index];

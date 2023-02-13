@@ -114,12 +114,15 @@ class VoroCrust_KD_Tree_Boundary : public VoroCrust_KD_Tree {
         void insert(Vector3D const& point, Vector3D const& vec, std::size_t f_index, std::size_t plc_index_);
 
         //! \brief finds the nearest point in the tree wthat is not cosmooth with `query`
-        int nearestNonCosmoothPoint(Vector3D const& query, Vector3D const& vec, std::size_t const f_index, double const angle) const;
+        int nearestNonCosmoothPointEdge(Vector3D const& query, Vector3D const& vec, std::size_t const f_index, double const angle) const;
 
+        int nearestNonCosmoothPointFace(Vector3D const& query, Vector3D const& vec, std::size_t const f_index, double const angle1, double const angle2) const;
     private:
 
         //! \brief finds the nearest non cosmooth point to `query` recursively 
-        void nearestNonCosmoothPointRecursive(Vector3D const& query, Vector3D const& vec, std::size_t const f_index, double const angle, NodePtr node, int &guess, double &minDist) const;
+        void nearestNonCosmoothPointEdgeRecursive(Vector3D const& query, Vector3D const& vec, std::size_t const f_index, double const angle, NodePtr const& node, int &guess, double &minDist) const;
+
+        void nearestNonCosmoothPointFaceRecursive(Vector3D const& query, Vector3D const& vec, std::size_t const f_index, double const angle1, double const angle2, NodePtr const& node, int &guess, double &minDist) const;
 
 };
 
