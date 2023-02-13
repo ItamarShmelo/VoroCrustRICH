@@ -201,7 +201,7 @@ double EdgesRMPS::calculateInitialRadius(Vector3D const& point, std::size_t cons
     EligbleEdge const& edge = eligble_edges[edge_index];
     
     // limitation from cosmoothness
-    double const r_smooth = calculateSmoothnessLimitation(point, edge[1]-edge[0], edge.crease_index, trees);
+    double const r_smooth = calculateSmoothnessLimitation(point, edge, trees);
 
     if(edges_ball_tree.points.empty()){
         return std::min({maxRadius, r_smooth});
@@ -215,7 +215,7 @@ double EdgesRMPS::calculateInitialRadius(Vector3D const& point, std::size_t cons
     double const dist = distance(point, q);
 
 
-    return std::min({maxRadius, r_smooth, r_q + L_Lipschitz*dist});
+    return std::min({maxRadius, 0.49*r_smooth, r_q + L_Lipschitz*dist});
 }
 
 bool EdgesRMPS::doSampling(VoroCrust_KD_Tree_Ball &edges_ball_tree, Trees &trees){
@@ -246,7 +246,7 @@ bool EdgesRMPS::doSampling(VoroCrust_KD_Tree_Ball &edges_ball_tree, Trees &trees
         if(miss_counter >= 100){
             divideEligbleEdges();
             //! IMPORTANT: resample needs to be on the right of the ||!!!!
-            resample = discardEligbleEdges(edges_ball_tree, trees) || resample;
+            resample = discardEligbleEdges(trees) || resample;
     
             auto const& res = calculateTotalLengthAndStartLengthOfEligbleEdges();
             total_len = res.first;
