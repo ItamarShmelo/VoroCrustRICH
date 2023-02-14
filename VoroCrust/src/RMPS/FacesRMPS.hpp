@@ -55,7 +55,7 @@ class FacesRMPS {
 
         bool checkIfPointIsDeeplyCovered(Vector3D const& p, Trees const& trees) const;
 
-        std::tuple<bool, std::size_t const, Vector3D const> sampleEligbleFaces(double const total_len, std::vector<double> const& start_area);
+        std::tuple<bool, std::size_t const, Vector3D const> sampleEligbleFaces(double const total_area, std::vector<double> const& start_area);
 
         bool discardEligbleFaces(Trees const& trees);
 
