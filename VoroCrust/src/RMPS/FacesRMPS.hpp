@@ -13,9 +13,10 @@ struct EligbleFace {
     std::vector<Vector3D> face;
     std::size_t patch_index;
     std::size_t plc_index;
+    double area;
 
     EligbleFace() :  face(), patch_index(0), plc_index(0) {}
-    EligbleFace(std::vector<Vector3D> const& face_, std::size_t const patch_index_, std::size_t const plc_index_) : face(face_), patch_index(patch_index_), plc_index(plc_index_) {}
+    EligbleFace(std::vector<Vector3D> const& face_, std::size_t const patch_index_, std::size_t const plc_index_, double const area_) : face(face_), patch_index(patch_index_), plc_index(plc_index_), area(area_) {}
 
     Vector3D const& operator [] (std::size_t const index) const {
         return face[index];
