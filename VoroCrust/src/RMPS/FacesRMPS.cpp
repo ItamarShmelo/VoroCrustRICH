@@ -151,3 +151,34 @@ bool FacesRMPS::checkIfPointIsDeeplyCovered(Vector3D const& p, Trees const& tree
 
     return distance(p, center) <= radius*(1.0-alpha);
 }
+
+std::tuple<bool, std::size_t const, Vector3D const> FacesRMPS::sampleEligbleFaces(double const total_area, std::vector<double> const& start_area) {
+    double const sample = uni01_gen()*total_area;
+
+    // find on which face the sample falls;
+    auto const& iter_lower_bound = std::lower_bound(start_area.begin(), start_area.end(), sample);
+    std::size_t const face_index = std::distance(start_area.begin(), iter_lower_bound) - 1;
+
+    // sample point inside triangle
+    //! CODEDUPLICATION: Done in the same way in Trees::superSampleFaces
+    //! ASSUMESFACEISATRIANGLE: assumes face is a triangle
+
+    // sample point in a triangle;
+    double const sqrt_r1 = std::sqrt(uni01_gen());
+    double const r2 = uni01_gen();
+
+    // sample to close to boundary return success=false
+    if(sqrt_r1 < 1e-14 || r2 < 1e-14) {
+        return std::tuple<bool, std::size_t const, Vector3D const>(false, 0, Vector3D(0.0, 0.0, 0.0));
+    }
+
+    EligbleFace const& face = eligble_faces[face_index];
+    Vector3D const& A = face[0];
+    Vector3D const& B = face[1];
+    Vector3D const& C = face[2];
+
+    // sample point formula is taken from https://math.stackexchange.com/questions/18686/uniform-random-point-in-triangle-in-3d
+    Vector3D const& point = (1.0-sqrt_r1)*A + (sqrt_r1*(1.0-r2))*B + (r2*sqrt_r1)*C;
+    
+    return std::tuple<bool, std::size_t const, Vector3D const>(true, face_index, point);
+}
