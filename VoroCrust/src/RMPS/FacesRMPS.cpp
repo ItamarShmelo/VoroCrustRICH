@@ -27,4 +27,19 @@ void FacesRMPS::loadFaces(std::vector<Face> const& faces) {
 
         eligble_faces.push_back(EligbleFace(vertices, face->patch_index, face->index, face->calcArea()));
     }
-}                                 
+}
+
+std::pair<double const, std::vector<double> const> FacesRMPS::calculateTotalAreaAndStartAreaOfEligbleFaces() const {
+    std::size_t const num_of_eligble_faces = eligble_faces.size();
+
+    std::vector<double> start_area(num_of_eligble_faces, 0.0);
+    double total_area = 0.0;
+
+    for(std::size_t i=0; i<num_of_eligble_faces; ++i){
+        EligbleFace const& face = eligble_faces[i];
+        start_area[i] = total_area;
+        total_area += face.area;
+    }
+
+    return std::pair<double const, std::vector<double> const>(total_area, start_area);
+}
