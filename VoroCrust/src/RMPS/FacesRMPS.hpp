@@ -26,5 +26,20 @@ struct EligbleFace {
     }  
 };
 
+class FacesRMPS {
+    public:
+        double const maxRadius;
+        double const L_Lipschitz;
+        double const alpha;
+        double const sharpTheta;
+        double const rejection_probability = 0.1;
 
+        boost::variate_generator<boost::mt19937, boost::uniform_01<>> uni01_gen;
+
+        std::shared_ptr<PL_Complex const> plc;
+        std::vector<EligbleFace> eligble_faces;
+
+        FacesRMPS(double const maxRadius_, double const L_Lipschitz_, double const alpha_, double const sharpTheta_, std::shared_ptr<PL_Complex> const& plc_);
+        ~FacesRMPS() = default;
+};
 #endif // FACES_RMPS
