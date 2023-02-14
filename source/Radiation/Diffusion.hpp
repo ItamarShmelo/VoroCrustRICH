@@ -105,8 +105,8 @@ public:
 \param boundary_calc Class to calcualte the values for the boundary conditions
 */
     Diffusion(DiffusionCoefficientCalculator const& D_coefficient_calc, DiffusionBoundaryCalculator const& boundary_calc,
-        EquationOfState const& eos, std::vector<std::string> const zero_cells = std::vector<std::string> (), bool const flux_limiter = true, bool const hydro_on = true, bool const compton_on = true) : D_coefficient_calcualtor(D_coefficient_calc),
-        boundary_calc_(boundary_calc), eos_(eos), flux_limiter_(flux_limiter), hydro_on_(hydro_on), compton_on_(compton_on), sigma_planck(), sigma_s(), fleck_factor(), CG::MatrixBuilder(zero_cells) {}
+        EquationOfState const& eos, std::vector<std::string> const zero_cells = std::vector<std::string> (), bool const flux_limiter = true, bool const hydro_on = true, bool const compton_on = false) : D_coefficient_calcualtor(D_coefficient_calc),
+        boundary_calc_(boundary_calc), eos_(eos), flux_limiter_(flux_limiter), hydro_on_(hydro_on), compton_on_(compton_on), sigma_planck(), sigma_s(), fleck_factor(), mass_scale_(1), length_scale_(1), time_scale_(1), CG::MatrixBuilder(zero_cells) {}
 
     void BuildMatrix(Tessellation3D const& tess, mat& A, size_t_mat& A_indeces, std::vector<ComputationalCell3D> const& cells, 
             double const dt, std::vector<double>& b, std::vector<double>& x0, double const current_time) const override;
@@ -120,6 +120,10 @@ public:
     bool const flux_limiter_;
     bool const hydro_on_;
     bool const compton_on_;
+
+    double mass_scale_;
+    double length_scale_;
+    double time_scale_;
 private:  
     EquationOfState const& eos_;   
 };
