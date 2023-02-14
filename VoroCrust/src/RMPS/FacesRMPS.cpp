@@ -43,3 +43,53 @@ std::pair<double const, std::vector<double> const> FacesRMPS::calculateTotalArea
 
     return std::pair<double const, std::vector<double> const>(total_area, start_area);
 }
+
+void FacesRMPS::divideEligbleFaces() {
+    //! ASSUMPTION: This fundtion assumes that every face is a triangle!
+    std::size_t const eligble_faces_size = eligble_faces.size();
+
+    std::vector<EligbleFace> new_eligble_faces(4*eligble_faces_size, EligbleFace(std::vector<Vector3D>(3, Vector3D(0, 0, 0)), 0.0, 0.0, 0.0));
+
+    for(std::size_t i=0; i < eligble_faces_size; ++i){
+        EligbleFace const& face = eligble_faces[i];
+        Vector3D const& midpoint_01 = 0.5*(face[0] + face[1]);
+        Vector3D const& midpoint_12 = 0.5*(face[1] + face[2]);
+        Vector3D const& midpoint_20 = 0.5*(face[2] + face[0]);
+
+        double const sub_triangle_area = 0.25*face.area;
+
+        new_eligble_faces[4*i][0] = face[0];
+        new_eligble_faces[4*i][1] = midpoint_01;
+        new_eligble_faces[4*i][2] = midpoint_20;
+
+        new_eligble_faces[4*i+1][0] = face[1];
+        new_eligble_faces[4*i+1][1] = midpoint_12;
+        new_eligble_faces[4*i+1][2] = midpoint_01;
+
+        new_eligble_faces[4*i+2][0] = face[2];
+        new_eligble_faces[4*i+2][1] = midpoint_20;
+        new_eligble_faces[4*i+2][2] = midpoint_12;
+
+        new_eligble_faces[4*i+3][0] = midpoint_01;
+        new_eligble_faces[4*i+3][1] = midpoint_12;
+        new_eligble_faces[4*i+3][2] = midpoint_20;
+        
+        //! MAYBEINSERTTOLOOP:
+        new_eligble_faces[4*i].patch_index = face.patch_index;
+        new_eligble_faces[4*i+1].patch_index = face.patch_index;
+        new_eligble_faces[4*i+2].patch_index = face.patch_index;
+        new_eligble_faces[4*i+3].patch_index = face.patch_index;
+
+        new_eligble_faces[4*i]  .plc_index = face.plc_index;
+        new_eligble_faces[4*i+1].plc_index = face.plc_index;
+        new_eligble_faces[4*i+2].plc_index = face.plc_index;
+        new_eligble_faces[4*i+3].plc_index = face.plc_index;
+
+        new_eligble_faces[4*i].area = sub_triangle_area;
+        new_eligble_faces[4*i+1].area = sub_triangle_area;
+        new_eligble_faces[4*i+2].area = sub_triangle_area;
+        new_eligble_faces[4*i+3].area = sub_triangle_area;
+    }
+
+    eligble_faces = new_eligble_faces;
+}
