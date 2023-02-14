@@ -89,7 +89,7 @@ std::tuple<bool, std::size_t const, Vector3D const> EdgesRMPS::sampleEligbleEdge
 
     // find on which edge the sample falls
     auto const& iter_lower_bound = std::lower_bound(start_len.begin(), start_len.end(), sample);
-    std::size_t edge_index = std::distance(start_len.begin(), iter_lower_bound) - 1;
+    std::size_t const edge_index = std::distance(start_len.begin(), iter_lower_bound) - 1;
     
     // if sample is too close to a vertex succes = false
     if(std::abs(start_len[edge_index] - sample) < 1e-14){
