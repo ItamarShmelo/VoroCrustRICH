@@ -93,3 +93,61 @@ void FacesRMPS::divideEligbleFaces() {
 
     eligble_faces = new_eligble_faces;
 }
+
+bool FacesRMPS::checkIfPointIsDeeplyCovered(Vector3D const& p, Trees const& trees) const {
+    VoroCrust_KD_Tree_Ball const& faces_ball_tree = trees.ball_kd_faces;
+
+    if(not faces_ball_tree.points.empty()){
+        std::size_t const nn_index = faces_ball_tree.nearestNeighbor(p);
+        
+        Vector3D const& q = faces_ball_tree.points[nn_index];
+        double const r_q = faces_ball_tree.ball_radii[nn_index];
+
+        // maximal radius for centers which balls can deeply cover p
+        double const r_max = (r_q + L_Lipschitz*distance(p, q)) / (1.0 - L_Lipschitz); 
+
+        std::vector<int> const& suspects = faces_ball_tree.radiusSearch(p, r_max);
+
+        for(int const i : suspects) {
+            Vector3D const& center = faces_ball_tree.points[i];
+            double const r = faces_ball_tree.ball_radii[i];
+
+            double const dist = distance(p, center);
+
+            if(dist <= r*(1.0 - alpha)){
+                return true;
+            }
+        }
+    }
+    
+    VoroCrust_KD_Tree_Ball const& edges_ball_tree = trees.ball_kd_edges;
+    
+    std::size_t const nn_index = edges_ball_tree.nearestNeighbor(p);
+    
+    Vector3D const& q = edges_ball_tree.points[nn_index];
+    double const r_q = edges_ball_tree.ball_radii[nn_index];
+
+    // maximal radius for cetners which balls can deeply cover p
+    double const r_max = (r_q + L_Lipschitz*distance(p, q)) / (1.0 - L_Lipschitz); 
+    
+    std::vector<int> const& suspects = edges_ball_tree.radiusSearch(p, r_max);
+
+    for(int const i : suspects) {
+        Vector3D const& center = edges_ball_tree.points[i];
+        double const r = edges_ball_tree.ball_radii[i];
+
+        double const dist = distance(p, center);
+        if(dist <= r*(1.0 - alpha)){
+            return true;
+        }
+    }
+
+    VoroCrust_KD_Tree_Ball const& corners_ball_tree = trees.ball_kd_faces;
+
+    std::size_t const nn_corner_index = corners_ball_tree.nearestNeighbor(p);
+
+    Vector3D const& center = corners_ball_tree.points[nn_corner_index];
+    double const radius = corners_ball_tree.ball_radii[nn_corner_index];
+
+    return distance(p, center) <= radius*(1.0-alpha);
+}
