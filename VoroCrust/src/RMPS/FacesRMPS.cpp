@@ -25,6 +25,6 @@ void FacesRMPS::loadFaces(std::vector<Face> const& faces) {
             vertices.push_back(vertex->vertex);
         }
 
-        eligble_faces.push_back(EligbleFace(vertices, face->patch_index, face->index));
+        eligble_faces.push_back(EligbleFace(vertices, face->patch_index, face->index, face->calcArea()));
     }
 }                                 
