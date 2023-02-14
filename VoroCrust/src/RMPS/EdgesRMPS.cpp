@@ -205,7 +205,7 @@ double EdgesRMPS::calculateSmoothnessLimitation(Vector3D const& p, EligbleEdge c
     return dist_non_cosmooth_edge;
 }
 
-bool EdgesRMPS::isEligbleEdgeIsDeeplyCoveredInEdgeBall(EligbleEdge const& edge, Trees const& trees, std::size_t const ball_index) const {
+bool EdgesRMPS::isEligbleEdgeDeeplyCoveredInEdgeBall(EligbleEdge const& edge, Trees const& trees, std::size_t const ball_index) const {
     VoroCrust_KD_Tree_Ball const& edges_ball_tree = trees.ball_kd_edges;
 
     Vector3D const& center = edges_ball_tree.points[ball_index];
@@ -235,7 +235,7 @@ bool EdgesRMPS::discardEligbleEdges(Trees const& trees){
         bool discard = false;
         for(std::size_t const ball_index : balls_to_check_edges){
             if(edge.crease_index == trees.ball_kd_edges.feature_index[ball_index]){
-                discard = discard || isEligbleEdgeIsDeeplyCoveredInEdgeBall(edge, trees, ball_index);
+                discard = discard || isEligbleEdgeDeeplyCoveredInEdgeBall(edge, trees, ball_index);
             }                             
         }
 

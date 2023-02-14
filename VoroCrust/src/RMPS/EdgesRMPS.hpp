@@ -76,7 +76,7 @@ class EdgesRMPS {
         double calculateSmoothnessLimitation(Vector3D const& p, EligbleEdge const& edge_sampled, Trees const& trees) const;
 
         //! \brief return true if eligble edge is deeply covered by edge ball 
-        bool isEligbleEdgeIsDeeplyCoveredInEdgeBall(EligbleEdge const& edge, Trees const& trees, std::size_t const ball_index) const;
+        bool isEligbleEdgeDeeplyCoveredInEdgeBall(EligbleEdge const& edge, Trees const& trees, std::size_t const ball_index) const;
 
         //! \brief retunrs the initial radius of a new sample defined by point
         double calculateInitialRadius(Vector3D const& point, std::size_t const edge_index, Trees const& trees) const;
