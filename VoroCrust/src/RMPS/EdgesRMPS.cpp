@@ -29,9 +29,10 @@ std::pair<double const, std::vector<double> const> EdgesRMPS::calculateTotalLeng
 }
 
 void EdgesRMPS::divideEligbleEdges(){
-    std::vector<EligbleEdge> new_eligble_edges(2*eligble_edges.size(), EligbleEdge(Vector3D(0.0, 0.0, 0.0), Vector3D(0.0, 0.0, 0.0), 0, 0));
-
     std::size_t const num_of_eligble_edges = eligble_edges.size();
+
+    std::vector<EligbleEdge> new_eligble_edges(2*num_of_eligble_edges, EligbleEdge(Vector3D(0.0, 0.0, 0.0), Vector3D(0.0, 0.0, 0.0), 0, 0));
+
     for(std::size_t i=0; i<num_of_eligble_edges; ++i){
         EligbleEdge const& edge = eligble_edges[i];
         Vector3D const& midpoint = 0.5*(edge[1] + edge[0]);
