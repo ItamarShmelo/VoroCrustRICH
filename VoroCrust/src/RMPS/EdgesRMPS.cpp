@@ -13,10 +13,11 @@ void EdgesRMPS::loadEdges(std::vector<Edge> const& sharp_edges){
 }
 
 std::pair<double const, std::vector<double> const> EdgesRMPS::calculateTotalLengthAndStartLengthOfEligbleEdges() const {
-    std::vector<double> start_len(eligble_edges.size(), 0.0);
+    std::size_t const num_of_eligble_edges = eligble_edges.size();
+
+    std::vector<double> start_len(num_of_eligble_edges, 0.0);
     double total_len = 0.0;
 
-    std::size_t num_of_eligble_edges = eligble_edges.size();
     for(std::size_t i=0; i<num_of_eligble_edges; ++i){
         EligbleEdge const& edge = eligble_edges[i];
         start_len[i] = total_len;
