@@ -145,7 +145,7 @@ std::tuple<std::vector<Vector3D>, std::vector<Vector3D>, std::vector<std::size_t
         Vector3D const& C = face->vertices[2]->vertex;
 
         // sample point formula is taken from https://math.stackexchange.com/questions/18686/uniform-random-point-in-triangle-in-3d
-        Vector3D point = (1.0-sqrt_r1)*A + (sqrt_r1*(1.0-r2))*B + (r2*sqrt_r1)*C;
+        Vector3D const& point = (1.0-sqrt_r1)*A + (sqrt_r1*(1.0-r2))*B + (r2*sqrt_r1)*C;
 
         points[i] = point;
         normals[i] = face->calcNormal();
