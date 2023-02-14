@@ -826,11 +826,12 @@ Conserved3D SimpleAMRExtensiveUpdater3D::ConvertPrimitveToExtensive3D(const Comp
 	ComputationalCellAddMult(cell_temp, slope.yderivative, diff.y);
 	ComputationalCellAddMult(cell_temp, slope.zderivative, diff.z);
 	cell_temp.internal_energy = eos.dp2e(cell_temp.density, cell_temp.pressure, cell_temp.tracers, ComputationalCell3D::tracerNames);
-	const double mass = volume* cell_temp.density;
+	const double mass = volume * cell_temp.density;
 	res.mass = mass;
-	res.internal_energy = cell_temp.internal_energy*mass;
-	res.energy = res.internal_energy + 0.5*mass*ScalarProd(cell_temp.velocity, cell_temp.velocity);
-	res.momentum = mass* cell_temp.velocity;
+	res.internal_energy = cell_temp.internal_energy * mass;
+	res.energy = res.internal_energy + 0.5 * mass * ScalarProd(cell_temp.velocity, cell_temp.velocity);
+	res.momentum = mass * cell_temp.velocity;
+	res.Erad = mass * cell_temp.Erad;
 	size_t N = cell_temp.tracers.size();
 	//res.tracers.resize(N);
 	for (size_t i = 0; i < N; ++i)
@@ -897,6 +898,8 @@ ComputationalCell3D SimpleAMRCellUpdater3D::ConvertExtensiveToPrimitve3D(const C
 		throw;
 	}
 	res.internal_energy = extensive.internal_energy / extensive.mass;
+	res.Erad = extensive.Erad / extensive.mass;
+	res.temperature = eos.de2T(res.density, res.internal_energy);
 	size_t N = extensive.tracers.size();
 //	res.tracers.resize(N);
 	for (size_t i = 0; i < N; ++i)
