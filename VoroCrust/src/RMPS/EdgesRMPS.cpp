@@ -236,7 +236,7 @@ bool EdgesRMPS::discardEligbleEdges(Trees const& trees){
 
         double const r_max = 2.0 / (1.0 - L_Lipschitz) * nn_edge_ball_radius;
 
-        std::vector<std::size_t> const balls_to_check_edges = trees.ball_kd_edges.getOverlappingBalls(nn_edge_ball_center, nn_edge_ball_radius, r_max);
+        std::vector<std::size_t> const& balls_to_check_edges = trees.ball_kd_edges.getOverlappingBalls(nn_edge_ball_center, nn_edge_ball_radius, r_max);
 
         bool discard = false;
         for(std::size_t const ball_index : balls_to_check_edges){
