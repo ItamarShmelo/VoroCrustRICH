@@ -41,5 +41,31 @@ class FacesRMPS {
 
         FacesRMPS(double const maxRadius_, double const L_Lipschitz_, double const alpha_, double const sharpTheta_, std::shared_ptr<PL_Complex> const& plc_);
         ~FacesRMPS() = default;
+
+        void loadFaces(std::vector<Face> const& faces);
+        
+        bool doSampling(VoroCrust_KD_Tree_Ball &faces_ball_tree, Trees const& trees);
+
+    private:
+
+        std::pair<double const, std::vector<double> const> calculateTotalAreaAndStartAreaOfEligbleFaces() const;
+
+        void divideEligbleFaces();
+
+        bool checkIfPointIsDeeplyCovered(Vector3D const&, Trees const& trees) const;
+
+        std::tuple<bool, std::size_t const, Vector3D const> sampleEligbleFaces(double const total_len, std::vector<double> const& start_area);
+
+        bool discardEligbleFaces(Trees const& trees);
+
+        void discardEligbleFacesContainedInCornerBalls(Trees const& trees);
+
+        void discardEligbleFacesContainedInEdgeBalls(Trees const& trees);
+
+        double calculateSmoothnessLimitation(Vector3D const& p, EligbleFace const& face_sampled, Trees const& trees) const;
+
+        bool isEligbleFaceDeeplyCoveredInFaceBall(EligbleFace const& face, Trees const& trees, std::size_t ball_index) const;
+
+        double calculateInitialRadius(Vector3D const& point, std::size_t const face_index, Trees const& trees) const;
 };
 #endif // FACES_RMPS
