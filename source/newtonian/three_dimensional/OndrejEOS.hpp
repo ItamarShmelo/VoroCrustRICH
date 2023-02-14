@@ -37,5 +37,9 @@ public:
     double dp2s(double d, double p, tvector const &tracers = tvector(), vector<string> const &tracernames = std::vector<std::string>()) const;
 
     double sd2p(double s, double d, tvector const &tracers = tvector(), vector<string> const &tracernames = std::vector<std::string>()) const;
+
+    double de2T(double const d, double const e, tvector const& tracers = tvector(), vector<string> const& tracernames = vector<string>()) const;
+
+    double dT2cv(double const d, double const T, tvector const& tracers = tvector(), vector<string> const& tracernames = vector<string>()) const;
 };
 #endif
