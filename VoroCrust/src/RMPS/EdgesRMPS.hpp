@@ -46,7 +46,7 @@ class EdgesRMPS {
         void loadEdges(std::vector<Edge> const& sharp_edges);
 
         //! \brief do the RMPS sampling stage until there are no more eligble edges 
-        bool doSampling(VoroCrust_KD_Tree_Ball &edges_ball_tree, Trees &tree);
+        bool doSampling(VoroCrust_KD_Tree_Ball &edges_ball_tree, Trees const& tree);
 
     private:
 

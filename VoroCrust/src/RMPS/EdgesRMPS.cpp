@@ -271,7 +271,7 @@ double EdgesRMPS::calculateInitialRadius(Vector3D const& point, std::size_t cons
     return std::min({maxRadius, 0.49*r_smooth, r_q + L_Lipschitz*dist});
 }
 
-bool EdgesRMPS::doSampling(VoroCrust_KD_Tree_Ball &edges_ball_tree, Trees &trees){
+bool EdgesRMPS::doSampling(VoroCrust_KD_Tree_Ball &edges_ball_tree, Trees const& trees){
 
     bool resample = false;
 
