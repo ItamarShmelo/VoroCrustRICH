@@ -55,28 +55,27 @@ bool EdgesRMPS::checkIfPointIsDeeplyCovered(Vector3D const& p, std::size_t const
     VoroCrust_KD_Tree_Ball const& corners_ball_tree = trees.ball_kd_vertices;
     VoroCrust_KD_Tree_Ball const& edges_ball_tree = trees.ball_kd_edges;
 
-    if(edges_ball_tree.points.empty()) return false;
+    if(not edges_ball_tree.points.empty()){
+        std::size_t const nn_index = edges_ball_tree.nearestNeighbor(p);
 
-    std::size_t const nn_index = edges_ball_tree.nearestNeighbor(p);
+        Vector3D const& q = edges_ball_tree.points[nn_index];
+        double const r_q = edges_ball_tree.ball_radii[nn_index];
 
-    Vector3D const& q = edges_ball_tree.points[nn_index];
-    double const r_q = edges_ball_tree.ball_radii[nn_index];
+        // maximal radius for centers which balls can deeply cover p 
+        double const r_max = (r_q + L_Lipschitz*distance(p, q)) / (1.0 - L_Lipschitz); 
+        
+        std::vector<int> const suspects = edges_ball_tree.radiusSearch(p, r_max);
+        
+        for(int const i : suspects){
+            Vector3D const& center = edges_ball_tree.points[i];
+            double const r = edges_ball_tree.ball_radii[i];
 
-    // maximal radius for centers which balls can deeply cover p 
-    double const r_max = (r_q + L_Lipschitz*distance(p, q)) / (1.0 - L_Lipschitz); 
-    
-    std::vector<int> const suspects = edges_ball_tree.radiusSearch(p, r_max);
-    
-    for(int const i : suspects){
-        Vector3D const& center = edges_ball_tree.points[i];
-        double const r = edges_ball_tree.ball_radii[i];
-
-        double const dist = distance(p, center);
-        if(dist <= r*(1.0 - alpha)){
-            return true;
+            double const dist = distance(p, center);
+            if(dist <= r*(1.0 - alpha)){
+                return true;
+            }
         }
     }
-
     std::size_t const nn_corner_index = corners_ball_tree.nearestNeighbor(p);
 
     Vector3D const& center = corners_ball_tree.points[nn_corner_index];
