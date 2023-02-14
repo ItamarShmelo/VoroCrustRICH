@@ -88,7 +88,7 @@ std::tuple<bool, std::size_t const, Vector3D const> EdgesRMPS::sampleEligbleEdge
     double const sample = uni01_gen()*total_len;
 
     // find on which edge the sample falls
-    auto const iter_lower_bound = std::lower_bound(start_len.begin(), start_len.end(), sample);
+    auto const& iter_lower_bound = std::lower_bound(start_len.begin(), start_len.end(), sample);
     std::size_t edge_index = std::distance(start_len.begin(), iter_lower_bound) - 1;
     
     // if sample is too close to a vertex succes = false
@@ -152,7 +152,7 @@ double EdgesRMPS::calculateSmoothnessLimitation(Vector3D const& p, EligbleEdge c
     VoroCrust_KD_Tree_Boundary const& faces_boundary_tree = trees.VC_kd_faces;
 
     // find nearest sharp corner
-    int nearestSharpCorner_index = corners_boundary_tree.kNearestNeighbors(p, 2)[1];
+    int const nearestSharpCorner_index = corners_boundary_tree.kNearestNeighbors(p, 2)[1];
     Vector3D const& nearestSharpCorner = corners_boundary_tree.points[nearestSharpCorner_index];
 
     double const dist_nearest_corner = distance(p, nearestSharpCorner);
@@ -162,7 +162,7 @@ double EdgesRMPS::calculateSmoothnessLimitation(Vector3D const& p, EligbleEdge c
 
     Vector3D const& parallel = edge_sampled[1] - edge_sampled[0];
 
-    long nn_non_cosmooth_index = edges_boundary_tree.nearestNonCosmoothPointEdge(p, parallel, edge_sampled.crease_index, sharpTheta);
+    long const nn_non_cosmooth_index = edges_boundary_tree.nearestNonCosmoothPointEdge(p, parallel, edge_sampled.crease_index, sharpTheta);
 
     if(nn_non_cosmooth_index >= 0){
 
@@ -170,7 +170,7 @@ double EdgesRMPS::calculateSmoothnessLimitation(Vector3D const& p, EligbleEdge c
         dist_non_cosmooth_edge = distance(p, nn_non_cosmooth_p);
     }
 
-    long nn_different_crease = edges_boundary_tree.nearestNeighborExcludingFeatures(p, {edge_sampled.crease_index});
+    long const nn_different_crease = edges_boundary_tree.nearestNeighborExcludingFeatures(p, {edge_sampled.crease_index});
 
     // found any nearest neighbors
     if(nn_different_crease >= 0){
@@ -273,7 +273,6 @@ double EdgesRMPS::calculateInitialRadius(Vector3D const& point, std::size_t cons
 
     double const dist = distance(point, q);
 
-
     return std::min({maxRadius, 0.49*r_smooth, r_q + L_Lipschitz*dist});
 }
 
@@ -298,7 +297,7 @@ bool EdgesRMPS::doSampling(VoroCrust_KD_Tree_Ball &edges_ball_tree, Trees const&
             std::cout << "eligble_edge[0][0] = " << f_edge[0].x << ", " << f_edge[0].y << ", " << f_edge[0].z << std::endl;
             break;
         }
-        auto const [success, edge_index, p] = sampleEligbleEdges(total_len, start_len);
+        auto const& [success, edge_index, p] = sampleEligbleEdges(total_len, start_len);
 
         if(!success) continue;
 
