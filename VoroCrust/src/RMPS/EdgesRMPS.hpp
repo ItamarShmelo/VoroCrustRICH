@@ -53,7 +53,7 @@ class EdgesRMPS {
         /*! \brief calculates the current total length of the eligble edges and the start len for each edge
             \return returns a pair <total_length, start_length> where start_length is a vector with the same size as the eligble edges
         */
-        std::pair<double const, std::vector<double> const> calculateTotalLengthAndStartLengthOfEligbleEdges();
+        std::pair<double const, std::vector<double> const> calculateTotalLengthAndStartLengthOfEligbleEdges() const;
 
         //! \brief divides the eligble edges to two eligble edges at the midpoint
         void divideEligbleEdges();

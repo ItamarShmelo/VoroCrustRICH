@@ -7,7 +7,7 @@ void EdgesRMPS::loadEdges(std::vector<Edge> const& sharp_edges){
         eligble_edges.push_back(EligbleEdge(edge->vertex1->vertex, edge->vertex2->vertex, edge->crease_index, edge->index));
 }
 
-std::pair<double const, std::vector<double> const> EdgesRMPS::calculateTotalLengthAndStartLengthOfEligbleEdges(){
+std::pair<double const, std::vector<double> const> EdgesRMPS::calculateTotalLengthAndStartLengthOfEligbleEdges() const {
     std::vector<double> start_len(eligble_edges.size(), 0.0);
     double total_len = 0.0;
 
