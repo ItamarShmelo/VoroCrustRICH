@@ -62,7 +62,7 @@ class EdgesRMPS {
         bool checkIfPointIsDeeplyCovered(Vector3D const& p, std::size_t const edge_index, Trees const& trees) const;
 
         /*! \brief sample the eligble edges
-            \return <success, sample> where success is a bool flag and is false if sampling failed
+            \return <success, edge_index, sample> where success is a bool flag and is false if sampling failed
         */
         std::tuple<bool, std::size_t const, Vector3D const> sampleEligbleEdges(double const total_len, std::vector<double> const& start_len);
 
