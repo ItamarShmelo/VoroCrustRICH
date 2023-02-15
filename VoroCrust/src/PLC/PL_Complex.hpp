@@ -13,7 +13,25 @@
 //! \brief a Crease is a chain of sharp edges, ends in a sharp corner or forms a cycle. 
 using Crease = std::vector<Edge>;
 //! \brief a Surface patch is the connected componnent containing no sharp features. A Surface patch is enveloped by Creases.
-using SurfacePatch = std::vector<Face>;
+struct SurfacePatch {
+    std::vector<Face> patch;
+    std::vector<std::size_t> patch_creases;
+    std::vector<std::size_t> patch_corners;
+
+    SurfacePatch() : patch(), patch_creases(), patch_corners() {}
+
+    void findCreasesAndCorners();
+    void push_back(Face const& new_face) { patch.push_back(new_face); }
+
+    Face const& operator[](std::size_t const index) const { return patch[index]; }
+    Face& operator[](std::size_t const index)  { return patch[index]; }
+
+    // so it can be used in the range for loops
+    auto begin() { return patch.begin();}
+    auto end() { return patch.end();}
+    auto begin() const { return patch.cbegin();}
+    auto end() const { return patch.cend();}
+};
 
 /*! \brief Piecewise Linear Complex 
     \details Holds the mesh and does the preprocessing of the VoroCrust algorithm.
