@@ -306,3 +306,12 @@ double FacesRMPS::calculateSmoothnessLimitation(Vector3D const& p, EligbleFace c
 
     return std::min({dist_nearest_corner, dist_nearest_sharp_edge, dist_non_cosmooth_face});
 }
+
+bool FacesRMPS::isEligbleFaceDeeplyCoveredInFaceBall(EligbleFace const& face, Trees const& trees, std::size_t const ball_index) const {
+    VoroCrust_KD_Tree_Ball const& faces_ball_tree = trees.ball_kd_faces;
+
+    Vector3D const& center = faces_ball_tree.points[ball_index];
+    double const r_deeply = faces_ball_tree.ball_radii[ball_index] * (1.0 - alpha);
+
+    return face.isContainedInBall(center, r_deeply);
+}
