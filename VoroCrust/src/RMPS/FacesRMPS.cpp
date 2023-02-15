@@ -204,7 +204,7 @@ void FacesRMPS::discardEligbleFacesContainedInCornerBalls(Trees const& trees) {
 
             if(face.isContainedInBall(center, r)){
                 to_discard.push_back(i);
-                continue;
+                break;
             }
         }
     }
