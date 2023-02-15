@@ -12,6 +12,7 @@
 
 //! \brief a Crease is a chain of sharp edges, ends in a sharp corner or forms a cycle. 
 using Crease = std::vector<Edge>;
+
 //! \brief a Surface patch is the connected componnent containing no sharp features. A Surface patch is enveloped by Creases.
 struct SurfacePatch {
     std::vector<Face> patch;
