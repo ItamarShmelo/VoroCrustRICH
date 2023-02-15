@@ -197,7 +197,7 @@ void FacesRMPS::discardEligbleFacesContainedInCornerBalls(Trees const& trees) {
         for(std::size_t const corner_index : patch.patch_corners) {
             Vertex const& corner = plc->vertices[corner_index];
 
-            std::size_t nn_index = corners_ball_tree.nearestNeighbor(corner->vertex);
+            std::size_t const nn_index = corners_ball_tree.nearestNeighbor(corner->vertex);
 
             Vector3D const& center = corners_ball_tree.points[nn_index];
             double const r = corners_ball_tree.ball_radii[nn_index];
