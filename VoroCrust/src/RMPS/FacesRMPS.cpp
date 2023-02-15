@@ -386,7 +386,7 @@ bool FacesRMPS::doSampling(VoroCrust_KD_Tree_Ball &faces_ball_tree, Trees const&
     total_area = res.first;
     start_area = res.second;
 
-    std::cout << "total_len = " << total_area << ", num_of_eligble_faces = " << eligble_faces.size() << std::endl;
+    std::cout << "total_area = " << total_area << ", num_of_eligble_faces = " << eligble_faces.size() << std::endl;
 
     int miss_counter = 0;
 
@@ -412,7 +412,7 @@ bool FacesRMPS::doSampling(VoroCrust_KD_Tree_Ball &faces_ball_tree, Trees const&
             start_area = res.second;
             
             miss_counter = 0;
-            std::cout << "total_len = " << total_area << ", num_of_eligble_edges = " << eligble_faces.size() << std::endl;
+            std::cout << "total_area = " << total_area << ", num_of_eligble_faces = " << eligble_faces.size() << std::endl;
             continue;
         }
 
