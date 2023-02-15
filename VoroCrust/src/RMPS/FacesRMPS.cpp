@@ -224,3 +224,44 @@ bool EligbleFace::isContainedInBall(Vector3D const& center, double const r) cons
     
     return true;
 }
+
+void FacesRMPS::discardEligbleFacesContainedInEdgeBalls(Trees const& trees) {
+    VoroCrust_KD_Tree_Ball const& edges_ball_tree = trees.ball_kd_edges;
+
+    std::vector<std::size_t> to_discard;
+
+    std::size_t const eligble_faces_size = eligble_faces.size();
+
+    for(std::size_t i=0; i < eligble_faces_size; ++i){
+        EligbleFace const& face = eligble_faces[i];
+
+        // find the closes ball to the first vertex
+        Vector3D const& v1 = face.face[0];        
+        std::size_t const nn_index = edges_ball_tree.nearestNeighbor(v1);
+        
+        Vector3D const& q = edges_ball_tree.points[nn_index];
+        double const r_q = edges_ball_tree.ball_radii[nn_index];
+        
+        // maximal radius for centers which balls can cover v1 hence the face
+        double const r_max = (r_q + L_Lipschitz*distance(v1, q)) / (1.0 - L_Lipschitz);
+        std::vector<int> const& suspects = edges_ball_tree.radiusSearch(v1, r_max);
+
+        for(int const i : suspects) {
+            Vector3D const& center = edges_ball_tree.points[i];
+            double const r = edges_ball_tree.ball_radii[i];
+
+            if(face.isContainedInBall(center, r)){
+                to_discard.push_back(i);
+                break;
+            }
+        }
+    }
+
+    //! CODEDUPLICATION: with discardEligbleFacesContainedInCornerBalls
+    // discard in reverse order bacause each erase changes the indices
+    for(long i=to_discard.size()-1; i>=0 ; ++i){
+        std::size_t const ind_to_discard = to_discard[i];
+        eligble_faces.erase(eligble_faces.begin() + ind_to_discard);
+    }
+
+}
