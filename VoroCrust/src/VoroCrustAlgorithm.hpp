@@ -5,6 +5,7 @@
 #include "trees.hpp"
 #include "RMPS/CornersRMPS.hpp"
 #include "RMPS/EdgesRMPS.hpp"
+#include "RMPS/FacesRMPS.hpp"
 #include <sstream>
 #include <memory>
 
@@ -23,6 +24,7 @@ class VoroCrustAlgorithm {
 
         CornersRMPS cornersDriver;
         EdgesRMPS edgesDriver;
+        FacesRMPS facesDriver;
 
         VoroCrustAlgorithm( PL_Complex const& plc_,
                             double const sharpTheta_,
