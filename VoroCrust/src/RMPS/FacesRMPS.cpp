@@ -210,7 +210,7 @@ void FacesRMPS::discardEligbleFacesContainedInCornerBalls(Trees const& trees) {
     }
 
     // discard in reverse order bacause each erase changes the indices
-    for(long i=to_discard.size()-1; i>=0 ; ++i){
+    for(long i=to_discard.size()-1; i>=0 ; --i){
         std::size_t const ind_to_discard = to_discard[i];
         eligble_faces.erase(eligble_faces.begin() + ind_to_discard);
     }
