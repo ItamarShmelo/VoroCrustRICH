@@ -124,6 +124,7 @@ void EdgesRMPS::discardEligbleEdgesContainedInCornerBalls(Trees const& trees){
 
             if(distance(edge[0], center) <= r && distance(edge[1], center) <= r){
                 to_discard.push_back(i);
+                continue;
             }
         }
         
