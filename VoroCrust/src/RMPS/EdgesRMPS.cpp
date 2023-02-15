@@ -267,7 +267,7 @@ double EdgesRMPS::calculateInitialRadius(Vector3D const& point, std::size_t cons
     double const r_smooth = calculateSmoothnessLimitation(point, edge, trees);
 
     if(edges_ball_tree.points.empty()){
-        return std::min({maxRadius, r_smooth});
+        return std::min(maxRadius, 0.49*r_smooth);
     }
 
     // limitation from Lipschitzness
