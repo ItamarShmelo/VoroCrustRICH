@@ -1,6 +1,8 @@
 #include "PL_Complex.hpp"
 #include <iostream>
 #include <cmath>
+#include <numeric>
+#include <functional>
 #include <queue>
 #include "../../../source/misc/utils.hpp"
 
@@ -382,6 +384,7 @@ void PL_Complex::buildSurfacePatches()
             continue;
         
         SurfacePatch const& new_patch = createSurfacePatch(face);
+
         patches.push_back(new_patch);
 
         std::cout << "\n SurfacePatch number : " << patches.size() << "\n"; 
@@ -392,6 +395,26 @@ void PL_Complex::buildSurfacePatches()
             std::cout << patch_face->index << ", ";
         } 
         std::cout << std::endl;        
+    }
+}
+
+void SurfacePatch::findCreasesAndCorners(){
+    for(Face const& face : this->patch){
+        for(Edge const& edge : face->edges){
+            if(not edge->isSharp) continue;
+
+            if(std::find(patch_creases.begin(), patch_creases.end(), edge->crease_index) == patch_creases.end()){
+                patch_creases.push_back(edge->crease_index);
+            }
+        }
+
+        for(Vertex const& vertex : face->vertices){
+            if(not vertex->isSharp) continue;
+
+            if(std::find(patch_corners.begin(), patch_corners.end(), vertex->index) == patch_corners.end()){
+                patch_corners.push_back(vertex->index);
+            }
+        }
     }
 }
 
@@ -423,7 +446,8 @@ SurfacePatch PL_Complex::createSurfacePatch(Face const &face)
             }
         }
     }
-
+    
+    patch.findCreasesAndCorners();
     return patch;
 }
 
