@@ -153,7 +153,7 @@ double EdgesRMPS::calculateSmoothnessLimitation(Vector3D const& p, EligbleEdge c
     VoroCrust_KD_Tree_Boundary const& faces_boundary_tree = trees.VC_kd_faces;
 
     // find nearest sharp corner
-    int const nearestSharpCorner_index = corners_boundary_tree.kNearestNeighbors(p, 2)[1];
+    int const nearestSharpCorner_index = corners_boundary_tree.nearestNeighbor(p);
     Vector3D const& nearestSharpCorner = corners_boundary_tree.points[nearestSharpCorner_index];
 
     double const dist_nearest_corner = distance(p, nearestSharpCorner);
