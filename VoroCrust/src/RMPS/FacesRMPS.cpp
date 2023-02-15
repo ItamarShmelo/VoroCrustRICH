@@ -246,9 +246,9 @@ void FacesRMPS::discardEligbleFacesContainedInEdgeBalls(Trees const& trees) {
         double const r_max = (r_q + L_Lipschitz*distance(v1, q)) / (1.0 - L_Lipschitz);
         std::vector<int> const& suspects = edges_ball_tree.radiusSearch(v1, r_max);
 
-        for(int const i : suspects) {
-            Vector3D const& center = edges_ball_tree.points[i];
-            double const r = edges_ball_tree.ball_radii[i];
+        for(int const j : suspects) {
+            Vector3D const& center = edges_ball_tree.points[j];
+            double const r = edges_ball_tree.ball_radii[j];
 
             if(face.isContainedInBall(center, r)){
                 to_discard.push_back(i);
