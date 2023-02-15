@@ -230,6 +230,9 @@ bool EdgesRMPS::discardEligbleEdges(Trees const& trees){
     for(long i = eligble_edges.size()-1; i >= 0; --i){
         EligbleEdge const& edge = eligble_edges[i];
         
+        
+        //! MIGHTBEUNECESSARY: this might be unecessary because I can take the nearest neighbor to one of the vertices
+        // of the edge and use the r_max test (see FacesRMPS)
         std::size_t const i_nn_edge_ball = trees.ball_kd_edges.nearestNeighborToSegment(edge.edge);
         Vector3D const& nn_edge_ball_center = trees.ball_kd_edges.points[i_nn_edge_ball];
         double const nn_edge_ball_radius = trees.ball_kd_edges.ball_radii[i_nn_edge_ball];
@@ -240,6 +243,7 @@ bool EdgesRMPS::discardEligbleEdges(Trees const& trees){
 
         bool discard = false;
         for(std::size_t const ball_index : balls_to_check_edges){
+            //! MIGHTBEUNECESSARY: all relevent balls should already be in the same crease
             if(edge.crease_index == trees.ball_kd_edges.feature_index[ball_index]){
                 discard = discard || isEligbleEdgeDeeplyCoveredInEdgeBall(edge, trees, ball_index);
             }                             
