@@ -182,3 +182,45 @@ std::tuple<bool, std::size_t const, Vector3D const> FacesRMPS::sampleEligbleFace
     
     return std::tuple<bool, std::size_t const, Vector3D const>(true, face_index, point);
 }
+
+void FacesRMPS::discardEligbleFacesContainedInCornerBalls(Trees const& trees) {
+    VoroCrust_KD_Tree_Ball const& corners_ball_tree = trees.ball_kd_vertices;
+
+    std::vector<std::size_t> to_discard;
+
+    std::size_t const eligble_faces_size = eligble_faces.size();
+
+    for(std::size_t i=0; i<eligble_faces_size; ++i){
+        EligbleFace const& face = eligble_faces[i];
+        SurfacePatch const& patch = plc->patches[face.patch_index];
+
+        for(std::size_t const corner_index : patch.patch_corners) {
+            Vertex const& corner = plc->vertices[corner_index];
+
+            std::size_t nn_index = corners_ball_tree.nearestNeighbor(corner->vertex);
+
+            Vector3D const& center = corners_ball_tree.points[nn_index];
+            double const r = corners_ball_tree.ball_radii[nn_index];
+
+            if(face.isContainedInBall(center, r)){
+                to_discard.push_back(i);
+                continue;
+            }
+        }
+    }
+
+    // discard in reverse order bacause each erase changes the indices
+    for(long i=to_discard.size()-1; i>=0 ; ++i){
+        std::size_t const ind_to_discard = to_discard[i];
+        eligble_faces.erase(eligble_faces.begin() + ind_to_discard);
+    }
+}
+
+bool EligbleFace::isContainedInBall(Vector3D const& center, double const r) const {
+
+    for(Vector3D const& vertex : face)
+        if(distance(center, vertex) > r)
+            return false;
+    
+    return true;
+}

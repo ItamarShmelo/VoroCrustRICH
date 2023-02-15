@@ -24,7 +24,9 @@ struct EligbleFace {
 
     Vector3D& operator [] (std::size_t const index) {
         return face[index];
-    }  
+    }
+
+    bool isContainedInBall(Vector3D const& center, double const r) const;
 };
 
 class FacesRMPS {
