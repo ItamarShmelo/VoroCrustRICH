@@ -344,7 +344,7 @@ bool EdgesRMPS::doSampling(VoroCrust_KD_Tree_Ball &edges_ball_tree, Trees const&
 
             for(int const center_index : centers_in_new_ball_indices){
                 Vector3D const& center_in = edges_ball_tree.points[center_index];
-                radius = std::min({radius, distance(p, center_in) / (1. - alpha)});
+                radius = std::min(radius, distance(p, center_in) / (1. - alpha));
             }
         }
 
