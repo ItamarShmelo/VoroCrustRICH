@@ -352,3 +352,27 @@ bool FacesRMPS::discardEligbleFaces(Trees const& trees) {
 
     return shrunkOtherStataBalls;
 }
+
+double FacesRMPS::calculateInitialRadius(Vector3D const& p, std::size_t const face_index, Trees const& trees) const {
+
+    VoroCrust_KD_Tree_Ball const& faces_ball_tree = trees.ball_kd_faces;
+
+    EligbleFace const& face = eligble_faces[face_index];
+
+    //limitation from cosmoothness
+    double const r_smooth = calculateSmoothnessLimitation(p, face, trees);
+
+    if(faces_ball_tree.points.empty()){
+        return std::min(maxRadius, 0.49*r_smooth);
+    }
+
+    // limitation from Lipschitzness
+    std::size_t const nn_face_ball = faces_ball_tree.nearestNeighbor(p);
+    Vector3D const& q = faces_ball_tree.points[nn_face_ball];
+    double const r_q = faces_ball_tree.ball_radii[nn_face_ball];
+
+    double const dist  = distance(p, q);
+
+    return std::min({maxRadius, 0.49*r_smooth, r_q + L_Lipschitz*dist});
+
+}
