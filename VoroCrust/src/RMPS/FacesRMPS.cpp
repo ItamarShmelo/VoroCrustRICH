@@ -315,3 +315,40 @@ bool FacesRMPS::isEligbleFaceDeeplyCoveredInFaceBall(EligbleFace const& face, Tr
 
     return face.isContainedInBall(center, r_deeply);
 }
+
+bool FacesRMPS::discardEligbleFaces(Trees const& trees) {
+    bool shrunkOtherStataBalls = false;
+
+    discardEligbleFacesContainedInCornerBalls(trees);
+    discardEligbleFacesContainedInEdgeBalls(trees);
+
+    VoroCrust_KD_Tree_Ball const& faces_ball_tree = trees.ball_kd_faces;
+    // erase in reverse so indices wont change
+    // might be better to put the indices in a vector then discard all at once
+    for(long i=eligble_faces.size()-1; i>=0 ; --i){
+        EligbleFace const& face = eligble_faces[i];
+
+        std::size_t const i_nn_face_ball = faces_ball_tree.nearestNeighbor(face.face[0]);
+        Vector3D const& nn_face_ball_center = faces_ball_tree.points[i_nn_face_ball];
+        double const nn_face_ball_radius = faces_ball_tree.ball_radii[i_nn_face_ball];
+
+        double const r_max = 2.0 / (1.0 - L_Lipschitz) * nn_face_ball_radius;
+
+        std::vector<std::size_t> const& balls_to_check_faces = faces_ball_tree.getOverlappingBalls(nn_face_ball_center, nn_face_ball_radius, r_max);
+
+        bool discard = false;
+        
+        for(std::size_t const ball_index : balls_to_check_faces) {
+            //! MIGHTBEUNECESSARY: all relevent balls should already be in the same patch
+            if(face.patch_index == faces_ball_tree.feature_index[ball_index]){
+                discard = discard || isEligbleFaceDeeplyCoveredInFaceBall(face, trees, ball_index);
+            }
+        }
+
+        if(discard){
+            eligble_faces.erase(eligble_faces.begin() + i);
+        }
+    }
+
+    return shrunkOtherStataBalls;
+}
