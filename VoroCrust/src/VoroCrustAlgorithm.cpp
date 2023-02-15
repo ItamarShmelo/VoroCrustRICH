@@ -67,7 +67,13 @@ void VoroCrustAlgorithm::run() {
             trees.ball_kd_edges.remakeTree();
         } while(enforceLipschitzness(trees.ball_kd_edges));
             
-
+        do {
+            std::cout << "\nFacesRMPS\n--------------\n" << std::endl;
+            facesDriver.loadFaces(plc->faces);
+            facesDriver.doSampling(trees.ball_kd_faces, trees);
+            trees.ball_kd_faces.remakeTree();
+        } while(enforceLipschitzness(trees.ball_kd_faces));
+        
         break;
     }
 
