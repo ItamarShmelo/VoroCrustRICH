@@ -142,7 +142,7 @@ bool FacesRMPS::checkIfPointIsDeeplyCovered(Vector3D const& p, Trees const& tree
         }
     }
 
-    VoroCrust_KD_Tree_Ball const& corners_ball_tree = trees.ball_kd_faces;
+    VoroCrust_KD_Tree_Ball const& corners_ball_tree = trees.ball_kd_vertices;
 
     std::size_t const nn_corner_index = corners_ball_tree.nearestNeighbor(p);
 
