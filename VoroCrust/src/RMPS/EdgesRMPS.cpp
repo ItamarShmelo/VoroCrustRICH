@@ -330,6 +330,7 @@ bool EdgesRMPS::doSampling(VoroCrust_KD_Tree_Ball &edges_ball_tree, Trees const&
         
         double radius = calculateInitialRadius(p, edge_index, trees);
 
+        //! REDUNDENT: this is done in `calculateInitialRadius` by calculateSmoothnessLimitation
         // limitation from proximity to a sharp corner 
         int nn_corner = trees.ball_kd_vertices.nearestNeighbor(p);
         Vector3D const& center_corner = trees.ball_kd_vertices.points[nn_corner];
