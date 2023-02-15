@@ -263,5 +263,38 @@ void FacesRMPS::discardEligbleFacesContainedInEdgeBalls(Trees const& trees) {
         std::size_t const ind_to_discard = to_discard[i];
         eligble_faces.erase(eligble_faces.begin() + ind_to_discard);
     }
+}
 
+double FacesRMPS::calculateSmoothnessLimitation(Vector3D const& p, EligbleFace const& face_sampled, Trees const& trees) const {
+    // Corners
+    VoroCrust_KD_Tree_Boundary const& corners_boundary_tree = trees.VC_kd_sharp_corners;
+
+    int const nearestSharpCorner_index = corners_boundary_tree.nearestNeighbor(p);
+    Vector3D const& nearestSharpCorner = corners_boundary_tree.points[nearestSharpCorner_index];
+
+    double const dist_nearest_corner = distance(p, nearestSharpCorner);
+    double dist_non_cosmooth_face = std::numeric_limits<double>::max();
+
+    // Faces
+
+    VoroCrust_KD_Tree_Boundary const& faces_boundary_tree = trees.VC_kd_faces;
+    Face const& plc_face = plc->faces[face_sampled.plc_index];
+
+    long const nn_non_cosmooth_index = faces_boundary_tree.nearestNonCosmoothPointFace(p, plc_face->calcNormal(), face_sampled.patch_index, sharpTheta, M_PI_2-sharpTheta);
+
+    if(nn_non_cosmooth_index >= 0){
+        Vector3D const& nn_non_cosmooth_p = faces_boundary_tree.points[nn_non_cosmooth_index];
+
+        dist_non_cosmooth_face = std::min(dist_non_cosmooth_face, distance(p, nn_non_cosmooth_p));
+    }
+
+    long const nn_different_patch = faces_boundary_tree.nearestNeighborExcludingFeatures(p, {face_sampled.patch_index});
+
+    if(nn_different_patch >= 0){
+        Vector3D const& nn_different_patch_p = faces_boundary_tree.points[nn_different_patch];
+
+        dist_non_cosmooth_face = std::min(dist_non_cosmooth_face, distance(p, nn_different_patch_p));
+    }
+
+    return std::min(dist_nearest_corner, dist_non_cosmooth_face);
 }
