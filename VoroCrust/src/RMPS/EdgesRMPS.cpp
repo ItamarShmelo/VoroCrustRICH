@@ -181,7 +181,6 @@ double EdgesRMPS::calculateSmoothnessLimitation(Vector3D const& p, EligbleEdge c
     }
 
     // find nearest non cosmooth point on face
-
     std::vector<std::size_t> patches_to_exclude;
 
     for(Face const& face : plc->edges[edge_sampled.plc_index]->faces){
