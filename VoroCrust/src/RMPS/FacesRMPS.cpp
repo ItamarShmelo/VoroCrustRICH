@@ -374,5 +374,83 @@ double FacesRMPS::calculateInitialRadius(Vector3D const& p, std::size_t const fa
     double const dist  = distance(p, q);
 
     return std::min({maxRadius, 0.49*r_smooth, r_q + L_Lipschitz*dist});
+}
 
+bool FacesRMPS::doSampling(VoroCrust_KD_Tree_Ball &faces_ball_tree, Trees const& trees){
+    bool resample = false;
+
+    double total_area;
+    std::vector<double> start_area;
+
+    auto const& res = calculateTotalAreaAndStartAreaOfEligbleFaces();
+    total_area = res.first;
+    start_area = res.second;
+
+    std::cout << "total_len = " << total_area << ", num_of_eligble_edges = " << eligble_faces.size() << std::endl;
+
+    int miss_counter = 0;
+
+    while(not eligble_faces.empty()) {
+        //! PRINTFORDEBUG: remove it at the end
+        if(eligble_faces.size() > 100000){ 
+            EligbleFace f_face = eligble_faces[0];
+            std::cout << "eligble_faces[0][0] = " << f_face[0].x << ", " << f_face[0].y << ", " << f_face[0].z << std::endl;
+            break;
+        } 
+
+        auto const& [success, face_index, p] = sampleEligbleFaces(total_area, start_area);
+
+        if(!success) continue;
+
+        if(miss_counter >= 100){
+            divideEligbleFaces();
+            //! IMPORTANT: resample needs to be on the right of the ||!!!!
+            resample = discardEligbleFaces(trees) || resample; 
+
+            auto const& res = calculateTotalAreaAndStartAreaOfEligbleFaces();
+            total_area = res.first;
+            start_area = res.second;
+            
+            miss_counter = 0;
+            std::cout << "total_len = " << total_area << ", num_of_eligble_edges = " << eligble_faces.size() << std::endl;
+            continue;
+        }
+
+        if(checkIfPointIsDeeplyCovered(p, trees)){
+            miss_counter += 1;
+            continue;
+        }
+        
+        std::cout << "face sample " << faces_ball_tree.points.size() << std::endl;
+
+        EligbleFace const& face = eligble_faces[face_index];
+
+        double radius = calculateInitialRadius(p, face_index, trees);
+
+        std::vector<int> const& centers_in_new_ball_indices = faces_ball_tree.radiusSearch(p, radius);
+
+        if(not centers_in_new_ball_indices.empty()){
+            if(uni01_gen() < rejection_probability) continue;
+
+            for(int const center_index : centers_in_new_ball_indices){
+                Vector3D const& center_in = faces_ball_tree.points[center_index];
+                radius = std::min(radius, distance(p, center_in) / (1. - alpha));
+            }
+        }
+
+        if(radius < 1e-8){
+            std::cout << "trying to create a ball which is too small" << std::endl;
+            std::cout << "at p = " << p.x << ", " << p.y << ", " << p.z << std::endl;
+            std::cout << "radius = " << radius << std::endl;
+            //! TODO: EXIT HERE
+            break; 
+        }
+
+        Face const& plc_face = plc->faces[face.plc_index];
+        faces_ball_tree.insert(p, plc_face->calcNormal(), radius, face.patch_index, face.plc_index);
+
+        miss_counter = 0;
+    }
+
+    return resample;
 }
