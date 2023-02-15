@@ -273,9 +273,17 @@ double FacesRMPS::calculateSmoothnessLimitation(Vector3D const& p, EligbleFace c
     Vector3D const& nearestSharpCorner = corners_boundary_tree.points[nearestSharpCorner_index];
 
     double const dist_nearest_corner = distance(p, nearestSharpCorner);
-    double dist_non_cosmooth_face = std::numeric_limits<double>::max();
+    
+    // Edges
+    VoroCrust_KD_Tree_Boundary const& edges_boundary_tree = trees.VC_kd_sharp_edges;
+
+    int const nearestPointOnSharpEdge_index = edges_boundary_tree.nearestNeighbor(p);
+    Vector3D const& nearestPointOnSharpEdge = edges_boundary_tree.points[nearestPointOnSharpEdge_index];
+
+    double const dist_nearest_sharp_edge = distance(p, nearestPointOnSharpEdge);
 
     // Faces
+    double dist_non_cosmooth_face = std::numeric_limits<double>::max();
 
     VoroCrust_KD_Tree_Boundary const& faces_boundary_tree = trees.VC_kd_faces;
     Face const& plc_face = plc->faces[face_sampled.plc_index];
@@ -296,5 +304,5 @@ double FacesRMPS::calculateSmoothnessLimitation(Vector3D const& p, EligbleFace c
         dist_non_cosmooth_face = std::min(dist_non_cosmooth_face, distance(p, nn_different_patch_p));
     }
 
-    return std::min(dist_nearest_corner, dist_non_cosmooth_face);
+    return std::min({dist_nearest_corner, dist_nearest_sharp_edge, dist_non_cosmooth_face});
 }
