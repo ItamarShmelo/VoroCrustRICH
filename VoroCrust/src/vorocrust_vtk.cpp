@@ -72,7 +72,7 @@ namespace vorocrust_vtk {
             ugrid->InsertNextCell(VTK_POLYHEDRON, point_array_in_cell.size(), ptIds, 1, faces_vtk->GetPointer(0));        
         }
 
-        std::vector<SurfacePatch> patches = plc.patches;
+        std::vector<SurfacePatch> const& patches = plc.patches;
 
         // set Faces Surface Patch index.
         vtkNew<vtkIntArray> data;
