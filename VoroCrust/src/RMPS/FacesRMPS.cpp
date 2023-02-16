@@ -340,9 +340,7 @@ bool FacesRMPS::discardEligbleFaces(Trees const& trees) {
         
         for(std::size_t const ball_index : balls_to_check_faces) {
             //! MIGHTBEUNECESSARY: all relevent balls should already be in the same patch
-            if(face.patch_index == faces_ball_tree.feature_index[ball_index]){
-                discard = discard || isEligbleFaceDeeplyCoveredInFaceBall(face, trees, ball_index);
-            }
+            discard = discard || isEligbleFaceDeeplyCoveredInFaceBall(face, trees, ball_index);
         }
 
         if(discard){
