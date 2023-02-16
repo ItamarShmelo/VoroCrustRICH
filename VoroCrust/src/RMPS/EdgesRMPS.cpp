@@ -306,6 +306,9 @@ bool EdgesRMPS::doSampling(VoroCrust_KD_Tree_Ball &edges_ball_tree, Trees const&
         if(!success) continue;
 
         if(miss_counter >= 100){
+            // remake tree so seach is faster
+            edges_ball_tree.remakeTree();
+
             divideEligbleEdges();
             //! IMPORTANT: resample needs to be on the right of the ||!!!!
             resample = discardEligbleEdges(trees) || resample;
