@@ -101,6 +101,65 @@ namespace vorocrust_vtk {
         writer->Write();
     }
     
+    void write_vtu_faces(std::filesystem::path const& filename, std::vector<std::vector<Vector3D>> const& faces){
+        if(filename.extension() != ".vtu"){
+            std::cout << "file extension for `filename` in `write_vtu_faces` must be '.vtu'!!!" << std::endl;
+            exit(1);
+        }
+
+        std::vector<Vector3D> vertices;
+        for(auto const& face : faces) 
+            vertices.insert(vertices.end(), face.begin(), face.end());
+        vertices = unique(vertices);
+
+
+        std::size_t const num_vertices = vertices.size();
+        std::size_t const num_faces = faces.size();
+
+        vtkNew<vtkUnstructuredGrid> ugrid;
+
+        vtkNew<vtkPoints> points;
+
+        points->SetNumberOfPoints(num_vertices);
+
+        // set Vertices.
+        for (std::size_t p = 0; p < num_vertices; ++p){
+            points->SetPoint(p, vertices[p].x, vertices[p].y, vertices[p].z);
+        }
+        ugrid->SetPoints(points);
+
+        ugrid->Allocate(num_faces);
+        // define Faces
+        std::vector<vtkIdType> point_array_in_cell;
+        for(std::size_t face_index=0; face_index < num_faces; ++face_index){
+            vtkNew<vtkIdList> faces_vtk;
+            point_array_in_cell.clear();
+
+            auto& face = faces[face_index];
+            size_t const Nvertices_in_face = face.size();
+
+            faces_vtk->InsertNextId(Nvertices_in_face);
+            for (std::size_t i = 0; i < Nvertices_in_face; ++i) {
+                auto const& it = std::find(vertices.begin(), vertices.end(), face[i]);
+                std::size_t const index = std::distance(vertices.begin(), it);
+                faces_vtk->InsertNextId(index);
+                point_array_in_cell.push_back(index);
+            }
+
+            std::sort(point_array_in_cell.begin(), point_array_in_cell.end());
+            point_array_in_cell = unique(point_array_in_cell);
+            vtkIdType* ptIds = &point_array_in_cell[0];
+            ugrid->InsertNextCell(VTK_POLYHEDRON, point_array_in_cell.size(), ptIds, 1, faces_vtk->GetPointer(0));        
+        }        
+        
+        // write
+        vtkNew<vtkXMLUnstructuredGridWriter> writer;
+        writer->SetCompressionLevel(1);
+        writer->SetFileName(filename.c_str());
+        writer->SetInputData(ugrid);
+        writer->Write();
+    }
+
     void write_arbitrary_oriented_vectors(std::filesystem::path const& filename, 
                                           std::vector<Vector3D> const& startPoints, 
                                           std::vector<Vector3D> const& vectors, 

@@ -17,6 +17,10 @@ namespace vorocrust_vtk{
 */
 void write_vtu_PL_Complex(std::filesystem::path const& filename, PL_Complex const& plc);
 
+/*! \brief writes a vector of faces as a vtu file
+*/
+void write_vtu_faces(std::filesystem::path const& filename, std::vector<std::vector<Vector3D>> const& faces);
+
 /*! \brief writes an arbitrary set of orienter `vectors` starting at `startPoints` */
 void write_arbitrary_oriented_vectors(std::filesystem::path const& filename, 
                                       std::vector<Vector3D> const& startPoints, 
