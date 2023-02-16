@@ -401,6 +401,9 @@ bool FacesRMPS::doSampling(VoroCrust_KD_Tree_Ball &faces_ball_tree, Trees const&
         if(!success) continue;
 
         if(miss_counter >= 100){
+            // remake tree so search is faster
+            faces_ball_tree.remakeTree();
+            
             divideEligbleFaces();
             //! IMPORTANT: resample needs to be on the right of the ||!!!!
             resample = discardEligbleFaces(trees) || resample; 
