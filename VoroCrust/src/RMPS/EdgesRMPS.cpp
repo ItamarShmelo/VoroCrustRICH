@@ -126,7 +126,6 @@ void EdgesRMPS::discardEligbleEdgesContainedInCornerBalls(Trees const& trees){
             double const r = corners_ball_tree.ball_radii[nn_index];
 
             if(distance(edge[0], center) <= r && distance(edge[1], center) <= r){
-                // to_discard.push_back(i);
                 isDeleted[i] = true;
                 continue;
             }
@@ -139,16 +138,9 @@ void EdgesRMPS::discardEligbleEdgesContainedInCornerBalls(Trees const& trees){
             double const r = corners_ball_tree.ball_radii[nn_index];
 
             if(distance(edge[0], center) <= r && distance(edge[1], center) <= r){
-                // to_discard.push_back(i);
                 isDeleted[i] = true;
             }
         }
-    }
-
-    // discard in reverse order bacause each erase changes the indices
-    for(long i=to_discard.size()-1; i>=0; --i){
-        std::size_t const ind_to_discard = to_discard[i];
-        eligble_edges.erase(eligble_edges.begin() + ind_to_discard);
     }
 }
 
@@ -256,7 +248,6 @@ bool EdgesRMPS::discardEligbleEdges(Trees const& trees){
         }
 
         if(discard){
-            // eligble_edges.erase(eligble_edges.begin()+i);
             isDeleted[i] = true;
         }
     }
