@@ -413,13 +413,7 @@ bool FacesRMPS::doSampling(VoroCrust_KD_Tree_Ball &faces_ball_tree, Trees const&
     int miss_counter = 0;
 
     while(not eligble_faces.empty()) {
-        //! PRINTFORDEBUG: remove it at the end
-        if(eligble_faces.size() > 100000){ 
-            EligbleFace f_face = eligble_faces[0];
-            std::cout << "eligble_faces[0][0] = " << f_face[0].x << ", " << f_face[0].y << ", " << f_face[0].z << std::endl;
-            break;
-        } 
-
+        
         auto const& [success, face_index, p] = sampleEligbleFaces(total_area, start_area);
 
         if(!success) continue;
