@@ -339,13 +339,13 @@ bool FacesRMPS::discardEligbleFaces(Trees const& trees) {
         Vector3D const& nn_face_ball_center = faces_ball_tree.points[i_nn_face_ball];
         double const nn_face_ball_radius = faces_ball_tree.ball_radii[i_nn_face_ball];
 
-        double const r_max = 2.0 / (1.0 - L_Lipschitz) * nn_face_ball_radius;
+        double const r_max = (nn_face_ball_radius + L_Lipschitz*distance(face.face[0], nn_face_ball_center)) / (1.0 - L_Lipschitz); 
 
-        std::vector<std::size_t> const& balls_to_check_faces = faces_ball_tree.getOverlappingBalls(nn_face_ball_center, nn_face_ball_radius, r_max);
+        std::vector<int> const& balls_to_check_faces = faces_ball_tree.radiusSearch(face.face[0], r_max);
 
         bool discard = false;
         
-        for(std::size_t const ball_index : balls_to_check_faces) {
+        for(int const ball_index : balls_to_check_faces) {
             //! MIGHTBEUNECESSARY: all relevent balls should already be in the same patch
             discard = discard || isEligbleFaceDeeplyCoveredInFaceBall(face, trees, ball_index);
         }
