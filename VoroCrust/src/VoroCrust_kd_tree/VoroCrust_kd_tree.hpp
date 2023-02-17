@@ -41,6 +41,8 @@ class VoroCrust_KD_Tree {
         //! \brief construct a VoroCrust_KD_Tree from a given vector of points
         VoroCrust_KD_Tree(std::vector<Vector3D> const& points);
         
+        virtual ~VoroCrust_KD_Tree() = default;
+
         //! \brief make the VoroCrust_KD_Tree from a given vector of points
         void makeTree(std::vector<Vector3D> const& points_);
 
@@ -109,7 +111,7 @@ class VoroCrust_KD_Tree_Boundary : public VoroCrust_KD_Tree {
 
         VoroCrust_KD_Tree_Boundary(std::vector<Vector3D> const& points, std::vector<Vector3D> const& vecs, std::vector<std::size_t> const& feature_index_, std::vector<std::size_t> const& plc_index_);
 
-        ~VoroCrust_KD_Tree_Boundary() = default;
+        virtual ~VoroCrust_KD_Tree_Boundary() = default;
 
         void insert(Vector3D const& point, Vector3D const& vec, std::size_t f_index, std::size_t plc_index_);
 
@@ -140,7 +142,7 @@ class VoroCrust_KD_Tree_Ball : public VoroCrust_KD_Tree_Boundary {
 
         VoroCrust_KD_Tree_Ball(std::vector<Vector3D> const& points, std::vector<Vector3D> const& vecs, std::vector<double> const& radii, std::vector<std::size_t> const& feature_index_, std::vector<std::size_t> const& plc_index_);
 
-        ~VoroCrust_KD_Tree_Ball() = default;
+        virtual ~VoroCrust_KD_Tree_Ball() = default;
 
         void insert(Vector3D const& point, Vector3D const& vec, double radius, std::size_t const f_index, std::size_t const& plc_index_);
 
