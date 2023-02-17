@@ -310,11 +310,6 @@ bool EdgesRMPS::doSampling(VoroCrust_KD_Tree_Ball &edges_ball_tree, Trees const&
 
     while(not eligble_edges.empty()){
         //! PRINTFORDEBUG: remove it at the end
-        if(eligble_edges.size() > 100000){ 
-            EligbleEdge f_edge = eligble_edges[0];
-            std::cout << "eligble_edge[0][0] = " << f_edge[0].x << ", " << f_edge[0].y << ", " << f_edge[0].z << std::endl;
-            break;
-        }
         auto const& [success, edge_index, p] = sampleEligbleEdges(total_len, start_len);
 
         if(!success) continue;
