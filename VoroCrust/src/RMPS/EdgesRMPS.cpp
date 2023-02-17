@@ -111,8 +111,6 @@ std::tuple<bool, std::size_t const, Vector3D const> EdgesRMPS::sampleEligbleEdge
 void EdgesRMPS::discardEligbleEdgesContainedInCornerBalls(Trees const& trees){
     VoroCrust_KD_Tree_Ball const& corners_ball_tree = trees.ball_kd_vertices;
 
-    std::vector<std::size_t> to_discard;
-
     std::size_t const num_of_eligble_edges = eligble_edges.size();
     for(std::size_t i=0 ; i<num_of_eligble_edges; ++i){
         EligbleEdge const& edge = eligble_edges[i];
