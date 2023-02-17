@@ -10,7 +10,8 @@ VoroCrustEdge::VoroCrustEdge(Vertex const& v1,
                                                          faces(), 
                                                          index(index_),
                                                          isSharp(false),
-                                                         isCreased(false){}
+                                                         isCreased(false),
+                                                         crease_index(-1) {}
 
 bool VoroCrustEdge::checkIfEqual(Vertex const& v1, Vertex const& v2){
     if (v1->index == vertex1->index && v2->index == vertex2->index)
