@@ -76,7 +76,6 @@ void VoroCrustAlgorithm::run() {
         
         break;
     }
-
 }
 
 bool VoroCrustAlgorithm::enforceLipschitzness(VoroCrust_KD_Tree_Ball& ball_tree){
