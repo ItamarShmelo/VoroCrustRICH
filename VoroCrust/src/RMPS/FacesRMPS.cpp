@@ -190,7 +190,6 @@ std::tuple<bool, std::size_t const, Vector3D const> FacesRMPS::sampleEligbleFace
 void FacesRMPS::discardEligbleFacesContainedInCornerBalls(Trees const& trees) {
     VoroCrust_KD_Tree_Ball const& corners_ball_tree = trees.ball_kd_vertices;
 
-    std::vector<std::size_t> to_discard;
 
     std::size_t const eligble_faces_size = eligble_faces.size();
 
@@ -207,17 +206,10 @@ void FacesRMPS::discardEligbleFacesContainedInCornerBalls(Trees const& trees) {
             double const r = corners_ball_tree.ball_radii[nn_index];
 
             if(face.isContainedInBall(center, r)){
-                // to_discard.push_back(i);
                 isDeleted[i] = true;
                 break;
             }
         }
-    }
-
-    // discard in reverse order bacause each erase changes the indices
-    for(long i=to_discard.size()-1; i>=0 ; --i){
-        std::size_t const ind_to_discard = to_discard[i];
-        eligble_faces.erase(eligble_faces.begin() + ind_to_discard);
     }
 }
 
@@ -233,7 +225,6 @@ bool EligbleFace::isContainedInBall(Vector3D const& center, double const r) cons
 void FacesRMPS::discardEligbleFacesContainedInEdgeBalls(Trees const& trees) {
     VoroCrust_KD_Tree_Ball const& edges_ball_tree = trees.ball_kd_edges;
 
-    std::vector<std::size_t> to_discard;
 
     std::size_t const eligble_faces_size = eligble_faces.size();
 
@@ -256,18 +247,10 @@ void FacesRMPS::discardEligbleFacesContainedInEdgeBalls(Trees const& trees) {
             double const r = edges_ball_tree.ball_radii[j];
 
             if(face.isContainedInBall(center, r)){
-                // to_discard.push_back(i);
                 isDeleted[i] = true;
                 break;
             }
         }
-    }
-
-    //! CODEDUPLICATION: with discardEligbleFacesContainedInCornerBalls
-    // discard in reverse order bacause each erase changes the indices
-    for(long i=to_discard.size()-1; i>=0 ; --i){
-        std::size_t const ind_to_discard = to_discard[i];
-        eligble_faces.erase(eligble_faces.begin() + ind_to_discard);
     }
 }
 
@@ -351,7 +334,6 @@ bool FacesRMPS::discardEligbleFaces(Trees const& trees) {
         }
 
         if(discard){
-            // eligble_faces.erase(eligble_faces.begin() + i);
             isDeleted[i] = true;
         }
     }
