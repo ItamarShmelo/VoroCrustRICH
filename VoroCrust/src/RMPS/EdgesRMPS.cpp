@@ -231,16 +231,16 @@ bool EdgesRMPS::discardEligbleEdges(Trees const& trees){
         
         //! MIGHTBEUNECESSARY: this might be unecessary because I can take the nearest neighbor to one of the vertices
         // of the edge and use the r_max test (see FacesRMPS)
-        std::size_t const i_nn_edge_ball = trees.ball_kd_edges.nearestNeighborToSegment(edge.edge);
+        std::size_t const i_nn_edge_ball = trees.ball_kd_edges.nearestNeighbor(edge.edge[0]);
         Vector3D const& nn_edge_ball_center = trees.ball_kd_edges.points[i_nn_edge_ball];
         double const nn_edge_ball_radius = trees.ball_kd_edges.ball_radii[i_nn_edge_ball];
 
-        double const r_max = 2.0 / (1.0 - L_Lipschitz) * nn_edge_ball_radius;
+        double const r_max = (nn_edge_ball_radius + L_Lipschitz*distance(edge.edge[0], nn_edge_ball_center)) / (1.0 - L_Lipschitz); 
 
-        std::vector<std::size_t> const& balls_to_check_edges = trees.ball_kd_edges.getOverlappingBalls(nn_edge_ball_center, nn_edge_ball_radius, r_max);
+        std::vector<int> const& balls_to_check_edges = trees.ball_kd_edges.radiusSearch(edge.edge[0], r_max);
 
         bool discard = false;
-        for(std::size_t const ball_index : balls_to_check_edges){
+        for(int const ball_index : balls_to_check_edges){
             //! MIGHTBEUNECESSARY: all relevent balls should already be in the same crease
             if(edge.crease_index == trees.ball_kd_edges.feature_index[ball_index]){
                 discard = discard || isEligbleEdgeDeeplyCoveredInEdgeBall(edge, trees, ball_index);
