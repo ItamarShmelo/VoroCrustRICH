@@ -77,6 +77,8 @@ double CornersRMPS::calculateSmoothnessLimitation(EligbleCorner const& corner, T
     // find neareset non cosmooth point on the edges
     std::vector<std::size_t> creases_exclude;
     for(Edge const& edge : corner->edges){
+        if(not edge->isSharp) continue;
+        
         std::size_t const crease_index = edge->crease_index;
         creases_exclude.push_back(crease_index);
 
