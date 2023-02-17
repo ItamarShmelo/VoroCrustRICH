@@ -38,6 +38,7 @@ class EdgesRMPS {
         
         std::shared_ptr<PL_Complex const> plc;
         std::vector<EligbleEdge> eligble_edges;
+        std::vector<bool> isDeleted;
 
         EdgesRMPS(double const maxRadius_, double const L_Lipschitz_, double const alpha_, double const sharpTheta_, std::shared_ptr<PL_Complex> const& plc_);
         ~EdgesRMPS() = default;

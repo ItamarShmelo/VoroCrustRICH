@@ -1,6 +1,6 @@
 #include "EdgesRMPS.hpp"
 
-EdgesRMPS::EdgesRMPS(double const maxRadius_, double const L_Lipschitz_, double const alpha_, double const sharpTheta_, std::shared_ptr<PL_Complex> const& plc_) : maxRadius(maxRadius_), L_Lipschitz(L_Lipschitz_), alpha(alpha_), sharpTheta(sharpTheta_), uni01_gen(boost::mt19937(std::time(nullptr)), boost::random::uniform_01<>()), plc(plc_), eligble_edges() {}
+EdgesRMPS::EdgesRMPS(double const maxRadius_, double const L_Lipschitz_, double const alpha_, double const sharpTheta_, std::shared_ptr<PL_Complex> const& plc_) : maxRadius(maxRadius_), L_Lipschitz(L_Lipschitz_), alpha(alpha_), sharpTheta(sharpTheta_), uni01_gen(boost::mt19937(std::time(nullptr)), boost::random::uniform_01<>()), plc(plc_), eligble_edges(), isDeleted() {}
 
 void EdgesRMPS::loadEdges(std::vector<Edge> const& sharp_edges){
     if(not eligble_edges.empty()){
@@ -10,6 +10,8 @@ void EdgesRMPS::loadEdges(std::vector<Edge> const& sharp_edges){
 
     for(Edge const& edge : sharp_edges)
         eligble_edges.push_back(EligbleEdge(edge->vertex1->vertex, edge->vertex2->vertex, edge->crease_index, edge->index));
+
+    isDeleted = std::vector<bool>(eligble_edges.size(), false);
 }
 
 std::pair<double const, std::vector<double> const> EdgesRMPS::calculateTotalLengthAndStartLengthOfEligbleEdges() const {
@@ -49,6 +51,7 @@ void EdgesRMPS::divideEligbleEdges(){
     }
 
     eligble_edges = new_eligble_edges;
+    isDeleted = std::vector<bool>(eligble_edges.size(), false);
 }
 
 bool EdgesRMPS::checkIfPointIsDeeplyCovered(Vector3D const& p, std::size_t const edge_index, Trees const& trees) const {
@@ -123,7 +126,8 @@ void EdgesRMPS::discardEligbleEdgesContainedInCornerBalls(Trees const& trees){
             double const r = corners_ball_tree.ball_radii[nn_index];
 
             if(distance(edge[0], center) <= r && distance(edge[1], center) <= r){
-                to_discard.push_back(i);
+                // to_discard.push_back(i);
+                isDeleted[i] = true;
                 continue;
             }
         }
@@ -135,7 +139,8 @@ void EdgesRMPS::discardEligbleEdgesContainedInCornerBalls(Trees const& trees){
             double const r = corners_ball_tree.ball_radii[nn_index];
 
             if(distance(edge[0], center) <= r && distance(edge[1], center) <= r){
-                to_discard.push_back(i);
+                // to_discard.push_back(i);
+                isDeleted[i] = true;
             }
         }
     }
@@ -228,6 +233,7 @@ bool EdgesRMPS::discardEligbleEdges(Trees const& trees){
 
     // discard in reverse order bacause each erase changes the indices
     for(long i = eligble_edges.size()-1; i >= 0; --i){
+        if(isDeleted[i]) continue;
         EligbleEdge const& edge = eligble_edges[i];
         
         
@@ -250,9 +256,26 @@ bool EdgesRMPS::discardEligbleEdges(Trees const& trees){
         }
 
         if(discard){
-            eligble_edges.erase(eligble_edges.begin()+i);
+            // eligble_edges.erase(eligble_edges.begin()+i);
+            isDeleted[i] = true;
         }
     }
+
+    std::size_t not_deleted = 0;
+    for(std::size_t i=0; i < isDeleted.size(); ++i){
+        if(not isDeleted[i]) not_deleted++;
+    }
+
+    std::vector<EligbleEdge> new_eligble_edges(not_deleted, eligble_edges[0]);
+
+    for(std::size_t i=0, j=0; i < isDeleted.size(); ++i){
+        if(not isDeleted[i]){
+            new_eligble_edges[j] = eligble_edges[i];
+            ++j;
+        }
+    }
+    
+    eligble_edges = new_eligble_edges;
 
     return shrunkOtherStrataBalls;
 }
