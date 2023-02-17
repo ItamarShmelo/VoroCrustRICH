@@ -41,6 +41,7 @@ class FacesRMPS {
 
         std::shared_ptr<PL_Complex const> plc;
         std::vector<EligbleFace> eligble_faces;
+        std::vector<bool> isDeleted;
 
         FacesRMPS(double const maxRadius_, double const L_Lipschitz_, double const alpha_, double const sharpTheta_, std::shared_ptr<PL_Complex> const& plc_);
         ~FacesRMPS() = default;

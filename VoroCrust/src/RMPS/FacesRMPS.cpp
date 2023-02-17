@@ -11,7 +11,8 @@ FacesRMPS::FacesRMPS(double const maxRadius_,
                                     sharpTheta(sharpTheta_), 
                                     uni01_gen(boost::mt19937(std::time(nullptr)), boost::random::uniform_01<>()), 
                                     plc(plc_), 
-                                    eligble_faces() {}
+                                    eligble_faces(),
+                                    isDeleted() {}
 
 void FacesRMPS::loadFaces(std::vector<Face> const& faces) {
     if(not eligble_faces.empty()){
@@ -27,6 +28,8 @@ void FacesRMPS::loadFaces(std::vector<Face> const& faces) {
 
         eligble_faces.push_back(EligbleFace(vertices, face->patch_index, face->index, face->calcArea()));
     }
+
+    isDeleted = std::vector<bool>(eligble_faces.size(), false);
 }
 
 std::pair<double const, std::vector<double> const> FacesRMPS::calculateTotalAreaAndStartAreaOfEligbleFaces() const {
@@ -92,6 +95,7 @@ void FacesRMPS::divideEligbleFaces() {
     }
 
     eligble_faces = new_eligble_faces;
+    isDeleted = std::vector<bool>(eligble_faces.size(), false);
 }
 
 bool FacesRMPS::checkIfPointIsDeeplyCovered(Vector3D const& p, Trees const& trees) const {
@@ -203,7 +207,8 @@ void FacesRMPS::discardEligbleFacesContainedInCornerBalls(Trees const& trees) {
             double const r = corners_ball_tree.ball_radii[nn_index];
 
             if(face.isContainedInBall(center, r)){
-                to_discard.push_back(i);
+                // to_discard.push_back(i);
+                isDeleted[i] = true;
                 break;
             }
         }
@@ -233,8 +238,8 @@ void FacesRMPS::discardEligbleFacesContainedInEdgeBalls(Trees const& trees) {
     std::size_t const eligble_faces_size = eligble_faces.size();
 
     for(std::size_t i=0; i < eligble_faces_size; ++i){
+        if(isDeleted[i]) continue;
         EligbleFace const& face = eligble_faces[i];
-
         // find the closes ball to the first vertex
         Vector3D const& v1 = face.face[0];        
         std::size_t const nn_index = edges_ball_tree.nearestNeighbor(v1);
@@ -251,7 +256,8 @@ void FacesRMPS::discardEligbleFacesContainedInEdgeBalls(Trees const& trees) {
             double const r = edges_ball_tree.ball_radii[j];
 
             if(face.isContainedInBall(center, r)){
-                to_discard.push_back(i);
+                // to_discard.push_back(i);
+                isDeleted[i] = true;
                 break;
             }
         }
@@ -326,6 +332,7 @@ bool FacesRMPS::discardEligbleFaces(Trees const& trees) {
     // erase in reverse so indices wont change
     // might be better to put the indices in a vector then discard all at once
     for(long i=eligble_faces.size()-1; i>=0 ; --i){
+        if(isDeleted[i]) continue;
         EligbleFace const& face = eligble_faces[i];
 
         std::size_t const i_nn_face_ball = faces_ball_tree.nearestNeighbor(face.face[0]);
@@ -344,9 +351,26 @@ bool FacesRMPS::discardEligbleFaces(Trees const& trees) {
         }
 
         if(discard){
-            eligble_faces.erase(eligble_faces.begin() + i);
+            // eligble_faces.erase(eligble_faces.begin() + i);
+            isDeleted[i] = true;
         }
     }
+
+    std::size_t not_deleted = 0;
+    for(std::size_t i=0; i < isDeleted.size(); ++i){
+        if(not isDeleted[i]) not_deleted++;
+    }
+
+    std::vector<EligbleFace> new_eligble_faces(not_deleted, EligbleFace(std::vector<Vector3D>(3, Vector3D(0, 0, 0)), 0.0, 0.0, 0.0));
+
+    for(std::size_t i=0, j=0; i < isDeleted.size(); ++i){
+        if(not isDeleted[i]){
+            new_eligble_faces[j] = eligble_faces[i];
+            ++j;
+        }
+    }
+
+    eligble_faces = new_eligble_faces;
 
     return shrunkOtherStataBalls;
 }
