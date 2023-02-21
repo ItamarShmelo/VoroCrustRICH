@@ -4,7 +4,11 @@ runs/temp_*
 build
 *.pyc
 __pycache__
-runs/
+output
+error
+*.h5
+*.vtu
+*.pvtu
 
 VoroCrust/CMakeFiles
 VoroCrust/cmake_install.cmake
