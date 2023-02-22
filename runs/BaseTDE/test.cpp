@@ -303,6 +303,8 @@ namespace
 			double const apocenter = Rstar_ * std::pow(Mbh_ / Mstar_, 2.0 / 3.0);
 			double const Rt = Rstar_ * std::pow(Mbh_ / Mstar_, 1.0 / 3.0);
 			double const min_cell_size = Rt * 1e-2;
+			double const apocenter_time = std::sqrt(apocenter * apocenter * apocenter / Mbh_);
+
 			for (size_t i = 0; i < Norg; ++i)
 			{
 				if (fastabs(tess.GetCellCM(i) - tess.GetMeshPoint(i)) > (tess.GetWidth(i) * 0.15))
@@ -310,10 +312,11 @@ namespace
 				if (tess.GetWidth(i) < min_cell_size)
 					continue;
 				double r_dist = fastabs(tess.GetMeshPoint(i));
-				if (r_dist < 2 * Rt)
+				if (r_dist < 2 * Rt || r_dist > 0.5 * apocenter)
 					continue;
 
 				double MaxMass2 = (tess.GetMeshPoint(i).x > (-apocenter * 2.5)) ? MaxMass : MaxMass * 30;
+				MaxMass2 *= std::min(1.0, std::pow(std::abs(time) / apocenter_time, 3.0));
 
 				double V = tess.GetVolume(i);
 				tess.GetNeighbors(i, neigh);
@@ -382,6 +385,7 @@ namespace
 			double const Rt = Rstar_ * std::pow(Mbh_ / Mstar_, 1.0 / 3.0);
 			double const time_Rt = std::sqrt(Rt * Rt * Rt / Mbh_);
 			double const min_cell_size = Rt * 1e-2;
+			double const apocenter_time = std::sqrt(apocenter * apocenter * apocenter / Mbh_);
 
 			double MaxMass = 3e-8;
 			for (size_t i = 0; i < Norg; ++i)
@@ -394,6 +398,7 @@ namespace
 				double w = tess.GetWidth(i);
 				double MaxMass2 = (tess.GetMeshPoint(i).x > -Rt * apocenter * 2.5) ? MaxMass : MaxMass * 30;
 				double r_i = fastabs(tess.GetMeshPoint(i));
+				MaxMass2 *= std::min(1.0, std::pow(std::abs(time) / apocenter_time, 3.0));
 				MaxMass2 = MaxMass2 * std::min(r_i * r_i / (50 * Rt * Rt), 1.0);
 				double const dt = w / eos_.dp2c(cells[i].density, cells[i].pressure, cells[i].tracers);
 				if (Vol * cells[i].density > MaxMass2 && w > 0.7 * min_cell_size && dt > 0.03 * time_Rt)
@@ -664,11 +669,14 @@ int main(void)
 		);
 		++counter;
 		t_restart = snap.time;
-		snap = ReadSnapshot3D(restart_name
-#ifdef RICH_MPI
-			, true
-#endif
-		);
+		auto last_time_restart = std::filesystem::last_write_time(restart_name);
+		auto last_time_snap = std::filesystem::last_write_time(file_name + int2str(counter) + ".h5");
+		if(last_time_snap < last_time_restart)
+			snap = ReadSnapshot3D(restart_name
+	#ifdef RICH_MPI
+				, true
+	#endif
+			);
 		ll = snap.ll;
 		ur = snap.ur;
 #ifdef RICH_MPI
