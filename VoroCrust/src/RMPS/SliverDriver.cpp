@@ -150,3 +150,7 @@ void SliverDriver::dealWithTriplets(BallInfo const& ball_info_1, Triplet const& 
         setRadiusOfBall(r_new, ball_info_4, trees);
     }
 }
+
+bool operator==(BallInfo const& lhs, BallInfo const& rhs) {
+    return (lhs.index == rhs.index) && (lhs.dim == rhs.dim);
+}
