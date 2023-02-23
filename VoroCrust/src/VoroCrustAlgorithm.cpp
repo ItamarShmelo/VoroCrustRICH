@@ -75,7 +75,11 @@ void VoroCrustAlgorithm::run() {
             trees.ball_kd_faces.remakeTree();
         } while(enforceLipschitzness(trees.ball_kd_faces));
         
-        break;
+        
+        if(not sliverDriver.eliminateSlivers(trees)) break;
+
+        enforceLipschitzness(trees.ball_kd_edges);
+        enforceLipschitzness(trees.ball_kd_faces);
     }
 }
 
