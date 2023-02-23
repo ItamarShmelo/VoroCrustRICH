@@ -121,7 +121,7 @@ void EdgesRMPS::discardEligbleEdgesContainedInCornerBalls(Trees const& trees){
             std::size_t const nn_index = corners_ball_tree.nearestNeighbor(edge_crease.front()->vertex1->vertex);
 
             Vector3D const& center = corners_ball_tree.points[nn_index];
-            double const r = corners_ball_tree.ball_radii[nn_index];
+            double const r = corners_ball_tree.ball_radii[nn_index]*(1. - alpha);
 
             if(distance(edge[0], center) <= r && distance(edge[1], center) <= r){
                 isDeleted[i] = true;
@@ -133,7 +133,7 @@ void EdgesRMPS::discardEligbleEdgesContainedInCornerBalls(Trees const& trees){
             std::size_t const nn_index = corners_ball_tree.nearestNeighbor(edge_crease.back()->vertex2->vertex);
 
             Vector3D const& center = corners_ball_tree.points[nn_index];
-            double const r = corners_ball_tree.ball_radii[nn_index];
+            double const r = corners_ball_tree.ball_radii[nn_index]*(1. - alpha);
 
             if(distance(edge[0], center) <= r && distance(edge[1], center) <= r){
                 isDeleted[i] = true;

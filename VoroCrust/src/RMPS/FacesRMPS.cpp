@@ -203,7 +203,7 @@ void FacesRMPS::discardEligbleFacesContainedInCornerBalls(Trees const& trees) {
             std::size_t const nn_index = corners_ball_tree.nearestNeighbor(corner->vertex);
 
             Vector3D const& center = corners_ball_tree.points[nn_index];
-            double const r = corners_ball_tree.ball_radii[nn_index];
+            double const r = corners_ball_tree.ball_radii[nn_index]*(1. - alpha);
 
             if(face.isContainedInBall(center, r)){
                 isDeleted[i] = true;
@@ -244,7 +244,7 @@ void FacesRMPS::discardEligbleFacesContainedInEdgeBalls(Trees const& trees) {
 
         for(int const j : suspects) {
             Vector3D const& center = edges_ball_tree.points[j];
-            double const r = edges_ball_tree.ball_radii[j];
+            double const r = edges_ball_tree.ball_radii[j]*(1. - alpha);
 
             if(face.isContainedInBall(center, r)){
                 isDeleted[i] = true;
