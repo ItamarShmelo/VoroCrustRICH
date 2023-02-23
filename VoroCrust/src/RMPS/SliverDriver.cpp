@@ -235,3 +235,24 @@ std::pair<double const, double const> getZDependency(double const a1, double con
     return std::pair<double const, double const>(e, f);
 }
 
+bool SliverDriver::eliminateSlivers(Trees &trees){
+    // initialize radii of balls
+    r_new_corner_balls = trees.ball_kd_vertices.ball_radii;
+    r_new_edge_balls = trees.ball_kd_edges.ball_radii;
+    r_new_face_balls = trees.ball_kd_faces.ball_radii;
+    
+    number_of_slivers_eliminated = 0;
+    
+    eliminateSliversForBallsInBallTree(Dim::CORNER, trees);
+    eliminateSliversForBallsInBallTree(Dim::EDGE, trees);
+    eliminateSliversForBallsInBallTree(Dim::FACE, trees);
+
+    // update ball radii
+    trees.ball_kd_vertices.ball_radii = r_new_corner_balls;
+    trees.ball_kd_edges.ball_radii    = r_new_edge_balls;
+    trees.ball_kd_faces.ball_radii    = r_new_face_balls;
+
+    std::cout << "number of slivers eliminated in this iteration = " << number_of_slivers_eliminated << std::endl;
+
+    return number_of_slivers_eliminated != 0;
+}
