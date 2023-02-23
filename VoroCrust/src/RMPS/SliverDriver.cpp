@@ -221,16 +221,16 @@ std::pair<double const, double const> getZDependency(double const a1, double con
     
     //! WARNING: EPSILONTICA
     if(std::abs(a1) < 1e-14){
-        return std::pair<double const, double const>(k1/b1, -c1/b1);
+        return std::pair<double const, double const>(-c1/b1, k1/b1);
     }
     
     if(std::abs(a3) < 1e-14){
-        return std::pair<double const, double const>(k3/b3, -c3/b3);
+        return std::pair<double const, double const>(-c3/b3, k3/b3);
     }
 
     double const a31 = a3 / a1;
     double const e = (c3 - c1*a31) / (b1*a31 - b3);
-    double const f = (k1 - a31 * k3) / (b1*a31 - b3);
+    double const f = (k1*a31 - k3) / (b1*a31 - b3);
 
     return std::pair<double const, double const>(e, f);
 }
