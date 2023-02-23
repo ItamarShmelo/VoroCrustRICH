@@ -664,4 +664,51 @@ void write_ballTree(std::filesystem::path const& filename,
     writer->Write();
 }
 
+void write_points(std::filesystem::path const& filename, std::vector<Vector3D> const& point_vectors) {
+    if(filename.extension() != ".vtu"){
+        std::cout << "file extension for `filename` in `write_points` must be '.vtu'!!!" << std::endl;
+        exit(1);
+    }
+
+    std::size_t const num_points = point_vectors.size();
+
+    vtkNew<vtkUnstructuredGrid> ugrid;
+    vtkNew<vtkPoints> points;
+
+    points->SetNumberOfPoints(num_points);
+
+    for(std::size_t p=0; p<num_points; ++p){
+        Vector3D const& point = point_vectors[p];
+        points->SetPoint(p, point.x, point.y, point.z); 
+    }
+
+    ugrid->SetPoints(points);
+    ugrid->Allocate(num_points);
+    
+    // define Points as Cells
+    std::vector<vtkIdType> point_array_in_cell;
+    for(std::size_t point_index=0; point_index < num_points; ++point_index){
+        vtkNew<vtkIdList> point_vtk;
+        point_array_in_cell.clear();
+
+        point_vtk->InsertNextId(1);
+        point_vtk->InsertNextId(point_index);
+        point_array_in_cell.push_back(point_index);
+
+        std::sort(point_array_in_cell.begin(), point_array_in_cell.end());
+
+        point_array_in_cell = unique(point_array_in_cell);
+        
+        vtkIdType* ptIds = &point_array_in_cell[0];
+        ugrid->InsertNextCell(VTK_POLYHEDRON, point_array_in_cell.size(), ptIds, 1, point_vtk->GetPointer(0));        
+    }
+    
+    // write
+    vtkNew<vtkXMLUnstructuredGridWriter> writer;
+    writer->SetCompressionLevel(1);
+    writer->SetFileName(filename.c_str());
+    writer->SetInputData(ugrid);
+    writer->Write();
+}
+
 } // namespace
