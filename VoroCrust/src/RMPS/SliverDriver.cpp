@@ -177,3 +177,61 @@ void SliverDriver::setRadiusOfBall(double const r_new, BallInfo const& ball_info
     std::cout << "ERROR: setRadiusOfBall" << std::endl;
     exit(1);
 }
+
+std::pair<Vector3D, Vector3D> SliverDriver::calculateIntersectionSeeds(Ball const& ball_1, Ball const& ball_2, Ball const& ball_3) const {
+    auto const& [p1, r1] = ball_1;
+    auto const& [p2, r2] = ball_2;
+    auto const& [p3, r3] = ball_3;
+
+    auto [a1, b1, c1, k1] = getLineCoeff(p1.x, p1.y, p1.z, r1, p2.x, p2.y, p2.z, r2);
+    auto [a3, b3, c3, k3] = getLineCoeff(p3.x, p3.y, p3.z, r3, p2.x, p2.y, p2.z, r2);
+
+    auto [e, f] = getZDependency(a1, b1, c1, k1, a3, b3, c3, k3);
+    auto [g, h] = getZDependency(b1, a1, c1, k1, b3, a3, c3, k3);
+
+    double const A = (1.0 + g*g + e*e);
+    double const B = -2.0*(g*(p1.x-h) + e*(p1.y-f) + p1.z);
+    double const C = ((p1.x-h)*(p1.x-h) + (p1.y-f) * (p1.y-f) + p1.z*p1.z - r1*r1);
+
+    double const z_plus = (-B + sqrt(B*B - 4*A*C))/(2.0*A);
+    double const x_plus = g*z_plus + h;
+    double const y_plus = e*z_plus + f;
+
+    Vector3D const seed_plus(x_plus, y_plus, z_plus);
+
+    double const z_minus = (-B - sqrt(B*B - 4*A*C))/(2.0*A);
+    double const x_minus = g*z_minus + h;
+    double const y_minus = e*z_minus + f;
+
+    Vector3D const seed_minus(x_minus, y_minus, z_minus);
+
+    return std::pair<Vector3D, Vector3D>(seed_plus, seed_minus);
+}
+
+std::tuple<double const, double const, double const, double const> getLineCoeff(double const x1, double const y1, double const z1, double const r1, double const x2, double const y2, double const z2, double const r2) {
+    double const a = 2.0*(x2-x1);
+    double const b = 2.0*(y2-y1);
+    double const c = 2.0*(z2-z1);
+    double const k = r1*r1 - r2*r2 + x2*x2 - x1*x1 + y2*y2 - y1*y1 + z2*z2 - z1*z1;
+
+    return std::tuple<double const, double const, double const, double const>(a, b, c, k);
+}
+
+std::pair<double const, double const> getZDependency(double const a1, double const b1, double const c1, double const k1, double const a3, double const b3, double const c3, double const k3) {
+    
+    //! WARNING: EPSILONTICA
+    if(std::abs(a1) < 1e-14){
+        return std::pair<double const, double const>(k1/b1, -c1/b1);
+    }
+    
+    if(std::abs(a3) < 1e-14){
+        return std::pair<double const, double const>(k3/b3, -c3/b3);
+    }
+
+    double const a31 = a3 / a1;
+    double const e = (c3 - c1*a31) / (b1*a31 - b3);
+    double const f = (k1 - a31 * k3) / (b1*a31 - b3);
+
+    return std::pair<double const, double const>(e, f);
+}
+
