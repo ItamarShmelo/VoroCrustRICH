@@ -361,8 +361,7 @@ bool EdgesRMPS::doSampling(VoroCrust_KD_Tree_Ball &edges_ball_tree, Trees const&
             std::cout << "trying to create a ball which is too small" << std::endl;
             std::cout << "at p = " << p.x << ", " << p.y << ", " << p.z << std::endl;
             std::cout << "radius = " << radius << std::endl;
-            //! TODO: EXIT HERE
-            break; 
+            exit(1); 
         }
 
         std::cout << "edge sample " << edges_ball_tree.points.size() << ", r = " << radius << std::endl;
