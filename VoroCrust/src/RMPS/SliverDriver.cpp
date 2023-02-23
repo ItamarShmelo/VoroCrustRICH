@@ -65,3 +65,24 @@ std::vector<Triplet> SliverDriver::formTripletsOfOverlappingBalls(std::vector<Ba
     return triplets;
 }
 
+Ball SliverDriver::getBall(BallInfo const& ball_info, Trees const& trees) const {
+    if(ball_info.dim == Dim::FACE){
+        std::size_t const index = ball_info.index;
+        return Ball(trees.ball_kd_faces.points[index], trees.ball_kd_faces.ball_radii[index]);
+    }
+
+    
+    if(ball_info.dim == Dim::EDGE){
+        std::size_t const index = ball_info.index;
+        return Ball(trees.ball_kd_edges.points[index], trees.ball_kd_edges.ball_radii[index]);
+    }
+
+    
+    if(ball_info.dim == Dim::CORNER){
+        std::size_t const index = ball_info.index;
+        return Ball(trees.ball_kd_vertices.points[index], trees.ball_kd_vertices.ball_radii[index]);
+    }
+
+    std::cout << "ERROR: getBall" << std::endl;
+    exit(1);
+}
