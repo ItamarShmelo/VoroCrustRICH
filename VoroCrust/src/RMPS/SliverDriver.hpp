@@ -38,6 +38,8 @@ class SliverDriver {
 
         bool eliminateSlivers(Trees &trees);
 
+        std::vector<Vector3D> getSeeds(Trees const& trees) const;
+
     private:
         void eliminateSliversForBallsInBallTree(Dim const dim, Trees const& trees);
 

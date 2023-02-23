@@ -256,3 +256,36 @@ bool SliverDriver::eliminateSlivers(Trees &trees){
 
     return number_of_slivers_eliminated != 0;
 }
+
+std::vector<Vector3D> SliverDriver::getSeeds(Trees const& trees) const {
+    std::vector<std::pair<Vector3D, Vector3D>> pair_of_seeds;
+
+    VoroCrust_KD_Tree_Ball const& faces_ball_tree = trees.ball_kd_faces;
+    for (std::size_t i = 0; i < faces_ball_tree.points.size(); ++i)
+    {
+        BallInfo ball_info(i, Dim::FACE);
+        std::vector<BallInfo> const& overlapping_balls = groupOverlappingBalls(ball_info, trees);
+        std::vector<Triplet>  const& triplets = formTripletsOfOverlappingBalls(overlapping_balls, trees);
+        for(Triplet const& triplet : triplets){
+            BallInfo const& ball_info_2 = overlapping_balls[triplet.first];
+            BallInfo const& ball_info_3 = overlapping_balls[triplet.second];
+
+            Ball const& ball_1 = getBall(ball_info, trees);
+            Ball const& ball_2 = getBall(ball_info_2, trees);
+            Ball const& ball_3 = getBall(ball_info_3, trees);
+
+            pair_of_seeds.push_back(calculateIntersectionSeeds(ball_1, ball_2, ball_3));
+        }
+    }
+    
+    std::vector<Vector3D> seeds(2*pair_of_seeds.size(), Vector3D(0.0, 0.0, 0.0));
+
+    for(std::size_t i = 0; i < pair_of_seeds.size(); ++i){
+        seeds[2*i] = pair_of_seeds[i].first;
+        seeds[2*i+1] = pair_of_seeds[i].second;
+    }
+
+    seeds = unique(seeds);
+
+    return seeds;
+}

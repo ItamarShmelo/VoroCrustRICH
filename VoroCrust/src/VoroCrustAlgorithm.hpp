@@ -40,6 +40,8 @@ class VoroCrustAlgorithm {
         /*! \brief runs the VoroCrust Algorithm*/
         void run();
 
+        std::vector<Vector3D> getSeeds() const;
+
         std::string repr() const;
 
     private:

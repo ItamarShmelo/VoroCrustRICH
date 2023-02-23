@@ -107,6 +107,10 @@ bool VoroCrustAlgorithm::enforceLipschitzness(VoroCrust_KD_Tree_Ball& ball_tree)
     return isBallsShrunk;
 }
 
+std::vector<Vector3D> VoroCrustAlgorithm::getSeeds() const {
+    return sliverDriver.getSeeds(trees);
+}
+
 std::string VoroCrustAlgorithm::repr() const {
     std::ostringstream s;
     
