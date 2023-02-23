@@ -17,7 +17,8 @@ VoroCrustAlgorithm::VoroCrustAlgorithm( PL_Complex const& plc_,
                                                               maximal_num_iter(15),
                                                               cornersDriver(maxRadius_, L_Lipschitz_, sharpTheta_, plc),
                                                               edgesDriver(maxRadius_, L_Lipschitz_, alpha_, sharpTheta_, plc),
-                                                              facesDriver(maxRadius_, L_Lipschitz_, alpha_, sharpTheta_, plc) {
+                                                              facesDriver(maxRadius_, L_Lipschitz_, alpha_, sharpTheta_, plc),
+                                                              sliverDriver(L_Lipschitz_) {
 
     if(sharpTheta > M_PI_2){
         std::cout << "ERROR: sharpTheta > pi/2" << std::endl;

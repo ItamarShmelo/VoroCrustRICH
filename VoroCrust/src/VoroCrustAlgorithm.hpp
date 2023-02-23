@@ -6,6 +6,7 @@
 #include "RMPS/CornersRMPS.hpp"
 #include "RMPS/EdgesRMPS.hpp"
 #include "RMPS/FacesRMPS.hpp"
+#include "RMPS/SliverDriver.hpp"
 #include <sstream>
 #include <memory>
 
@@ -25,6 +26,7 @@ class VoroCrustAlgorithm {
         CornersRMPS cornersDriver;
         EdgesRMPS edgesDriver;
         FacesRMPS facesDriver;
+        SliverDriver sliverDriver;
 
         VoroCrustAlgorithm( PL_Complex const& plc_,
                             double const sharpTheta_,
@@ -38,12 +40,15 @@ class VoroCrustAlgorithm {
         /*! \brief runs the VoroCrust Algorithm*/
         void run();
 
+        std::string repr() const;
+
+    private:
         /*! \brief enforces the Lipschitzness for a strata ball_tree
             \return true if some ball shrunk
         */
         bool enforceLipschitzness(VoroCrust_KD_Tree_Ball& ball_tree);
 
-        std::string repr() const;
+        bool sliverElimination();
 };
 
 
