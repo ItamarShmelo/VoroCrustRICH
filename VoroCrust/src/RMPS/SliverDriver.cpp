@@ -154,3 +154,26 @@ void SliverDriver::dealWithTriplets(BallInfo const& ball_info_1, Triplet const& 
 bool operator==(BallInfo const& lhs, BallInfo const& rhs) {
     return (lhs.index == rhs.index) && (lhs.dim == rhs.dim);
 }
+
+void SliverDriver::setRadiusOfBall(double const r_new, BallInfo const& ball_info, Trees const& trees) {
+    if(ball_info.dim == Dim::CORNER){
+        if(r_new < r_new_corner_balls[ball_info.index]) number_of_slivers_eliminated++;
+        r_new_corner_balls[ball_info.index] = std::min(r_new, r_new_corner_balls[ball_info.index]);
+        return;
+    }
+
+    if(ball_info.dim == Dim::EDGE) {
+        if(r_new < r_new_edge_balls[ball_info.index]) number_of_slivers_eliminated++;
+        r_new_edge_balls[ball_info.index] = std::min(r_new, r_new_edge_balls[ball_info.index]);
+        return;
+    }
+
+    if(ball_info.dim == Dim::FACE) {
+        if(r_new < r_new_face_balls[ball_info.index]) number_of_slivers_eliminated++;
+        r_new_face_balls[ball_info.index] = std::min(r_new, r_new_face_balls[ball_info.index]);
+        return;
+    }
+
+    std::cout << "ERROR: setRadiusOfBall" << std::endl;
+    exit(1);
+}
