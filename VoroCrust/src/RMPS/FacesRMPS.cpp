@@ -422,7 +422,6 @@ bool FacesRMPS::doSampling(VoroCrust_KD_Tree_Ball &faces_ball_tree, Trees const&
             continue;
         }
         
-        std::cout << "face sample " << faces_ball_tree.points.size() << std::endl;
 
         EligbleFace const& face = eligble_faces[face_index];
 
@@ -446,6 +445,8 @@ bool FacesRMPS::doSampling(VoroCrust_KD_Tree_Ball &faces_ball_tree, Trees const&
             //! TODO: EXIT HERE
             break; 
         }
+
+        std::cout << "face sample " << faces_ball_tree.points.size() << ", r = " << radius << std::endl;
 
         Face const& plc_face = plc->faces[face.plc_index];
         faces_ball_tree.insert(p, plc_face->calcNormal(), radius, face.patch_index, face.plc_index);

@@ -334,7 +334,6 @@ bool EdgesRMPS::doSampling(VoroCrust_KD_Tree_Ball &edges_ball_tree, Trees const&
             continue;
         }
 
-        std::cout << "edge sample " << edges_ball_tree.points.size() << std::endl;
 
         EligbleEdge const& edge = eligble_edges[edge_index];
         
@@ -365,6 +364,8 @@ bool EdgesRMPS::doSampling(VoroCrust_KD_Tree_Ball &edges_ball_tree, Trees const&
             //! TODO: EXIT HERE
             break; 
         }
+
+        std::cout << "edge sample " << edges_ball_tree.points.size() << ", r = " << radius << std::endl;
 
         edges_ball_tree.insert(p, edge[1]-edge[0], radius, edge.crease_index, edge.plc_index);
         
