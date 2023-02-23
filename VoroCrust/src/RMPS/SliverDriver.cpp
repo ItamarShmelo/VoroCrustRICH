@@ -110,3 +110,43 @@ void SliverDriver::eliminateSliversForBallsInBallTree(Dim const dim, Trees const
         dealWithBall(BallInfo(i, dim), trees);
     }
 }
+
+void SliverDriver::dealWithBall(BallInfo const& ball_info, Trees const& trees) {
+    std::vector<BallInfo> const& overlapping_balls = groupOverlappingBalls(ball_info, trees);
+    std::vector<Triplet>  const& triplets = formTripletsOfOverlappingBalls(overlapping_balls, trees);
+
+    for(Triplet const& triplet : triplets){
+        dealWithTriplets(ball_info, triplet, overlapping_balls, trees);
+    }
+}
+
+void SliverDriver::dealWithTriplets(BallInfo const& ball_info_1, Triplet const& triplet, std::vector<BallInfo> const& overlapping_balls, Trees const& trees) {
+    BallInfo const& ball_info_2 = overlapping_balls[triplet.first];
+    BallInfo const& ball_info_3 = overlapping_balls[triplet.second];
+
+    Ball const& ball_1 = getBall(ball_info_1, trees);
+    Ball const& ball_2 = getBall(ball_info_2, trees);
+    Ball const& ball_3 = getBall(ball_info_3, trees);
+
+    auto const& [seed_p, seed_m] = calculateIntersectionSeeds(ball_1, ball_2, ball_3);
+
+    for(BallInfo const& ball_info_4 : overlapping_balls){
+        if(ball_info_4 == ball_info_2 || ball_info_4 == ball_info_3) continue;
+        auto const& [p4, r4] = getBall(ball_info_4, trees);
+
+        bool const is_seed_p_covered = distance(seed_p, p4) < r4; // check if seed_p is covered by ball_4
+        bool const is_seed_m_covered = distance(seed_m, p4) < r4; // check if seed_m is covered by ball_4
+
+        // check if there is a half covered seed pair
+        double r_new = std::numeric_limits<double>::max();
+
+        //! WARNING: EPSILONTICA
+        if(is_seed_p_covered && !is_seed_m_covered){
+            r_new = distance(p4, seed_p) * (1.0 - 1e-14);
+        } else if(is_seed_m_covered && !is_seed_p_covered){
+            r_new = distance(p4, seed_m) * (1.0 - 1e-14);
+        }
+
+        setRadiusOfBall(r_new, ball_info_4, trees);
+    }
+}
