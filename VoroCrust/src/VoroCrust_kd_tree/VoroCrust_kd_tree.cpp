@@ -488,7 +488,7 @@ std::vector<std::size_t> VoroCrust_KD_Tree_Ball::getOverlappingBalls(Vector3D co
     std::vector<std::size_t> overlapping_balls_indices;
 
     for(std::size_t const i : suspects){
-        if(abs(center - points[i]) < radius + ball_radii[i]){
+        if(distance(center, points[i]) < radius + ball_radii[i]){
             overlapping_balls_indices.push_back(i);
         }
     }
