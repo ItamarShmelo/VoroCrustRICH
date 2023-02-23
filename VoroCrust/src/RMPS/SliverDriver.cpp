@@ -47,3 +47,21 @@ std::vector<BallInfo> SliverDriver::groupOverlappingBalls(BallInfo const& ball_i
 
     return overlapping_balls;
 }
+
+std::vector<Triplet> SliverDriver::formTripletsOfOverlappingBalls(std::vector<BallInfo> const& overlapping_balls, Trees const& trees) const {
+    std::vector<std::pair<std::size_t, std::size_t>> triplets;
+
+    std::size_t overlapping_balls_size = overlapping_balls.size();
+
+    for(std::size_t i=0 ; i < overlapping_balls_size; ++i){
+        auto const& [p_i, r_i] = getBall(overlapping_balls[i], trees);
+        for(std::size_t j=i+1; j < overlapping_balls_size; ++j){
+            auto const& [p_j, r_j] = getBall(overlapping_balls[j], trees);
+            
+            if(distance(p_i, p_j) < r_i + r_j) triplets.push_back(Triplet(i, j));
+        }
+    }
+
+    return triplets;
+}
+
