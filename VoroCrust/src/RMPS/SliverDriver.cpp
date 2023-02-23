@@ -86,3 +86,27 @@ Ball SliverDriver::getBall(BallInfo const& ball_info, Trees const& trees) const 
     std::cout << "ERROR: getBall" << std::endl;
     exit(1);
 }
+
+void SliverDriver::eliminateSliversForBallsInBallTree(Dim const dim, Trees const& trees) {
+    VoroCrust_KD_Tree const * ball_tree_ptr;
+
+    switch(dim){
+        case Dim::CORNER:
+            ball_tree_ptr = &trees.ball_kd_vertices;
+            break;
+        case Dim::EDGE:
+            ball_tree_ptr = &trees.ball_kd_edges;
+            break;
+        case Dim::FACE:
+            ball_tree_ptr = &trees.ball_kd_faces;
+            break;
+        default:
+            std::cout << "error in dim in eliminateSliversForBallsInBallTree" << std::endl;
+            break;
+    }
+    
+    std::size_t const num_of_balls = ball_tree_ptr->points.size();
+    for(std::size_t i=0; i < num_of_balls; ++i){
+        dealWithBall(BallInfo(i, dim), trees);
+    }
+}
