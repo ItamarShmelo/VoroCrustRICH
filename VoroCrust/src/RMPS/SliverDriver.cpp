@@ -148,8 +148,8 @@ void SliverDriver::dealWithTriplets(BallInfo const& ball_info_1, Triplet const& 
 }
 
 void SliverDriver::dealWithHalfCoveredSeeds(InfoQuartet const& balls_info, BallQuartet const& balls, Trees const& trees){
-    int least_shrinkage = 0;
-    double r_new = std::numeric_limits<double>::max();
+    int least_shrinkage = -1;
+    double r_new = -1.0;
 
     int l = -1;
     // run over all triplets in quartet
@@ -179,7 +179,7 @@ void SliverDriver::dealWithHalfCoveredSeeds(InfoQuartet const& balls_info, BallQ
                     r_temp = distance(seed_m, p4);
                 }
 
-                if(r_temp < r_new){
+                if(r_temp > r_new){
                     least_shrinkage = l;
                     r_new = r_temp;
                 }
@@ -187,7 +187,7 @@ void SliverDriver::dealWithHalfCoveredSeeds(InfoQuartet const& balls_info, BallQ
         }
     }
 
-    setRadiusOfBall(r_new, balls_info[least_shrinkage], trees);
+    if(least_shrinkage>=0) setRadiusOfBall(r_new, balls_info[least_shrinkage], trees);
 }
 
 
