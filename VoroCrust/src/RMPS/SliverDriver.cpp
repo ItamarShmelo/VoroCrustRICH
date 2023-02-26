@@ -258,7 +258,7 @@ bool SliverDriver::eliminateSlivers(Trees &trees){
 }
 
 std::vector<Vector3D> SliverDriver::getSeeds(Trees const& trees) const {
-    std::vector<std::pair<Vector3D, Vector3D>> pair_of_seeds;
+    std::vector<Vector3D> seeds;
 
     VoroCrust_KD_Tree_Ball const& faces_ball_tree = trees.ball_kd_faces;
     for (std::size_t i = 0; i < faces_ball_tree.points.size(); ++i)
@@ -274,18 +274,31 @@ std::vector<Vector3D> SliverDriver::getSeeds(Trees const& trees) const {
             Ball const& ball_2 = getBall(ball_info_2, trees);
             Ball const& ball_3 = getBall(ball_info_3, trees);
 
-            pair_of_seeds.push_back(calculateIntersectionSeeds(ball_1, ball_2, ball_3));
+            auto const& [seed_1, seed_2] = calculateIntersectionSeeds(ball_1, ball_2, ball_3);
+
+            bool is_seed_1_covered = false;
+            bool is_seed_2_covered = false;
+            for(BallInfo const& ball_info_4 : overlapping_balls){
+                if(ball_info_4 == ball_info_2 || ball_info_4 == ball_info_3) continue;
+
+                auto const& [p4, r4] = getBall(ball_info_4, trees);
+
+                is_seed_1_covered = is_seed_1_covered || distance(seed_1, p4) < r4; // check if seed_p is covered by ball_4
+                is_seed_2_covered = is_seed_2_covered || distance(seed_2, p4) < r4; // check if seed_m is covered by ball_4
+
+            }
+            
+            if(not is_seed_1_covered) seeds.push_back(seed_1);
+            if(not is_seed_2_covered) seeds.push_back(seed_2);
         }
     }
     
-    std::vector<Vector3D> seeds(2*pair_of_seeds.size(), Vector3D(0.0, 0.0, 0.0));
-
-    for(std::size_t i = 0; i < pair_of_seeds.size(); ++i){
-        seeds[2*i] = pair_of_seeds[i].first;
-        seeds[2*i+1] = pair_of_seeds[i].second;
-    }
-
+    std::size_t const seeds_size_old = seeds.size();
+    
     seeds = unique(seeds);
+    std::size_t const seeds_size_unique = seeds.size();
 
+    std::cout << "unique eliminated " << seeds_size_old - seeds_size_unique << " seeds " << std::endl;
+    
     return seeds;
 }
