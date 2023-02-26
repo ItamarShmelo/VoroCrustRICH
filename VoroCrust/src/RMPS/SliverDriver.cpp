@@ -132,24 +132,64 @@ void SliverDriver::dealWithTriplets(BallInfo const& ball_info_1, Triplet const& 
 
     for(BallInfo const& ball_info_4 : overlapping_balls){
         if(ball_info_4 == ball_info_2 || ball_info_4 == ball_info_3) continue;
-        auto const& [p4, r4] = getBall(ball_info_4, trees);
+        Ball const& ball_4 = getBall(ball_info_4, trees);
+        auto const& [p4, r4] = ball_4;
 
         bool const is_seed_p_covered = distance(seed_p, p4) < r4; // check if seed_p is covered by ball_4
         bool const is_seed_m_covered = distance(seed_m, p4) < r4; // check if seed_m is covered by ball_4
 
-        // check if there is a half covered seed pair
-        double r_new = std::numeric_limits<double>::max();
+        bool const half_covered_seed = (is_seed_p_covered && !is_seed_m_covered) || (is_seed_m_covered && !is_seed_p_covered);
 
-        //! WARNING: EPSILONTICA
-        if(is_seed_p_covered && !is_seed_m_covered){
-            r_new = distance(p4, seed_p) * (1.0 - 1e-14);
-        } else if(is_seed_m_covered && !is_seed_p_covered){
-            r_new = distance(p4, seed_m) * (1.0 - 1e-14);
-        }
+        InfoQuartet info_quartet = {ball_info_1, ball_info_2, ball_info_3, ball_info_4};
+        BallQuartet ball_quartet = {ball_1, ball_2, ball_3, ball_4};
 
-        setRadiusOfBall(r_new, ball_info_4, trees);
+        if(half_covered_seed) dealWithHalfCoveredSeeds(info_quartet, ball_quartet, trees);
     }
 }
+
+void SliverDriver::dealWithHalfCoveredSeeds(InfoQuartet const& balls_info, BallQuartet const& balls, Trees const& trees){
+    int least_shrinkage = 0;
+    double r_new = std::numeric_limits<double>::max();
+
+    int l = -1;
+    // run over all triplets in quartet
+    for(int i=0; i<4; ++i){
+        for(int j=i+1; j<4; ++j){
+            for(int k=j+1; k < 4; ++k){
+                for(int m=0; m < 4; ++m){
+                    if((i != m) && (j != m) && (k != m)){
+                        l=m;
+                        break;
+                    }
+                }
+
+                // find intersection seeds of triplets
+                auto const& [seed_p, seed_m] = calculateIntersectionSeeds(balls[i], balls[j], balls[k]);
+                
+                auto const& [p4, r4] = balls[l];
+        
+                bool const is_seed_p_covered = distance(seed_p, p4) < r4; // check if seed_p is covered by ball_4
+                bool const is_seed_m_covered = distance(seed_m, p4) < r4; // check if seed_m is covered by ball_4
+
+                double r_temp = std::numeric_limits<double>::max();
+
+                if(is_seed_p_covered && !is_seed_m_covered){
+                    r_temp = distance(seed_p, p4);
+                } else if(is_seed_m_covered && !is_seed_p_covered) {
+                    r_temp = distance(seed_m, p4);
+                }
+
+                if(r_temp < r_new){
+                    least_shrinkage = l;
+                    r_new = r_temp;
+                }
+            }
+        }
+    }
+
+    setRadiusOfBall(r_new, balls_info[least_shrinkage], trees);
+}
+
 
 bool operator==(BallInfo const& lhs, BallInfo const& rhs) {
     return (lhs.index == rhs.index) && (lhs.dim == rhs.dim);
@@ -266,6 +306,7 @@ std::vector<Vector3D> SliverDriver::getSeeds(Trees const& trees) const {
         BallInfo ball_info(i, Dim::FACE);
         std::vector<BallInfo> const& overlapping_balls = groupOverlappingBalls(ball_info, trees);
         std::vector<Triplet>  const& triplets = formTripletsOfOverlappingBalls(overlapping_balls, trees);
+        
         for(Triplet const& triplet : triplets){
             BallInfo const& ball_info_2 = overlapping_balls[triplet.first];
             BallInfo const& ball_info_3 = overlapping_balls[triplet.second];
