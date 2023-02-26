@@ -616,10 +616,12 @@ void write_ballTree(std::filesystem::path const& filename,
     
     vtkNew<vtkSphereSource> sphere;
     
+    int resolution = 14;
+
     sphere->SetCenter(centers[0].x, centers[0].y, centers[0].z);
     sphere->SetRadius(ball_radii[0]);
-    sphere->SetPhiResolution(7);
-    sphere->SetThetaResolution(7);
+    sphere->SetPhiResolution(resolution);
+    sphere->SetThetaResolution(resolution);
     
     vtkNew<vtkDoubleArray> data_first;
     data_first->SetName("radius");
@@ -639,8 +641,8 @@ void write_ballTree(std::filesystem::path const& filename,
 
         sphere_input->SetCenter(centers[i].x, centers[i].y, centers[i].z);
         sphere_input->SetRadius(ball_radii[i]);
-        sphere_input->SetPhiResolution(7);
-        sphere_input->SetThetaResolution(7);
+        sphere_input->SetPhiResolution(resolution);
+        sphere_input->SetThetaResolution(resolution);
         sphere_input->Update();
         
         vtkNew<vtkDoubleArray> data;
@@ -702,6 +704,17 @@ void write_points(std::filesystem::path const& filename, std::vector<Vector3D> c
         vtkIdType* ptIds = &point_array_in_cell[0];
         ugrid->InsertNextCell(VTK_POLYHEDRON, point_array_in_cell.size(), ptIds, 1, point_vtk->GetPointer(0));        
     }
+    
+    vtkNew<vtkIntArray> data;
+    data->SetName("Separate");
+    data->SetNumberOfComponents(1);
+    data->SetNumberOfValues(num_points);
+
+    for(std::size_t p=0; p<num_points; ++p){
+        data->SetValue(p, point_vectors[p].z > 0 ? 1 : -1);
+    }
+
+    ugrid->GetCellData()->AddArray(data);
     
     // write
     vtkNew<vtkXMLUnstructuredGridWriter> writer;
