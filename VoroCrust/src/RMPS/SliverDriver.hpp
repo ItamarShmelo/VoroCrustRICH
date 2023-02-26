@@ -2,6 +2,7 @@
 #define SLIVER_DRIVER
 
 #include "../trees.hpp"
+#include <array>
 
 enum Dim {
     CORNER = 0,
@@ -20,6 +21,8 @@ struct BallInfo {
 
 using Ball = std::pair<Vector3D, double const>;
 using Triplet = std::pair<std::size_t, std::size_t>; // Triplet is p, Triplet.first, Triplet.second
+using InfoQuartet = std::array<BallInfo const, 4>;
+using BallQuartet = std::array<Ball const, 4>;
 
 inline std::tuple<double const, double const, double const, double const> getLineCoeff(double const x1, double const y1, double const z1, double const r1, double const x2, double const y2, double const z2, double const r2);
 
@@ -53,9 +56,11 @@ class SliverDriver {
 
         std::vector<Triplet> formTripletsOfOverlappingBalls(std::vector<BallInfo> const& overlapping_balls, Trees const& trees) const;
 
-        inline Ball getBall(BallInfo const& ball_info, Trees const& trees) const;
+        void dealWithHalfCoveredSeeds(InfoQuartet const& balls_info, BallQuartet const& balls, Trees const& trees);
 
-        inline void setRadiusOfBall(double const r_new, BallInfo const& ball_info, Trees const& trees);
+        Ball getBall(BallInfo const& ball_info, Trees const& trees) const;
+
+        void setRadiusOfBall(double const r_new, BallInfo const& ball_info, Trees const& trees);
 
 };
 
