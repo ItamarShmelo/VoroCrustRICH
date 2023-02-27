@@ -242,7 +242,6 @@ std::tuple<bool, Vector3D, Vector3D> SliverDriver::calculateIntersectionSeeds(Ba
     
     // if there is no intersection or the centers are linear or perpenicular (all of which should not preduce seeds)
     if(disc < 0 || std::isnan(disc)){
-        std::cout << "POW" << std::endl;
         return std::tuple<bool, Vector3D, Vector3D>(false, Vector3D(0.0, 0.0, 0.0), Vector3D(0.0, 0.0, 0.0));
     }
 
@@ -354,7 +353,7 @@ std::vector<Vector3D> SliverDriver::getSeeds(Trees const& trees) const {
     std::size_t const seeds_size_old = seeds.size();
     
     //! WARNING: unique needs vector to be sorted so this does nothing actually... 
-    seeds = unique(seeds);
+    // seeds = unique(seeds);
     std::size_t const seeds_size_unique = seeds.size();
 
     std::cout << "unique eliminated " << seeds_size_old - seeds_size_unique << " seeds " << std::endl;
