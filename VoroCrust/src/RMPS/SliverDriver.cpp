@@ -336,6 +336,7 @@ std::vector<Vector3D> SliverDriver::getSeeds(Trees const& trees) const {
     
     std::size_t const seeds_size_old = seeds.size();
     
+    //! WARNING: unique needs vector to be sorted so this does nothing actually... 
     seeds = unique(seeds);
     std::size_t const seeds_size_unique = seeds.size();
 
