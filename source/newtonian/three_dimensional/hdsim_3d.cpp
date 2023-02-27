@@ -956,5 +956,5 @@ double HDSim3D::RadiationTimeStep(double const dt, CG::MatrixBuilder const& matr
 		pt_.updateTime(dt);
 		pt_.updateCycle();
 	}
-	return dt * std::min(0.05 / max_diff, 1.15);
+	return dt * std::min(0.075 / max_diff, 1.15);
 }
