@@ -69,8 +69,8 @@ void Diffusion::BuildMatrix(Tessellation3D const& tess, mat& A, size_t_mat& A_in
         double const Cv = mass_scale_ * eos_.dT2cv(cells[i].density, T, cells[i].tracers, ComputationalCell3D::tracerNames) / (time_scale_ * time_scale_ * length_scale_);
         double const beta = 4 * CG::radiation_constant * T * T * T / Cv;
         fleck_factor[i] = compton_on_ ? FleckFactorCompton(dt * time_scale_, beta, sigma_planck[i], sigma_s[i], Er, Cv) : FleckFactor(dt * time_scale_, beta, sigma_planck[i]);
-        b[i] = Er * volume;
-        x0[i] = Er;       
+        b[i] = volume * Er;
+        x0[i] = (Er + 0.5 * std::min(fleck_factor[i] * dt * sigma_planck[i] * CG::speed_of_light * time_scale_, 1.0) * (CG::radiation_constant * T * T * T * T - Er));
         b[i] += volume * fleck_factor[i] * dt * CG::speed_of_light * sigma_planck[i] * T * T * T * T * CG::radiation_constant * time_scale_;
     }
 #ifdef RICH_MPI
