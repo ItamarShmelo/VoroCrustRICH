@@ -72,6 +72,47 @@ Vector3D VoroCrustFace::calculateCenteroid() const {
     return res / 3.0;
 }
 
+std::pair<bool, Vector3D> VoroCrustFace::pointXYaxisRayIntersectsAt(Vector3D const& point) const {
+    //https://math.stackexchange.com/questions/2686606/equation-of-a-plane-passing-through-3-points
+    Vector3D const& p1 = vertices[0]->vertex;
+    Vector3D const& p2 = vertices[1]->vertex;
+    Vector3D const& p3 = vertices[2]->vertex;
+
+    double const coeff_z = Mat33<double>(p1.x, p1.y, 1.0, p2.x, p2.y, 1.0, p3.x, p3.y, 1.0).determinant();
+    // face is parallel to ray return sucess = false
+    if(std::abs(coeff_z) < 1e-14) {
+        return std::pair<bool, Vector3D>(false, Vector3D(0.0, 0.0, 0.0));
+    }
+
+    double const coeff_x = Mat33<double>(p1.y, p1.z, 1.0, p2.y, p2.z, 1.0, p3.y, p3.z, 1.0).determinant();
+    double const coeff_y = -Mat33<double>(p1.x, p1.z, 1.0, p2.x, p2.z, 1.0, p3.x, p3.z, 1.0).determinant();
+    
+    double const value = -Mat33<double>(p1.x, p1.y, p1.z, p2.x, p2.y, p2.z, p3.x, p3.y, p3.z).determinant();
+
+    double const z_intersect_plane = -(coeff_x*point.x + coeff_y*point.y + value)/coeff_z;
+
+    return std::pair<bool, Vector3D>(true, Vector3D(point.x, point.y, z_intersect_plane));
+}
+std::pair<bool, Vector3D> VoroCrustFace::pointXYaxisRayIntersectsAt(Vector3D const& point) const {
+    Vector3D const& p1 = vertices[0]->vertex;
+    Vector3D const& p2 = vertices[1]->vertex;
+    Vector3D const& p3 = vertices[2]->vertex;
+
+    double const coeff_z = Mat33<double>(p1.x, p1.y, 1.0, p2.x, p2.y, 1.0, p3.x, p3.y, 1.0).determinant();
+    // face is parallel to ray return sucess = false
+    if(std::abs(coeff_z) < 1e-14) {
+        return std::pair<bool, Vector3D>(false, Vector3D(0.0, 0.0, 0.0));
+    }
+
+    double const coeff_x = Mat33<double>(p1.y, p1.z, 1.0, p2.y, p2.z, 1.0, p3.y, p3.z, 1.0).determinant();
+    double const coeff_y = -Mat33<double>(p1.x, p1.z, 1.0, p2.x, p2.z, 1.0, p3.x, p3.z, 1.0).determinant();
+    
+    double const value = -Mat33<double>(p1.x, p1.y, p1.z, p2.x, p2.y, p2.z, p3.x, p3.y, p3.z).determinant();
+
+    double const z_intersect_plane = -(coeff_x*point.x + coeff_y*point.y + value)/coeff_z;
+
+    return std::pair<bool, Vector3D>(true, Vector3D(point.x, point.y, z_intersect_plane));
+}
 std::string VoroCrustFace::repr() const
 {
     std::ostringstream s;
