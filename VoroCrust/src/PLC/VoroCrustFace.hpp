@@ -51,6 +51,10 @@ class VoroCrustFace
 
         Vector3D calculateCenteroid() const;
 
+        std::pair<bool, Vector3D> pointXYaxisRayIntersectsAt(Vector3D const& point) const;
+
+        bool pointIsInsideFace(Vector3D const& point) const;
+
         std::string repr() const;
 
 };
