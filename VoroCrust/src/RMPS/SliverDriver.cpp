@@ -128,7 +128,9 @@ void SliverDriver::dealWithTriplets(BallInfo const& ball_info_1, Triplet const& 
     Ball const& ball_2 = getBall(ball_info_2, trees);
     Ball const& ball_3 = getBall(ball_info_3, trees);
 
-    auto const& [seed_p, seed_m] = calculateIntersectionSeeds(ball_1, ball_2, ball_3);
+    auto const& [success, seed_p, seed_m] = calculateIntersectionSeeds(ball_1, ball_2, ball_3);
+
+    if(not success) return;
 
     for(BallInfo const& ball_info_4 : overlapping_balls){
         if(ball_info_4 == ball_info_2 || ball_info_4 == ball_info_3) continue;
@@ -156,15 +158,17 @@ void SliverDriver::dealWithHalfCoveredSeeds(InfoQuartet const& balls_info, BallQ
     for(int i=0; i<4; ++i){
         for(int j=i+1; j<4; ++j){
             for(int k=j+1; k < 4; ++k){
+                // find intersection seeds of triplets
+                auto const& [success, seed_p, seed_m] = calculateIntersectionSeeds(balls[i], balls[j], balls[k]);
+
+                if(not success) continue;
+
                 for(int m=0; m < 4; ++m){
                     if((i != m) && (j != m) && (k != m)){
                         l=m;
                         break;
                     }
                 }
-
-                // find intersection seeds of triplets
-                auto const& [seed_p, seed_m] = calculateIntersectionSeeds(balls[i], balls[j], balls[k]);
                 
                 auto const& [p4, r4] = balls[l];
         
@@ -323,7 +327,9 @@ std::vector<Vector3D> SliverDriver::getSeeds(Trees const& trees) const {
             Ball const& ball_2 = getBall(ball_info_2, trees);
             Ball const& ball_3 = getBall(ball_info_3, trees);
 
-            auto const& [seed_1, seed_2] = calculateIntersectionSeeds(ball_1, ball_2, ball_3);
+            auto const& [success, seed_1, seed_2] = calculateIntersectionSeeds(ball_1, ball_2, ball_3);
+
+            if(not success) continue;
 
             bool is_seed_1_covered = false;
             bool is_seed_2_covered = false;
