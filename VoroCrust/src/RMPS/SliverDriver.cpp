@@ -281,8 +281,10 @@ std::pair<double const, double const> getZDependency(double const a1, double con
     }
 
     double const a31 = a3 / a1;
-    double const e = (c3 - c1*a31) / (b1*a31 - b3);
-    double const f = (k1*a31 - k3) / (b1*a31 - b3);
+    double const denom = (b1*a31 - b3);
+
+    double const e = (c3 - c1*a31) / denom;
+    double const f = (k1*a31 - k3) / denom;
 
     return std::pair<double const, double const>(e, f);
 }
