@@ -232,14 +232,22 @@ std::tuple<bool, Vector3D, Vector3D> SliverDriver::calculateIntersectionSeeds(Ba
     double const A = (1.0 + g*g + e*e);
     double const B = -2.0*(g*(p1.x-h) + e*(p1.y-f) + p1.z);
     double const C = ((p1.x-h)*(p1.x-h) + (p1.y-f) * (p1.y-f) + p1.z*p1.z - r1*r1);
+    
+    double const disc = B*B - 4*A*C;
+    
+    // if there is no intersection or the centers are linear or perpenicular (all of which should not preduce seeds)
+    if(disc < 0 || std::isnan(disc)){
+        std::cout << "POW" << std::endl;
+        return std::tuple<bool, Vector3D, Vector3D>(false, Vector3D(0.0, 0.0, 0.0), Vector3D(0.0, 0.0, 0.0));
+    }
 
-    double const z_plus = (-B + sqrt(B*B - 4*A*C))/(2.0*A);
+    double const z_plus = (-B + sqrt(disc))/(2.0*A);
     double const x_plus = g*z_plus + h;
     double const y_plus = e*z_plus + f;
 
     Vector3D const seed_plus(x_plus, y_plus, z_plus);
-
-    double const z_minus = (-B - sqrt(B*B - 4*A*C))/(2.0*A);
+    
+    double const z_minus = (-B - sqrt(disc))/(2.0*A);
     double const x_minus = g*z_minus + h;
     double const y_minus = e*z_minus + f;
 
