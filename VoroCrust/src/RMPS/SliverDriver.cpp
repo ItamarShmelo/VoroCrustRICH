@@ -6,6 +6,7 @@ SliverDriver::SliverDriver(double const L_Lipschitz_) : L_Lipschitz(L_Lipschitz_
 
 std::vector<BallInfo> SliverDriver::groupOverlappingBalls(BallInfo const& ball_info, Trees const& trees) const {
     //! MAYBE: I need to change r_max when looking for lower dimensional balls;
+    //! MAYBE: to only look at face balls (I think there are special cases where this is invlid though)
     auto const& [p, radius] = getBall(ball_info, trees);
 
     std::vector<BallInfo> overlapping_balls;
