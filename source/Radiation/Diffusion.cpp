@@ -182,28 +182,26 @@ void Diffusion::BuildMatrix(Tessellation3D const& tess, mat& A, size_t_mat& A_in
         for(size_t j = 0; j < Nneigh; ++j)
         {
             size_t const neighbor_j = neighbors[j];
-            Vector3D r_ij = point - tess.GetMeshPoint(neighbor_j);
-            double const r_ij_size = abs(r_ij);
-            r_ij *= 1.0 / r_ij_size;
-            double const momentum_relativity_term = -0.5 * fleck_factor[i] * dt * flux_limiter * tess.GetArea(faces[j]) * (2 * 3 * sigma_planck[i] * Dcell / CG::speed_of_light - 1) * length_scale_ * length_scale_ * time_scale_
-                * ScalarProd(cells_cgs[i].velocity, r_ij) / 3;
-            A[i][0] += momentum_relativity_term;
             if(!tess.IsPointOutsideBox(neighbor_j))
             {
+                Vector3D r_ij = point - tess.GetMeshPoint(neighbor_j);
+                double const r_ij_size = abs(r_ij);
+                r_ij *= 1.0 / r_ij_size;
+                double const momentum_relativity_term = -0.5 * fleck_factor[i] * dt * flux_limiter * tess.GetArea(faces[j]) * (2 * 3 * sigma_planck[i] * Dcell / CG::speed_of_light - 1) * length_scale_ * length_scale_ * time_scale_
+                    * ScalarProd(cells_cgs[i].velocity, r_ij) / 3;
+                A[i][0] += momentum_relativity_term;
                 auto it = std::find(A_indeces[i].begin(), A_indeces[i].end(), neighbor_j);
                 if(it == A_indeces[i].end())
                     throw UniversalError("Key not equal in diffusion");
                 size_t const neigh_counter = static_cast<size_t>(it - A_indeces[i].begin());
                 if(A_indeces[i][neigh_counter] != neighbor_j)
                     throw UniversalError("Key not equal value in diffusion");
-                A[i][neigh_counter] +=momentum_relativity_term;
+                A[i][neigh_counter] += momentum_relativity_term;
             }
             else
-            {
-                double Er_j;
-                boundary_calc_.GetOutSideValues(tess, cells_cgs, i, neighbor_j, new_Er, Er_j, dummy_v);
-                b[i] -= momentum_relativity_term * Er_j;
-            }
+                boundary_calc_.SetMomentumTermBoundary(tess, i, neighbor_j, dt * time_scale_, cells_cgs[i],
+                    tess.GetArea(faces[j]) * length_scale_ * length_scale_, A[i][0], b[i], faces[j], fleck_factor[i],
+                    flux_limiter, Dcell, sigma_planck[i]);
         }
         R2[i] = flux_limiter_ ? flux_limiter / 3 + boost::math::pow<2>(flux_limiter * abs(gradE[i]) * Dcell / (CG::speed_of_light * Er)) : 1.0 / 3.0;
         A[i][0] -= volume * fleck_factor[i] * dt * 0.5 * (3 - R2[i]) * sigma_planck[i] * ScalarProd(cells_cgs[i].velocity, cells_cgs[i].velocity) * time_scale_ / CG::speed_of_light;
@@ -314,6 +312,25 @@ void DiffusionSideBoundary::SetBoundaryValues(Tessellation3D const& tess, size_t
     }
 }
 
+void DiffusionSideBoundary::SetMomentumTermBoundary(Tessellation3D const& tess, size_t const index, size_t const outside_point, double const dt,
+        ComputationalCell3D const& cell, double const Area, double& A, double &b, size_t const face_index, double const fleck_factor,
+        double const flux_limiter, double const D, double const sigma_planck)const
+{
+    double const R = tess.GetWidth(index);
+    Vector3D r_ij = tess.GetMeshPoint(index) - tess.GetMeshPoint(outside_point);
+    double const r_ij_size = abs(r_ij);
+    r_ij *= 1.0 / r_ij_size;
+    double const momentum_relativity_term = -0.5 * fleck_factor * dt * flux_limiter * Area * 
+        (2 * 3 * sigma_planck * D / CG::speed_of_light - 1) * ScalarProd(cell.velocity, r_ij) / 3;
+    if(tess.GetMeshPoint(index).x > (tess.GetMeshPoint(outside_point).x + R * 1e-4))
+    {
+        A += momentum_relativity_term;
+        b -= momentum_relativity_term * CG::radiation_constant * T_ * T_ * T_ * T_;
+    }
+    else
+        A += 2 * momentum_relativity_term;
+}
+
 void DiffusionSideBoundary::GetOutSideValues(Tessellation3D const& tess, std::vector<ComputationalCell3D> const& cells, size_t const index, size_t const outside_point,
     std::vector<double> const& new_E, double& E_outside, Vector3D& v_outside)const
 {
@@ -323,6 +340,19 @@ void DiffusionSideBoundary::GetOutSideValues(Tessellation3D const& tess, std::ve
     else
         E_outside = new_E[index];
     v_outside = cells[index].velocity;
+}
+
+void DiffusionClosedBox::SetMomentumTermBoundary(Tessellation3D const& tess, size_t const index, size_t const outside_point, double const dt,
+        std::vector<ComputationalCell3D> const& /*cells*/, double const Area, double& A, 
+        double& /*b*/, size_t const /*face_index*/, double const fleck_factor, double const flux_limiter, 
+        double const D, double const sigma_planck)const
+{
+     Vector3D r_ij = tess.GetMeshPoint(index) - tess.GetMeshPoint(outside_point);
+    double const r_ij_size = abs(r_ij);
+    r_ij *= 1.0 / r_ij_size;
+    double const momentum_relativity_term = -0.5 * fleck_factor * dt * flux_limiter * Area * 
+        (2 * 3 * sigma_planck * D / CG::speed_of_light - 1) * ScalarProd(cell.velocity, r_ij) / 3;
+    A += 2 * momentum_relativity_term;
 }
 
 void DiffusionClosedBox::SetBoundaryValues(Tessellation3D const& /*tess*/, size_t const /*index*/, size_t const /*outside_point*/, double const /*dt*/, 
@@ -385,6 +415,33 @@ void DiffusionXInflowBoundary::SetBoundaryValues(Tessellation3D const& tess, siz
     }
 }
 
+void DiffusionXInflowBoundary::SetMomentumTermBoundary(Tessellation3D const& tess, size_t const index, size_t const outside_point, double const dt,
+        ComputationalCell3D const& cell, double const Area, double& A, double &b, size_t const face_index, double const fleck_factor,
+        double const flux_limiter, double const D, double const sigma_planck)const
+{
+    double const R = tess.GetWidth(index);
+    Vector3D r_ij = tess.GetMeshPoint(index) - tess.GetMeshPoint(outside_point);
+    double const r_ij_size = abs(r_ij);
+    r_ij *= 1.0 / r_ij_size;
+    double const momentum_relativity_term = -0.5 * fleck_factor * dt * flux_limiter * Area * 
+        (2 * 3 * sigma_planck * D / CG::speed_of_light - 1) * ScalarProd(cell.velocity, r_ij) / 3;
+    if(tess.GetMeshPoint(index).x > (tess.GetMeshPoint(outside_point).x + R * 1e-4))
+    {
+        A += momentum_relativity_term;
+        b -= momentum_relativity_term * left_state_.Erad * left_state_.density;
+    }
+    else
+    {
+        if(tess.GetMeshPoint(index).x < (tess.GetMeshPoint(outside_point).x - R * 1e-4))
+        {
+            A += momentum_relativity_term;
+            b -= momentum_relativity_term * right_state_.Erad * right_state_.density;
+        }
+        else
+            A += 2 * momentum_relativity_term;
+    }
+}
+
 void DiffusionXInflowBoundary::GetOutSideValues(Tessellation3D const& tess, std::vector<ComputationalCell3D> const& cells, size_t const index, size_t const outside_point,
     std::vector<double> const& new_E, double& E_outside, Vector3D& v_outside)const
 {
@@ -409,4 +466,29 @@ void DiffusionXInflowBoundary::GetOutSideValues(Tessellation3D const& tess, std:
             v_outside -= 2 * normal * ScalarProd(normal, v_outside);
         }
     }
+}
+
+void DiffusionOpenBoundary::SetBoundaryValues(Tessellation3D const& /*tess*/, size_t const /*index*/, size_t const /*outside_point*/, double const dt,
+    std::vector<ComputationalCell3D> const& /*cells*/, double const Area, double& A, double& /*b*/, size_t const /*face_index*/)const
+{
+    A += Area * dt * 0.5 * CG::speed_of_light;
+}
+
+void DiffusionOpenBoundary::GetOutSideValues(Tessellation3D const& tess, std::vector<ComputationalCell3D> const& cells, size_t const index, size_t const outside_point,
+    std::vector<double> const& new_E, double& E_outside, Vector3D& v_outside)const
+{
+    E_outside = new_E[index] * 1e-20;
+    v_outside = cells[index];
+}
+
+void DiffusionOpenBoundary::SetMomentumTermBoundary(Tessellation3D const& tess, size_t const index, size_t const outside_point, double const dt,
+    ComputationalCell3D const& cell, double const Area, double& A, double &b, size_t const face_index, 
+    double const fleck_factor, double const flux_limiter, double const D, double const sigma_planck)const
+{
+    Vector3D r_ij = index - tess.GetMeshPoint(outside_point);
+    double const r_ij_size = abs(r_ij);
+    r_ij *= 1.0 / r_ij_size;
+    double const momentum_relativity_term = -0.5 * fleck_factor * dt * flux_limiter * Area * (2 * 3 * 
+        sigma_planck * D / CG::speed_of_light - 1) * ScalarProd(cell.velocity, r_ij) / 3;
+    A[i][0] += momentum_relativity_term;
 }

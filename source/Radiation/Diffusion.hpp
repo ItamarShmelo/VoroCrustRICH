@@ -62,6 +62,25 @@ virtual void SetBoundaryValues(Tessellation3D const& tess, size_t const index, s
     */
 virtual void GetOutSideValues(Tessellation3D const& tess, std::vector<ComputationalCell3D> const& cells, size_t const index, size_t const outside_point,
     std::vector<double> const& new_E, double& E_outside, Vector3D& v_outside)const = 0;
+   /*!
+\brief Sets the boundary values for the matrix build for the momentum term
+\param tess The tesselation
+\param index The index of the cell that is adjacent to a boundary
+\param outside_point The index of the cell that is outside
+\param cell The primitve cell
+\param A the value in the A matrix to change, given as input and output
+\param b the value in the b vector to change, given as input and output
+\param Area The area of the interface between the two cells
+\param dt The time step
+\param face_index The index of the interface
+\param fleck_factor The fleck factor
+\param flux_limiter The flux limiter
+\param D The diffusion coefficient
+\param sigma_planck The planck opacity
+    */
+virtual void SetMomentumTermBoundary(Tessellation3D const& tess, size_t const index, size_t const outside_point, double const dt,
+    ComputationalCell3D const& cell, double const Area, double& A, double &b, size_t const face_index, 
+    double const fleck_factor, double const flux_limiter, double const D, double const sigma_planck)const = 0;
 };
 
 //! \brief Class with constant blackbody temperature on the left x side and zero flux on other sides
@@ -79,6 +98,11 @@ class DiffusionSideBoundary : public DiffusionBoundaryCalculator
 
     void GetOutSideValues(Tessellation3D const& tess, std::vector<ComputationalCell3D> const& cells, size_t const index, size_t const outside_point,
         std::vector<double> const& new_E, double& E_outside, Vector3D& v_outside)const override;
+
+    void SetMomentumTermBoundary(Tessellation3D const& tess, size_t const index, size_t const outside_point, double const dt,
+        ComputationalCell3D const& cell, double const Area, double& A, double &b, size_t const face_index, 
+        double const fleck_factor, double const flux_limiter, double const D, double const sigma_planck)const override;
+
     private:
         double const T_;
 };
@@ -92,6 +116,10 @@ class DiffusionClosedBox : public DiffusionBoundaryCalculator
     
     void GetOutSideValues(Tessellation3D const& tess, std::vector<ComputationalCell3D> const& cells, size_t const index, size_t const outside_point,
         std::vector<double> const& new_E, double& E_outside, Vector3D& v_outside)const override;
+
+    void SetMomentumTermBoundary(Tessellation3D const& tess, size_t const index, size_t const outside_point, double const dt,
+        ComputationalCell3D const& cell, double const Area, double& A, double &b, size_t const face_index, 
+        double const fleck_factor, double const flux_limiter, double const D, double const sigma_planck)const override;
 };
 
 //! \brief Class for calculating diffusion matrix data for the CG solver
@@ -156,8 +184,27 @@ class DiffusionXInflowBoundary : public DiffusionBoundaryCalculator
     
     void GetOutSideValues(Tessellation3D const& tess, std::vector<ComputationalCell3D> const& cells, size_t const index, size_t const outside_point,
         std::vector<double> const& new_E, double& E_outside, Vector3D& v_outside)const override;
+    
+   void SetMomentumTermBoundary(Tessellation3D const& tess, size_t const index, size_t const outside_point, double const dt,
+        ComputationalCell3D const& cell, double const Area, double& A, double &b, size_t const face_index, 
+        double const fleck_factor, double const flux_limiter, double const D, double const sigma_planck)const override;
+
     private:
         ComputationalCell3D const& left_state_, right_state_;
         DiffusionCoefficientCalculator const& D_calc_;
+};
+
+class DiffusionOpenBoundary : public DiffusionBoundaryCalculator
+{
+    public:
+    void SetBoundaryValues(Tessellation3D const& tess, size_t const index, size_t const outside_point, double const dt,
+        std::vector<ComputationalCell3D> const& cells, double const Area, double& A, double &b, size_t const face_index)const override;
+    
+    void GetOutSideValues(Tessellation3D const& tess, std::vector<ComputationalCell3D> const& cells, size_t const index, size_t const outside_point,
+        std::vector<double> const& new_E, double& E_outside, Vector3D& v_outside)const override;
+    
+   void SetMomentumTermBoundary(Tessellation3D const& tess, size_t const index, size_t const outside_point, double const dt,
+        ComputationalCell3D const& cell, double const Area, double& A, double &b, size_t const face_index, 
+        double const fleck_factor, double const flux_limiter, double const D, double const sigma_planck)const override;
 };
 #endif
