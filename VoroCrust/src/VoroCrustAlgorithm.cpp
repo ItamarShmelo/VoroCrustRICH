@@ -89,6 +89,7 @@ bool VoroCrustAlgorithm::enforceLipschitzness(VoroCrust_KD_Tree_Ball& ball_tree)
 
     std::cout << "Running enforceLipschitzness " << std::endl;
     // go through all pairs i != j and enforce r_i <= r_j + L * ||p_i - p_j||
+    //! MAYBE: only consider the overlapping balls or balls up to radius r_i?
     for(std::size_t i = 0; i<num_of_points; ++i){
         for(std::size_t j = 0; j<num_of_points; ++j){
             if(i == j) continue;
