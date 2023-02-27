@@ -50,7 +50,7 @@ class SliverDriver {
 
         void dealWithTriplets(BallInfo const& ball_info_1, Triplet const& triplet, std::vector<BallInfo> const& overlapping_balls, Trees const& trees);
 
-        std::pair<Vector3D, Vector3D> calculateIntersectionSeeds(Ball const& ball_1, Ball const& ball_2, Ball const& ball_3) const;
+        std::tuple<bool, Vector3D, Vector3D> calculateIntersectionSeeds(Ball const& ball_1, Ball const& ball_2, Ball const& ball_3) const;
 
         std::vector<BallInfo> groupOverlappingBalls(BallInfo const& ball, Trees const& trees) const;
 

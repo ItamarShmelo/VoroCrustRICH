@@ -218,7 +218,7 @@ void SliverDriver::setRadiusOfBall(double const r_new, BallInfo const& ball_info
     exit(1);
 }
 
-std::pair<Vector3D, Vector3D> SliverDriver::calculateIntersectionSeeds(Ball const& ball_1, Ball const& ball_2, Ball const& ball_3) const {
+std::tuple<bool, Vector3D, Vector3D> SliverDriver::calculateIntersectionSeeds(Ball const& ball_1, Ball const& ball_2, Ball const& ball_3) const {
     auto const& [p1, r1] = ball_1;
     auto const& [p2, r2] = ball_2;
     auto const& [p3, r3] = ball_3;
@@ -245,7 +245,7 @@ std::pair<Vector3D, Vector3D> SliverDriver::calculateIntersectionSeeds(Ball cons
 
     Vector3D const seed_minus(x_minus, y_minus, z_minus);
 
-    return std::pair<Vector3D, Vector3D>(seed_plus, seed_minus);
+    return std::tuple<bool, Vector3D, Vector3D>(true, seed_plus, seed_minus);
 }
 
 std::tuple<double const, double const, double const, double const> getLineCoeff(double const x1, double const y1, double const z1, double const r1, double const x2, double const y2, double const z2, double const r2) {
