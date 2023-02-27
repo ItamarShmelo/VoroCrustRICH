@@ -110,6 +110,46 @@ std::vector<Vector3D> VoroCrustAlgorithm::getSeeds() const {
     return sliverDriver.getSeeds(trees);
 }
 
+std::pair<std::vector<Vector3D>, std::vector<Vector3D>> VoroCrustAlgorithm::determineIfSeedsAreInsideOrOutside(std::vector<Vector3D> const& seeds) const {
+
+    // if(seeds.size() % 2 != 0){
+    //     std::cout << "ERROR: seeds is not even" << std::endl;
+    //     exit(1);
+    // }
+
+    if(seeds.empty()){
+        std::cout << "ERROR: seeds is empty" << std::endl;
+        exit(1);
+    }
+
+    std::vector<Vector3D> in_seeds, out_seeds;
+
+    int i = 0;
+    for(Vector3D const& seed : seeds) {
+        std::cout << "seed num " << ++i << std::endl;
+        if(i == 5000) break;
+        
+        int count = 0;
+        for(Face const& face : plc->faces) {
+            auto const& [success, p_inter] = face->pointXYaxisRayIntersectsAt(seed);
+
+            if(not success) continue;
+
+            if(face->pointIsInsideFace(p_inter)){
+                count++;
+            }
+        }
+
+        if(count % 2 == 0){
+            out_seeds.push_back(seed);
+        } else {
+            in_seeds.push_back(seed);
+        }
+    }
+
+    return std::pair<std::vector<Vector3D>, std::vector<Vector3D>>(in_seeds, out_seeds);
+}
+
 std::string VoroCrustAlgorithm::repr() const {
     std::ostringstream s;
     

@@ -44,6 +44,8 @@ class VoroCrustAlgorithm {
 
         std::string repr() const;
 
+        std::pair<std::vector<Vector3D>, std::vector<Vector3D>> determineIfSeedsAreInsideOrOutside(std::vector<Vector3D> const& seeds) const;
+    
     private:
         /*! \brief enforces the Lipschitzness for a strata ball_tree
             \return true if some ball shrunk
