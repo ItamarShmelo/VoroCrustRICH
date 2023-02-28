@@ -127,8 +127,8 @@ std::pair<std::vector<Vector3D>, std::vector<Vector3D>> VoroCrustAlgorithm::dete
 
     int i = 0;
     for(Vector3D const& seed : seeds) {
+        // determine if a seed is in or out using the ray casting algorithm
         std::cout << "seed num " << ++i << std::endl;
-        if(i == 5000) break;
         
         int count = 0;
         for(Face const& face : plc->faces) {
