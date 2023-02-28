@@ -1,6 +1,6 @@
 #include "SliverDriver.hpp"
 #include <iostream>
-#include "../../../source/misc/utils.hpp"
+#include "../unsorted_unique.hpp"
 
 SliverDriver::SliverDriver(double const L_Lipschitz_) : L_Lipschitz(L_Lipschitz_), r_new_corner_balls(), r_new_edge_balls(), r_new_face_balls(), number_of_slivers_eliminated(0) {}
 
@@ -350,13 +350,7 @@ std::vector<Vector3D> SliverDriver::getSeeds(Trees const& trees) const {
         }
     }
     
-    std::size_t const seeds_size_old = seeds.size();
-    
-    //! WARNING: unique needs vector to be sorted so this does nothing actually... 
-    // seeds = unique(seeds);
-    std::size_t const seeds_size_unique = seeds.size();
-
-    std::cout << "unique eliminated " << seeds_size_old - seeds_size_unique << " seeds " << std::endl;
+    seeds = unsorted_unique<Vector3D>(seeds);
     
     return seeds;
 }
