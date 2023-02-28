@@ -222,7 +222,14 @@ void WriteSnapshot3D(HDSim3D const& sim, std::string const& filename,
   for (size_t i = 0; i < Ncells; ++i)
     temp[i] = tess.GetMeshPoint(i).z;
   write_std_vector_to_hdf5(writegroup, temp, "Z");
-
+  if(write_vtu)
+  {
+    vtu_cell_vectors_names.push_back("Coordinates");
+    std::vector<Vector3D> vel(Ncells);
+    for (size_t i = 0; i < Ncells; ++i)
+      vel[i] = tess.GetMeshPoint(i);
+    vtu_cell_vectors.push_back(vel);
+  }
   for (size_t i = 0; i < Ncells; ++i)
     temp[i] = tess.GetCellCM(i).x;
   write_std_vector_to_hdf5(writegroup, temp, "CMx");
@@ -291,7 +298,13 @@ void WriteSnapshot3D(HDSim3D const& sim, std::string const& filename,
   for (size_t i = 0; i < Ncells; ++i)
     ids[i] = cells[i].ID;
   write_std_vector_to_hdf5(writegroup, ids, "ID");
-
+  if(write_vtu)
+  {
+    for (size_t i = 0; i < Ncells; ++i)
+      temp[i] = ids[i];
+    vtu_cell_variables.push_back(temp);
+    vtu_cell_variable_names.push_back("ID");
+  }
   for (size_t i = 0; i < Ncells; ++i)
     temp[i] = cells[i].velocity.x;
   write_std_vector_to_hdf5(writegroup, temp, "Vx");
@@ -320,6 +333,15 @@ void WriteSnapshot3D(HDSim3D const& sim, std::string const& filename,
   {
     vtu_cell_variables.push_back(temp);
     vtu_cell_variable_names.push_back("Temperature");
+  }
+
+  for (size_t i = 0; i < Ncells; ++i)
+    temp[i] = cells[i].Erad;
+  write_std_vector_to_hdf5(writegroup, temp, "Erad");
+  if(write_vtu)
+  {
+    vtu_cell_variables.push_back(temp);
+    vtu_cell_variable_names.push_back("Erad");
   }
 
   Group tracers, stickers;
@@ -353,8 +375,13 @@ void WriteSnapshot3D(HDSim3D const& sim, std::string const& filename,
   for (size_t j = 0; j <ComputationalCell3D::stickerNames.size(); ++j)
     {
       for (size_t i = 0; i < Ncells; ++i)
-	temp[i] = cells[i].stickers[j];
+	      temp[i] = cells[i].stickers[j];
       write_std_vector_to_hdf5(stickers, temp, ComputationalCell3D::stickerNames[j]);
+      if(write_vtu)
+      {
+        vtu_cell_variables.push_back(temp);
+        vtu_cell_variable_names.push_back(ComputationalCell3D::stickerNames[j]);
+      }
     }
 
   for (size_t i = 0; i < Ncells; ++i)
@@ -461,6 +488,7 @@ Snapshot3D ReadSnapshot3D(const string& fname
   // Hydrodynamic
   {
     const vector<double> density = read_double_vector_from_hdf5(read_location, "Density");
+    const vector<double> Erad = read_double_vector_from_hdf5(read_location, "Erad");
     const vector<double> temperature = read_double_vector_from_hdf5(read_location, "Temperature");
     const vector<double> pressure = read_double_vector_from_hdf5(read_location, "Pressure");
     const vector<double> energy = read_double_vector_from_hdf5(read_location, "InternalEnergy");
@@ -501,6 +529,7 @@ Snapshot3D ReadSnapshot3D(const string& fname
     for (size_t i = 0; i < res.cells.size(); ++i)
       {
 	res.cells.at(i).density = density.at(i);
+  res.cells.at(i).Erad = Erad.at(i);
   res.cells.at(i).temperature = temperature.at(i);
 	res.cells.at(i).pressure = pressure.at(i);
 	res.cells.at(i).internal_energy = energy.at(i);

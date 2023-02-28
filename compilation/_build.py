@@ -14,8 +14,6 @@ logger = logging.getLogger("build_program.main")
 root_dir = str(pathlib.Path(__file__).parent.parent.absolute())
 sys.path.append(root_dir)
 
-import gen_version
-
 def _run_cmake(*, build_dir, exe_name, config, SysLibsDict, test_dir, definitionOfReal=8):
 
     common_cxx_flags = " -std=c++14 -Wextra -Wshadow -fno-common -fstack-protector-all -rdynamic -Werror "
@@ -37,7 +35,7 @@ def _run_cmake(*, build_dir, exe_name, config, SysLibsDict, test_dir, definition
         cxx_compiler = SysLibsDict["g++"]
 
         cmake_cxx_standard = "17"
-        cmake_cxx_flags = " -Wdouble-promotion -fstrict-aliasing -Wno-deprecated-copy "
+        cmake_cxx_flags = " -Wdouble-promotion -fstrict-aliasing -Wno-deprecated-copy -Wno-double-promotion -Wno-shadow "
         cmake_cxx_flags_debug = " -D_GLIBCXX_DEBUG "
         cmake_cxx_flags_release = " "
     elif config.startswith("intel"):
@@ -50,7 +48,7 @@ def _run_cmake(*, build_dir, exe_name, config, SysLibsDict, test_dir, definition
         c_compiler = SysLibsDict["icc"]
         cxx_compiler = SysLibsDict["icpc"]
        
-        common_cxx_flags += " -diag-remark=13397,13401,15552 -pedantic-errors -Wall "
+        common_cxx_flags += " -diag-remark=13397,13401,15552,2196 -pedantic-errors -Wall "
         cmake_cxx_standard = "17"
         cmake_cxx_flags = " -ansi-alias -fimf-arch-consistency=true "
         cmake_cxx_flags_debug = " -fp-model consistent -diag-disable=openmp -Wno-unknown-pragmas "
@@ -111,10 +109,8 @@ def _run_cmake(*, build_dir, exe_name, config, SysLibsDict, test_dir, definition
     return cmake_result
 
 def build_program(*, configs, make_dir, src_dir, test_dir):
-    from source.cppversion.generate_cppversion import generate_cppversion
     """Build the program with the desired configurations."""
     exe_name = "rich"
-    git_version = gen_version.GitVersion(root_dir)
     logger.debug(f"args:\nconfigs = {configs}\nroot_dir = {root_dir}\nmake_dir = {make_dir}\nsrc_dir = {src_dir}\ntest_dir = {test_dir}")
 
     assert os.path.isdir(os.path.join(root_dir, "source")), f"Directory {root_dir} does not contain a directory named source"
@@ -145,11 +141,6 @@ def build_program(*, configs, make_dir, src_dir, test_dir):
         if not os.path.isdir(config_dir):
             os.makedirs(config_dir)
         
-        generate_cppversion(path=os.path.join(config_dir, "generated/cppversion"),
-                    version=str(git_version),
-                    config=config)
-
-
         #run cmake for the specific config
         logger.info("Running cmake")
         cmake = _run_cmake(build_dir=build_dir,
@@ -168,11 +159,7 @@ def build_program(*, configs, make_dir, src_dir, test_dir):
         make = run_make.main(make_dir, config)
         assert make.returncode == 0, f"Running make for {config} failed"
         
-        exe_suffix = "_" + git_version.project_hash[:8] + "_"
-        if git_version.has_diff:
-            exe_suffix += "with_diff"
-        if git_version.has_untracked_files:
-            exe_suffix += "with_untracked_files"
+        exe_suffix = "_"
         exe_suffix += config
 
         exe_path_with_suffix = os.path.join(config_dir, exe_name + exe_suffix)

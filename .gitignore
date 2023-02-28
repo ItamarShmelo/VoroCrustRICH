@@ -4,8 +4,13 @@ runs/temp_*
 build
 *.pyc
 __pycache__
-runs/
-
+*.h5
+*.vtu
+*.pvtu
+*.mat
+rich
+output
+error
 VoroCrust/CMakeFiles
 VoroCrust/cmake_install.cmake
 VoroCrust/CMakeCache.txt

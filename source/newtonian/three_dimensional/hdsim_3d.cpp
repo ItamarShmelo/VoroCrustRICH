@@ -320,12 +320,7 @@ void HDSim3D::timeAdvance2(void)
 			vector<size_t> selfindex;
 			vector<vector<size_t> > sentpoints;
 			vector<int> sentproc;
-			MPI_Barrier(MPI_COMM_WORLD);
-			if(rank==0)
-				std::cout<<"Starting load move"<<std::endl;
 			proc_update_->Update(tproc_, tess_);
-			if(rank==0)
-				std::cout<<"Done load move"<<std::endl;
 			std::vector<Vector3D> &oldpoints = tess_.accessMeshPoints();
 			oldpoints.resize(tess_.GetPointNo());
 			std::vector<Vector3D> newpoints = tess_.UpdateMPIPoints(tproc_, rank, oldpoints, selfindex, sentproc, sentpoints);
@@ -903,8 +898,10 @@ double HDSim3D::RadiationTimeStep(double const dt, CG::MatrixBuilder const& matr
 	if(N == 0)
 		std::cout<<"Zero cells in RadiationTimeStep"<<std::endl;
 	std::vector<double> old_Er(N, 0);
+	for(size_t i = 0; i < N; ++i)
+		old_Er[i] = cells_[i].Erad * cells_[i].density;
 	std::vector<double> new_Er = CG::conj_grad_solver(CG_eps, total_iters, tess_, cells_ , dt, matrix_builder, pt_.getTime());
-	double max_Er = *std::max_element(new_Er.begin(), new_Er.end());
+	double max_Er = *std::max_element(old_Er.begin(), old_Er.end());
 #ifdef RICH_MPI
 	MPI_Allreduce(MPI_IN_PLACE, &max_Er, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
 #endif	
@@ -917,6 +914,10 @@ double HDSim3D::RadiationTimeStep(double const dt, CG::MatrixBuilder const& matr
 
 	double max_diff = std::numeric_limits<double>::min() * 100;
 	int max_loc = 0;
+	int rank = 0;
+#ifdef RICH_MPI
+	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+#endif
 	for(size_t i = 0; i < N; ++i)
 	{
 		bool to_calc = true;
@@ -925,15 +926,15 @@ double HDSim3D::RadiationTimeStep(double const dt, CG::MatrixBuilder const& matr
 				to_calc = false;
 		if(not to_calc)
 			continue;
-		double const equlibrium_factor = std::abs(cells_[i].temperature - std::pow(new_Er[i] / CG::radiation_constant, 0.25)) > 0.01 * cells_[i].temperature ? 0.2 : 1;
-		double const diff = equlibrium_factor * std::abs(new_Er[i] - old_Er[i]) / (new_Er[i] + 0.005 * max_Er);
+		double const equlibrium_factor = std::abs(cells_[i].temperature - std::pow(new_Er[i] / CG::radiation_constant, 0.25)) < 0.02 * cells_[i].temperature ? 0.05 : 1;
+		double const diff = equlibrium_factor * std::abs(cells_[i].Erad * cells_[i].density - old_Er[i]) / (cells_[i].Erad * cells_[i].density + 0.02 * max_Er);
 		if(diff > max_diff)
 		{
 			max_diff = diff;
 			max_loc = i;
 		}
 	}
-	int rank = 0;
+
 	struct
     {
         double val;
@@ -942,19 +943,18 @@ double HDSim3D::RadiationTimeStep(double const dt, CG::MatrixBuilder const& matr
     max_data.mpi_id = rank;
     max_data.val = max_diff;
 #ifdef RICH_MPI
-	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 	MPI_Allreduce(MPI_IN_PLACE, &max_data, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_WORLD);
 	max_diff = max_data.val;
 	ComputationalCell3D cdummy;
 	MPI_exchange_data(tess_, cells_, true, &cdummy);	
 #endif
 	if(rank == max_data.mpi_id)
-		std::cout<<"Radiation time step ID "<<cells_[max_loc].ID<<" old Er "<<old_Er[max_loc]<<" new Er "<<new_Er[max_loc]<<
-		" diff "<<max_diff<<" Tgas "<<cells_[max_loc].temperature<<" Trad "<<std::pow(new_Er[max_loc] / CG::radiation_constant, 0.25)<<std::endl;
+		std::cout<<"Radiation time step ID "<<cells_[max_loc].ID<<" old Er "<<old_Er[max_loc]<<" new Er "<<cells_[max_loc].Erad * cells_[max_loc].density<<
+		" diff "<<max_diff<<" Tgas "<<cells_[max_loc].temperature<<" Trad "<<std::pow(new_Er[max_loc] / CG::radiation_constant, 0.25)<<" max_Er "<<max_Er<<" rank "<<rank<<" density "<<cells_[max_loc].density<<std::endl;
 	if(no_hydro)
 	{
 		pt_.updateTime(dt);
 		pt_.updateCycle();
 	}
-	return dt * std::min(0.05 / max_diff, 1.1);
+	return dt * std::min(0.075 / max_diff, 1.15);
 }

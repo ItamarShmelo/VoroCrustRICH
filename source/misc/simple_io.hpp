@@ -26,6 +26,13 @@ void write_number(double num,
 		  string const& fname,
 		  int prec=6);
 
+/*! \brief Writes a single int to a file
+\param num Number
+\param fname Name of the file
+*/
+void write_int(int num,
+		  string const& fname);
+
 /*! \brief Writes a list of numbers to a file
 \param v List of numbers
 \param fname Name of the file

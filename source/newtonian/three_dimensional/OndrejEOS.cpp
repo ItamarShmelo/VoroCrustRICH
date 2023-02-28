@@ -12,7 +12,7 @@ namespace
         size_t index = static_cast<size_t>(std::upper_bound(x_begin, x_end, xi) - x_begin);
         if ((index < 2 && xi < *(x_begin + 1)) || index >= static_cast<size_t>(y_end - y_begin - 1))
         {
-            if (xi == *(y_begin + index))
+            if(index == 1 && std::abs(*(x_begin + index) -  xi) < 1e-14)
                 ++index;
             else
             {
@@ -141,10 +141,20 @@ double OndrejEOS::dp2T(double d, double p, tvector const &tracers, vector<string
         return std::pow(10.0, InterpData2(std::log10(d_cgs), std::log10(p_cgs), P_, T_));
 }
 
+double OndrejEOS::de2T(double const d, double const e, tvector const& tracers, vector<string> const& tracernames) const
+{
+    double e_cgs = e * lscale_ * lscale_ / (tscale_ * tscale_);
+    double d_cgs = d * mscale_ / (lscale_ * lscale_ * lscale_);
+    if (e_cgs > 1e16)
+        return e_cgs / (1.5 * 1.3419e8);
+    else
+        return std::pow(10.0, InterpData2(std::log10(d_cgs), std::log10(e_cgs), U_, T_));
+}
+
 double OndrejEOS::dT2p(double d, double T, tvector const &tracers, vector<string> const &tracernames) const
 {
     double d_cgs = d * mscale_ / (lscale_ * lscale_ * lscale_);
-    if (T > 8e7)
+    if (T > 5e7)
         return tscale_ * tscale_ * lscale_ * T * d_cgs * 1.3419e8 / mscale_;
     else
         return tscale_ * tscale_ * lscale_ * std::pow(10.0, InterpData2(std::log10(d_cgs), std::log10(T), T_, P_)) / mscale_;
@@ -188,10 +198,20 @@ double OndrejEOS::dp2cv(double d, double p, tvector const &tracers, vector<strin
     double d_cgs = d * mscale_ / (lscale_ * lscale_ * lscale_);
     double p_cgs = p * mscale_ / (tscale_ * tscale_ * lscale_);
     double const cv_factor = lscale_ * tscale_ * tscale_ / mscale_;
-    if (p_cgs > 1e16 * d_cgs)
+    if (p_cgs > 1e15 * d_cgs)
         return 2.0128e8 * d_cgs * cv_factor;
     else
         return std::pow(10.0, InterpData2(std::log10(d_cgs), std::log10(p_cgs), P_, CV_)) * cv_factor;
+}
+
+double OndrejEOS::dT2cv(double const d, double const T, tvector const& tracers, vector<string> const& tracernames) const
+{
+    double const d_cgs = d * mscale_ / (lscale_ * lscale_ * lscale_);
+    double const cv_factor = lscale_ * tscale_ * tscale_ / mscale_;
+    if(T > 1e6 || d_cgs > 10)
+        return  2.0128e8 * d_cgs * cv_factor;
+    else
+        return std::pow(10.0, InterpData2(std::log10(d_cgs), std::log10(T), T_, CV_)) * cv_factor;
 }
 
 double OndrejEOS::de2c(double d, double e, tvector const &tracers, vector<string> const &tracernames) const

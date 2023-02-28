@@ -128,7 +128,7 @@ void DiffusionForce::operator()(const Tessellation3D& tess, const vector<Computa
     size_t max_loc = 0;
     for(size_t i = 0; i < N; ++i)
     {
-        double const diff = std::abs(new_Er[i] - cells[i].Erad * cells[i].density) / (new_Er[i] + 0.005 * max_Er);
+        double const diff = std::abs(extensives[i].Erad - old_extensives[i].Erad) / (tess.GetVolume(i) * (new_Er[i] + 0.005 * max_Er));
         if(diff > max_diff)
         {
             max_diff = diff;

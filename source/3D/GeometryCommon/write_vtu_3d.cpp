@@ -146,12 +146,6 @@ void write_vtu_3d(std::filesystem::path const& file_name,
 		ugrid->GetCellData()->AddArray(var_data);
 	}
 
-	// ------------ write the vtu file to disk
-    vtkNew<vtkXMLUnstructuredGridWriter> writer;
-	writer->SetCompressionLevel(9);
-    writer->SetFileName(file_name.c_str());
-    writer->SetInputData(ugrid);
-  	writer->Write();
 
 	// ------------ write the 'pieced' .pvtu file
 	/*
@@ -200,6 +194,13 @@ void write_vtu_3d(std::filesystem::path const& file_name,
 		pwriter->SetFileName(pname.c_str());
 		pwriter->SetInputData(ugrid);
 		pwriter->Write();
+	#else
+		// ------------ write the vtu file to disk
+		vtkNew<vtkXMLUnstructuredGridWriter> writer;
+		writer->SetCompressionLevel(9);
+		writer->SetFileName(file_name.c_str());
+		writer->SetInputData(ugrid);
+		writer->Write();
 	#endif
 }
 
