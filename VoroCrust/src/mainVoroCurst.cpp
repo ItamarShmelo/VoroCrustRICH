@@ -34,7 +34,7 @@ void triangle(){
     vorocrust_vtk::write_ballTree(dirname+"/triangle_sharp_edges_sampling.vtp", alg_triangle.trees.ball_kd_edges);
     vorocrust_vtk::write_ballTree(dirname+"/triangle_faces_sampling.vtp", alg_triangle.trees.ball_kd_faces);
 
-    std::vector<Vector3D> seeds = alg_triangle.getSeeds();
+    std::vector<Vector3D> const& seeds = alg_triangle.getSeeds();
 
     vorocrust_vtk::write_points(dirname+"/triangle_seeds.vtu", seeds);
 
@@ -163,6 +163,60 @@ std::vector<Vector3D> load_seeds(std::string filename){
     return seeds;
 }
 
+void box(){
+    std::vector<Vector3D> vertices{
+        Vector3D(0, 0, 0), // 0
+        Vector3D(3, 0, 0), // 1
+        Vector3D(0, 3, 0), // 2
+        Vector3D(0, 0, 3), // 3
+        Vector3D(3, 3, 0), // 4
+        Vector3D(0, 3, 3), // 5
+        Vector3D(3, 0, 3), // 6
+        Vector3D(3, 3, 3), // 7
+    };
+
+    PL_Complex plc_box = PL_Complex(vertices);
+
+    // square 1
+    plc_box.addFace({0, 1, 4});
+    plc_box.addFace({4, 2, 0});
+
+    // square 2
+    plc_box.addFace({0, 1, 6});
+    plc_box.addFace({6, 3, 0});
+
+    // square 3
+    plc_box.addFace({0, 3, 5});
+    plc_box.addFace({5, 2, 0});
+    
+    // square 4
+    plc_box.addFace({4, 1, 6});
+    plc_box.addFace({4, 6, 7});
+
+    // square 5
+    plc_box.addFace({4, 2, 5});
+    plc_box.addFace({4, 5, 7});
+
+    // square 6
+    plc_box.addFace({3, 6, 7});
+    plc_box.addFace({3, 5, 7});
+    
+    plc_box.detectFeatures(M_PI*0.1, M_PI*0.1);
+
+    std::vector<Vector3D> seeds{{1.5, 1.3, 1.}};
+
+    std::string dirname = "./box";
+    std::filesystem::create_directories(dirname);
+    
+    vorocrust_vtk::write_vtu_PL_Complex(dirname+"/box.vtu", plc_box);
+    vorocrust_vtk::write_points(dirname+"/seeds.vtu", seeds);
+
+    VoroCrustAlgorithm alg_box(plc_box, M_PI*0.1, M_PI*0.1, 0.3, 0.3, 0.13);
+    auto const& [in_seeds, out_seeds] =  alg_box.determineIfSeedsAreInsideOrOutside(seeds);
+    vorocrust_vtk::write_points(dirname+"/box_seeds_in.vtu", in_seeds);
+    vorocrust_vtk::write_points(dirname+"/box_seeds_out.vtu", out_seeds);
+}
+
 void loadfox_and_split_seeds(){
     std::cout << "\nRead From File\n------------------------\n\n" << std::endl;
     auto vertices_from_file = read_vertices("data/fox/vertices.txt");
@@ -203,9 +257,11 @@ int main(int argc, char *argv[]){
 
     // triangle();
     // getchar();
-    // fox();
+    fox();
     // getchar();
     loadfox_and_split_seeds();
+
+    // box();
 
     
     return 0;
@@ -269,9 +325,9 @@ void write_points(std::string filename, std::vector<Vector3D> points){
     std::ofstream myfile_z(filename + "_z.txt");
 
     for(Vector3D const& p : points){
-        myfile_x << p.x << "\n";
-        myfile_y << p.y << "\n";
-        myfile_z << p.z << "\n";
+        myfile_x << std::setprecision(16) << p.x << "\n";
+        myfile_y << std::setprecision(16) << p.y << "\n";
+        myfile_z << std::setprecision(16) << p.z << "\n";
     }
 
     myfile_x.close();
