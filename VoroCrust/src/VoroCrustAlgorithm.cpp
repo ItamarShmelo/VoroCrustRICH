@@ -136,7 +136,7 @@ std::pair<std::vector<Vector3D>, std::vector<Vector3D>> VoroCrustAlgorithm::dete
 
             if(not success) continue;
 
-            if(face->pointIsInsideFace(p_inter)){
+            if(p_inter.z > seed.z && face->pointIsInsideFace(p_inter)){
                 count++;
             }
         }
