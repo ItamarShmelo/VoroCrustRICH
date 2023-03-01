@@ -15,7 +15,7 @@ std::vector<BallInfo> SliverDriver::groupOverlappingBalls(BallInfo const& ball_i
     double const r_max = (2.0 / (1.0 - L_Lipschitz)) * radius;
 
     //! EPSILONTICA:
-    double const r_corner_and_edge = (ball_info.dim == Dim::FACE) ? max_radius_corner_edge*(1.+ 1e-14) : r_max;
+    double const r_corner_and_edge = (ball_info.dim == Dim::FACE) ? (max_radius_corner_edge+2.0*radius)*(1.+ 1e-14) : r_max;
 
     VoroCrust_KD_Tree_Ball const& corners_ball_tree = trees.ball_kd_vertices;
     std::vector<std::size_t> const& overlapping_corner_balls_indices = corners_ball_tree.getOverlappingBalls(p, radius, r_corner_and_edge);
