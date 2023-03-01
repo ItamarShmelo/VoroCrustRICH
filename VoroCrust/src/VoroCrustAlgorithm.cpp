@@ -46,7 +46,6 @@ void VoroCrustAlgorithm::run() {
 
     plc->detectFeatures(sharpTheta, flatTheta);
 
-    std::cout << plc->repr() << std::endl;
     //! TODO: make sampling size a user input!
     //! IMPORTANT: sampling size can effect the convergence of the algorithm because the radius is determined using proximity to the sampled points on different features. Make sure that the sampling size is compatible to the size of the smallest polygon in the data. One wants the sampling to be "dense" in the edges and faces.
     trees.loadPLC(*plc, 1e5, 1e6);    
@@ -132,7 +131,6 @@ std::pair<std::vector<Vector3D>, std::vector<Vector3D>> VoroCrustAlgorithm::dete
     int i = 0;
     for(Vector3D const& seed : seeds) {
         // determine if a seed is in or out using the ray casting algorithm
-        std::cout << "seed num " << ++i << std::endl;
         
         int count = 0;
         for(Face const& face : plc->faces) {
