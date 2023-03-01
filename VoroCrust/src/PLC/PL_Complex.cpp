@@ -4,7 +4,7 @@
 #include <numeric>
 #include <functional>
 #include <queue>
-#include "../../../source/misc/utils.hpp"
+#include "../unsorted_unique.hpp"
 
 PL_Complex::PL_Complex(std::vector<Vector3D> const &vertices_) : vertices(),
                                                                  edges(),
@@ -48,7 +48,7 @@ Edge PL_Complex::addEdge(Vertex const &v1, Vertex const &v2)
 void PL_Complex::addFace(std::vector<unsigned int> const &indices)
 {
     //! WARNING: unique needs vector to be sorted so this does nothing actually... 
-    if (indices.size() != unique(indices).size())
+    if (indices.size() != unsorted_unique<unsigned int>(indices).size())
     {
         std::cout << "ERROR: Repeated indices in PL_Complex::addFace!" << std::endl;
         exit(1);
