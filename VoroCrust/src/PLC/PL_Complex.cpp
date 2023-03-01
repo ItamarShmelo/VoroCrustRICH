@@ -86,7 +86,7 @@ void PL_Complex::addFace(std::vector<unsigned int> const &indices)
             new_face_ptr->neighbors.push_back(new_edge_ptr->faces[0]);
             new_edge_ptr->faces[0]->neighbors.push_back(new_edge_ptr->faces[1]);
 
-            std::cout << "Neigbors :: faces " << new_face_ptr->index << " and face " << new_edge_ptr->faces[0]->index << std::endl;
+            // std::cout << "Neigbors :: faces " << new_face_ptr->index << " and face " << new_edge_ptr->faces[0]->index << std::endl;
         }
     }
 
