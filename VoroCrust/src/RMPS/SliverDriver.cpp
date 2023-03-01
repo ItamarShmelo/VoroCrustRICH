@@ -228,6 +228,7 @@ void SliverDriver::setRadiusOfBall(double const r_new, BallInfo const& ball_info
 }
 
 std::tuple<bool, Vector3D, Vector3D> SliverDriver::calculateIntersectionSeeds(Ball const& ball_1, Ball const& ball_2, Ball const& ball_3) const {
+    // https://gist.github.com/ahcurrier/1a03faa8b0c2420ec6fd
     auto const& [p1, r1] = ball_1;
     auto const& [p2, r2] = ball_2;
     auto const& [p3, r3] = ball_3;
