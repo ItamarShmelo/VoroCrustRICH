@@ -2,7 +2,7 @@
 #include <iostream>
 #include "../unsorted_unique.hpp"
 
-SliverDriver::SliverDriver(double const L_Lipschitz_) : L_Lipschitz(L_Lipschitz_), r_new_corner_balls(), r_new_edge_balls(), r_new_face_balls(), number_of_slivers_eliminated(0) {}
+SliverDriver::SliverDriver(double const L_Lipschitz_) : L_Lipschitz(L_Lipschitz_), r_new_corner_balls(), r_new_edge_balls(), r_new_face_balls(), number_of_slivers_eliminated(0), max_radius_corner_edge(0) {}
 
 std::vector<BallInfo> SliverDriver::groupOverlappingBalls(BallInfo const& ball_info, Trees const& trees) const {
     //! MAYBE: I need to change r_max when looking for lower dimensional balls;
@@ -12,12 +12,15 @@ std::vector<BallInfo> SliverDriver::groupOverlappingBalls(BallInfo const& ball_i
     std::vector<BallInfo> overlapping_balls;
 
     double const r_max = (2.0 / (1.0 - L_Lipschitz)) * radius;
-    
+
+    //! EPSILONTICA:
+    double const r_corner_and_edge = (ball_info.dim == Dim::FACE) ? max_radius_corner_edge*(1.+ 1e-14) : r_max;
+
     VoroCrust_KD_Tree_Ball const& corners_ball_tree = trees.ball_kd_vertices;
-    std::vector<std::size_t> const& overlapping_corner_balls_indices = corners_ball_tree.getOverlappingBalls(p, radius, r_max);
+    std::vector<std::size_t> const& overlapping_corner_balls_indices = corners_ball_tree.getOverlappingBalls(p, radius, r_corner_and_edge);
 
     VoroCrust_KD_Tree_Ball const& edges_ball_tree = trees.ball_kd_edges;
-    std::vector<std::size_t> const& overlapping_edge_balls_indices = edges_ball_tree.getOverlappingBalls(p, radius, r_max);
+    std::vector<std::size_t> const& overlapping_edge_balls_indices = edges_ball_tree.getOverlappingBalls(p, radius, r_corner_and_edge);
 
     VoroCrust_KD_Tree_Ball const& faces_ball_tree = trees.ball_kd_faces;
     std::vector<std::size_t> const& overlapping_face_balls_indices = faces_ball_tree.getOverlappingBalls(p, radius, r_max);
@@ -295,10 +298,15 @@ bool SliverDriver::eliminateSlivers(Trees &trees){
     r_new_edge_balls = trees.ball_kd_edges.ball_radii;
     r_new_face_balls = trees.ball_kd_faces.ball_radii;
     
+    double const max_radius_corner = *std::max_element(r_new_corner_balls.begin(), r_new_corner_balls.end());
+    double const max_radius_edge = *std::max_element(r_new_edge_balls.begin(), r_new_edge_balls.end());
+    max_radius_corner_edge = std::max(max_radius_corner, max_radius_edge);
+
     number_of_slivers_eliminated = 0;
     
-    eliminateSliversForBallsInBallTree(Dim::CORNER, trees);
-    eliminateSliversForBallsInBallTree(Dim::EDGE, trees);
+    //! PERHAPS: I'm not sure I need this elimination of slivers from CORNER OR EDGE Since a Face ball has to be part of the quartet since no corner balls and edge balls can create a triplet...
+    // eliminateSliversForBallsInBallTree(Dim::CORNER, trees);
+    // eliminateSliversForBallsInBallTree(Dim::EDGE, trees);
     eliminateSliversForBallsInBallTree(Dim::FACE, trees);
 
     // update ball radii
@@ -312,6 +320,12 @@ bool SliverDriver::eliminateSlivers(Trees &trees){
 }
 
 std::vector<Vector3D> SliverDriver::getSeeds(Trees const& trees) const {
+    //! CODEDUPLICATION:
+    double const max_radius_corner = *std::max_element(trees.ball_kd_vertices.ball_radii.begin(), trees.ball_kd_vertices.ball_radii.end());
+    double const max_radius_edge = *std::max_element(trees.ball_kd_edges.ball_radii.begin(), trees.ball_kd_edges.ball_radii.end());
+
+    max_radius_corner_edge = std::max(max_radius_corner, max_radius_edge);
+
     std::vector<Vector3D> seeds;
 
     VoroCrust_KD_Tree_Ball const& faces_ball_tree = trees.ball_kd_faces;

@@ -44,6 +44,8 @@ class SliverDriver {
         std::vector<Vector3D> getSeeds(Trees const& trees) const;
 
     private:
+        mutable double max_radius_corner_edge;
+
         void eliminateSliversForBallsInBallTree(Dim const dim, Trees const& trees);
 
         void dealWithBall(BallInfo const& ball_info, Trees const& trees);
