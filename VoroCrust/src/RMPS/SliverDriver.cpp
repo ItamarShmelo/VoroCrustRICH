@@ -1,6 +1,7 @@
 #include "SliverDriver.hpp"
 #include <iostream>
-#include "../unsorted_unique.hpp"
+
+std::vector<Vector3D> unsorted_unique(std::vector<Vector3D> const& vec, double const tol);
 
 SliverDriver::SliverDriver(double const L_Lipschitz_) : L_Lipschitz(L_Lipschitz_), r_new_corner_balls(), r_new_edge_balls(), r_new_face_balls(), number_of_slivers_eliminated(0), max_radius_corner_edge(0) {}
 
@@ -364,7 +365,40 @@ std::vector<Vector3D> SliverDriver::getSeeds(Trees const& trees) const {
         }
     }
     
-    seeds = unsorted_unique<Vector3D>(seeds);
+    seeds = unsorted_unique(seeds, 1e-5);
     
     return seeds;
+}
+
+std::vector<Vector3D> unsorted_unique(std::vector<Vector3D> const& vec, double const tol) {
+    std::size_t const vec_size = vec.size();
+
+    std::vector<bool> isDeleted(vec_size, false);
+
+    std::size_t size_deleted = 0;
+    for(std::size_t i=0; i<vec_size; ++i){
+        for(std::size_t j=i+1; j<vec_size; ++j){
+            if(isDeleted[j]) continue;
+
+            bool const res = abs(vec[i] - vec[j]) < tol;
+            
+            isDeleted[j] = res;
+            if(res) ++size_deleted;
+        }
+    }
+
+
+
+    std::vector<Vector3D> new_vec(vec_size - size_deleted, Vector3D());
+    //! FORDEBUG: remove
+    std::cout << "original size:" << vec_size <<", new_size: " << new_vec.size() << std::endl;
+
+    for(std::size_t i=0, j=0; i<vec_size; ++i){
+        if(isDeleted[i]) continue;
+
+        new_vec[j] = vec[i];
+        ++j;
+    }
+
+    return new_vec;
 }
