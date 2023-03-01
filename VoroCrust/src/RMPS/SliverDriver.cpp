@@ -366,7 +366,7 @@ std::vector<Vector3D> SliverDriver::getSeeds(Trees const& trees) const {
         }
     }
     
-    seeds = unsorted_unique(seeds, 1e-5);
+    seeds = unsorted_unique(seeds, 1e-8);
     
     return seeds;
 }
