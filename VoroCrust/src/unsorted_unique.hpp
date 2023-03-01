@@ -21,8 +21,6 @@ std::vector<T> unsorted_unique(std::vector<T> const& vec) {
         }
     }
 
-
-
     std::vector<T> new_vec(vec_size - size_deleted, T());
     //! FORDEBUG: remove
     std::cout << "original size:" << vec_size <<", new_size: " << new_vec.size() << std::endl;
