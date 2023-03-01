@@ -381,7 +381,7 @@ std::vector<Vector3D> unsorted_unique(std::vector<Vector3D> const& vec, double c
         for(std::size_t j=i+1; j<vec_size; ++j){
             if(isDeleted[j]) continue;
 
-            bool const res = abs(vec[i] - vec[j]) < tol;
+            bool const res = (abs(vec[i] - vec[j]) < tol);
             
             isDeleted[j] = res;
             if(res) ++size_deleted;
