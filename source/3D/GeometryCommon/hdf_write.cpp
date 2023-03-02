@@ -387,6 +387,11 @@ void WriteSnapshot3D(HDSim3D const& sim, std::string const& filename,
   for (size_t i = 0; i < Ncells; ++i)
     temp[i] = tess.GetVolume(i);
   write_std_vector_to_hdf5(writegroup, temp, "Volume");
+  if(write_vtu)
+  {
+    vtu_cell_variables.push_back(temp);
+    vtu_cell_variable_names.push_back("Volume");
+  }
 #ifdef RICH_MPI
   if (rank == 0)
     {
