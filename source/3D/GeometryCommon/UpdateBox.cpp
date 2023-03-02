@@ -35,6 +35,7 @@ void UpdateBox(Tessellation3D &tess, HDSim3D &sim, double const min_velocity, do
     tempvec[4] = -minv.x;
     tempvec[5] = -minv.y;
     tempvec[6] = -minv.z;
+	temprecv= tempvec;
 	int rank = 0;
 #ifdef RICH_MPI
     MPI_Allreduce(&tempvec[0], &temprecv[0], 7, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
