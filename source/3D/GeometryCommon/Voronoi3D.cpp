@@ -351,8 +351,8 @@ void CleanSameLine(boost::container::small_vector<size_t, 8> &indeces, vector<Ve
     size_t Nindeces = indeces.size();
     for(size_t i = 0; i < Nindeces; ++i)
     {
-      Vector3D normal_temp = CrossProduct(face_points[indeces[i]] - face_points[indeces[(N + i - 1) % N]], face_points[indeces[(i + 1) % N]] 
-        - face_points[indeces[(N + i - 1) % N]]);
+      Vector3D normal_temp = CrossProduct(face_points[indeces[i]] - face_points[indeces[(Nindeces + i - 1) % Nindeces]], face_points[indeces[(i + 1) % Nindeces]] 
+        - face_points[indeces[(Nindeces + i - 1) % Nindeces]]);
       double const area = fastabs(normal_temp);
       normal_temp *= 1.0 / area;
       if(area < area_scale * small_fraction || ScalarProd(normal_temp, good_normal) < 0.99998)
