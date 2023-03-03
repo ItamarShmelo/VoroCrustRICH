@@ -47,12 +47,18 @@ class VoroCrustFace
         //! \brief flips the orientation of the face i.e. reverse the vector `vertices`
         void flipOrientation();
 
+        //! \brief orient `this` with respect to `face` (normals scalar product is positive) 
         void orientWithRespectTo(Face const& face);
 
+        //! \brief calculates the Centeroid of the face
         Vector3D calculateCenteroid() const;
 
+        //! \brief finds the intersection of the ray coming out of point in the positive z direction
+        //! with the plane defined by face
+        //! \return a pair <success, point> where `success` is a flag indicating if there exists such an intersection point, and `point` is the intersection point with the plane (assuming success) 
         std::pair<bool, Vector3D> pointXYaxisRayIntersectsAt(Vector3D const& point) const;
 
+        //! \brief returns `true` if point is inside face
         bool pointIsInsideFace(Vector3D const& point) const;
 
         std::string repr() const;

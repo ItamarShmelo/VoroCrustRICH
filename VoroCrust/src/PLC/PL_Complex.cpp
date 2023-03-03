@@ -288,6 +288,7 @@ void PL_Complex::buildCreases()
 void PL_Complex::orderCrease(Crease &crease){
     Edge start;
     bool foundStart;
+    // look for the start of the crease (if crease is a circle it will take the last element as the start)
     for(std::size_t i=0; i<crease.size(); ++i){
         start = crease[i];
         foundStart = true;
@@ -305,6 +306,7 @@ void PL_Complex::orderCrease(Crease &crease){
 
     orderedCrease.push_back(start);
 
+    // build an ordered crease i.e v2[i-1] = v1[i]
     for(std::size_t i=0; i<crease.size()-1; ++i){
         bool found = false;
         for(std::size_t j=0; j<crease.size(); ++j){

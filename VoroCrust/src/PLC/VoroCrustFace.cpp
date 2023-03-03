@@ -64,6 +64,7 @@ void VoroCrustFace::orientWithRespectTo(Face const& face){
 }
 
 Vector3D VoroCrustFace::calculateCenteroid() const {
+    // assumes face is a triangle!
     Vector3D res(0.0, 0.0, 0.0);
     for(Vertex const& vertex : vertices){
         res += vertex->vertex;
@@ -79,7 +80,7 @@ std::pair<bool, Vector3D> VoroCrustFace::pointXYaxisRayIntersectsAt(Vector3D con
     Vector3D const& p3 = vertices[2]->vertex;
 
     double const coeff_z = Mat33<double>(p1.x, p1.y, 1.0, p2.x, p2.y, 1.0, p3.x, p3.y, 1.0).determinant();
-    // face is parallel to ray return sucess = false
+    // face is parallel to ray return success = false
     if(std::abs(coeff_z) < 1e-14) {
         return std::pair<bool, Vector3D>(false, Vector3D(0.0, 0.0, 0.0));
     }
@@ -101,7 +102,7 @@ bool sameSide(Vector3D const& p1, Vector3D const& p2, Vector3D const& a, Vector3
 }
 
 bool VoroCrustFace::pointIsInsideFace(Vector3D const& point) const {
-    //! SHOULDJUSTCHECKITONCE: should just sheck it once
+    //! SHOULDJUSTCHECKITONCE: should just check it once
     if(vertices.size() != 3){
         std::cout << "ERROR: face is not a triangle!" << std::endl;
         exit(1);
