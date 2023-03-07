@@ -21,7 +21,7 @@ void triangle(){
 
     PL_Complex plc_triangle = PL_Complex(vertices);
     plc_triangle.addFace(std::vector<unsigned int>{0,1,2});
-    std::cout << plc_triangle.repr() << std::endl;
+    // std::cout << plc_triangle.repr() << std::endl;
 
     VoroCrustAlgorithm alg_triangle(plc_triangle, M_PI*0.1, M_PI*0.1, 0.1, 0.3, 0.13);
     
@@ -41,17 +41,17 @@ void triangle(){
 
     write_points(dirname+"/seeds", seeds);
 
-    std::cout << "\n\nFINISH PART ONE\n" << std::endl;
+    // std::cout << "\n\nFINISH PART ONE\n" << std::endl;
 }
 
 void fox(){
-    std::cout << "\nRead From File\n------------------------\n\n" << std::endl;
+    // std::cout << "\nRead From File\n------------------------\n\n" << std::endl;
     auto vertices_from_file = read_vertices("data/fox/vertices.txt");
 
     PL_Complex plc_from_file(vertices_from_file);
 
     for(auto& vertex : plc_from_file.vertices){
-        // std::cout << "vertex " << vertex->index << ": " << vertex->repr() << "\n";
+        // // std::cout << "vertex " << vertex->index << ": " << vertex->repr() << "\n";
     }
 
     auto faces_from_file = read_faces("data/fox/faces.txt");
@@ -59,16 +59,16 @@ void fox(){
     int i = 0;
     for(auto& face_indices : faces_from_file){
         i++;
-        std::cout << "face " << i << ": v1 = " << face_indices[0] << ", v2 = " << face_indices[1] << ", v3 = " << face_indices[2] << "\n";
+        // std::cout << "face " << i << ": v1 = " << face_indices[0] << ", v2 = " << face_indices[1] << ", v3 = " << face_indices[2] << "\n";
         plc_from_file.addFace(face_indices);
     }
 
 
-    std::cout << std::endl;
+    // std::cout << std::endl;
 
     VoroCrustAlgorithm alg_fox(plc_from_file, M_PI*0.1, M_PI*0.1, 100., 0.3, 0.13);
     
-    // std::cout << alg_fox.repr() << std::endl;
+    // // std::cout << alg_fox.repr() << std::endl;
 
     alg_fox.run();
     
@@ -80,7 +80,7 @@ void fox(){
     int search_kNN = alg_fox.trees.VC_kd_sharp_corners.kNearestNeighbors(query, 1)[0];
 
     if(search_kNN != search_NN){
-        std::cout << "\nNN != kNN when k=1\n" << std::endl;
+        // std::cout << "\nNN != kNN when k=1\n" << std::endl;
 
         exit(1);
     }
@@ -140,106 +140,106 @@ void fox(){
     
     write_points(dirname+"/fox_seeds", seeds);
 
-    std::cout << "\n\nFINISH PART TWO\n\nCLICK TO END " << std::endl;
+    // std::cout << "\n\nFINISH PART TWO\n\nCLICK TO END " << std::endl;
 }
 
-void elad(){
-    std::cout << "\nRead From File\n------------------------\n\n" << std::endl;
-    auto vertices_from_file = read_vertices("data/elad/vertices.txt");
+void astroid(){
+    // std::cout << "\nRead From File\n------------------------\n\n" << std::endl;
+    auto vertices_from_file = read_vertices("data/astroid/vertices.txt");
 
     PL_Complex plc_from_file(vertices_from_file);
 
     for(auto& vertex : plc_from_file.vertices){
-        // std::cout << "vertex " << vertex->index << ": " << vertex->repr() << "\n";
+        // // std::cout << "vertex " << vertex->index << ": " << vertex->repr() << "\n";
     }
 
-    auto faces_from_file = read_faces("data/elad/faces.txt");
+    auto faces_from_file = read_faces("data/astroid/faces.txt");
 
     int i = 0;
     for(auto& face_indices : faces_from_file){
         i++;
-        std::cout << "face " << i << ": v1 = " << face_indices[0] << ", v2 = " << face_indices[1] << ", v3 = " << face_indices[2] << "\n";
+        // // std::cout << "face " << i << ": v1 = " << face_indices[0] << ", v2 = " << face_indices[1] << ", v3 = " << face_indices[2] << "\n";
         plc_from_file.addFace(face_indices);
     }
 
 
-    std::cout << std::endl;
+    // std::cout << std::endl;
 
-    VoroCrustAlgorithm alg_elad(plc_from_file, M_PI*0.1, M_PI*0.1, 100., 0.3, 0.13);
+    VoroCrustAlgorithm alg_astroid(plc_from_file, M_PI*20./180., M_PI*20./180., 100., 0.3, 0.13);
     
-    // std::cout << alg_elad.repr() << std::endl;
+    // // std::cout << alg_astroid.repr() << std::endl;
 
-    alg_elad.run();
+    alg_astroid.run();
     
 
     
     Vector3D query(100, 250, 50);
 
-    int search_NN = alg_elad.trees.VC_kd_sharp_corners.nearestNeighbor(query);
-    int search_kNN = alg_elad.trees.VC_kd_sharp_corners.kNearestNeighbors(query, 1)[0];
+    int search_NN = alg_astroid.trees.VC_kd_sharp_corners.nearestNeighbor(query);
+    int search_kNN = alg_astroid.trees.VC_kd_sharp_corners.kNearestNeighbors(query, 1)[0];
 
     if(search_kNN != search_NN){
-        std::cout << "\nNN != kNN when k=1\n" << std::endl;
+        // std::cout << "\nNN != kNN when k=1\n" << std::endl;
 
         exit(1);
     }
 
 
-    std::vector<Vector3D> centeroids(alg_elad.plc->faces.size(), {0, 0, 0});
-    std::vector<Vector3D> normals(alg_elad.plc->faces.size(), {0, 0, 0});
+    std::vector<Vector3D> centeroids(alg_astroid.plc->faces.size(), {0, 0, 0});
+    std::vector<Vector3D> normals(alg_astroid.plc->faces.size(), {0, 0, 0});
 
-    for(std::size_t i=0; i<alg_elad.plc->faces.size(); ++i){
-        centeroids[i] = alg_elad.plc->faces[i]->calculateCenteroid();
-        normals[i] = -1*alg_elad.plc->faces[i]->calcNormal();
+    for(std::size_t i=0; i<alg_astroid.plc->faces.size(); ++i){
+        centeroids[i] = alg_astroid.plc->faces[i]->calculateCenteroid();
+        normals[i] = -1*alg_astroid.plc->faces[i]->calcNormal();
     }
 
     
-    std::vector<Vector3D> vertex1(alg_elad.plc->sharp_edges.size(), {0, 0, 0});
-    std::vector<Vector3D> edge_vectors(alg_elad.plc->sharp_edges.size(), {0, 0, 0});
+    std::vector<Vector3D> vertex1(alg_astroid.plc->sharp_edges.size(), {0, 0, 0});
+    std::vector<Vector3D> edge_vectors(alg_astroid.plc->sharp_edges.size(), {0, 0, 0});
 
-    for(std::size_t i=0; i<alg_elad.plc->sharp_edges.size(); ++i){
-        vertex1[i] = alg_elad.plc->sharp_edges[i]->vertex1->vertex;
-        edge_vectors[i] = alg_elad.plc->sharp_edges[i]->vertex2->vertex - alg_elad.plc->sharp_edges[i]->vertex1->vertex;
+    for(std::size_t i=0; i<alg_astroid.plc->sharp_edges.size(); ++i){
+        vertex1[i] = alg_astroid.plc->sharp_edges[i]->vertex1->vertex;
+        edge_vectors[i] = alg_astroid.plc->sharp_edges[i]->vertex2->vertex - alg_astroid.plc->sharp_edges[i]->vertex1->vertex;
     }
 
-    std::string dirname = "./elad";
+    std::string dirname = "./astroid";
     std::filesystem::create_directories(dirname);
-    vorocrust_vtk::write_vtu_PL_Complex(dirname+"/elad.vtu", *alg_elad.plc);
+    vorocrust_vtk::write_vtu_PL_Complex(dirname+"/astroid.vtu", *alg_astroid.plc);
     
-    vorocrust_vtk::write_arbitrary_oriented_vectors(dirname+"/elad_face_noramls.vtp", centeroids,  normals, "normals", 10.0);
+    vorocrust_vtk::write_arbitrary_oriented_vectors(dirname+"/astroid_face_noramls.vtp", centeroids,  normals, "normals", 10.0);
     
-    vorocrust_vtk::write_arbitrary_oriented_vectors(dirname+"/elad_face_creases.vtp", vertex1,  edge_vectors, "creases", 1.0);
+    vorocrust_vtk::write_arbitrary_oriented_vectors(dirname+"/astroid_face_creases.vtp", vertex1,  edge_vectors, "creases", 1.0);
 
-    vorocrust_vtk::write_vtu_trees(dirname+"/elad_trees.vtu", alg_elad.trees);
+    vorocrust_vtk::write_vtu_trees(dirname+"/astroid_trees.vtu", alg_astroid.trees);
     
-    vorocrust_vtk::write_nearestNeighbor(dirname+"/elad_nearest_vertices.vtu", alg_elad.trees.VC_kd_sharp_corners, query);
-    vorocrust_vtk::write_kNearestNeighbors(dirname+"/elad_k_nearest_vertices.vtu", alg_elad.trees.VC_kd_sharp_corners, query, 25);
-    vorocrust_vtk::write_radiusSearch(dirname+"/elad_radius_10.vtu", alg_elad.trees.VC_kd_faces, query, 10.0);
-    vorocrust_vtk::write_radiusSearch("elad_radius_20.vtu", alg_elad.trees.VC_kd_faces, query, 20.0);
+    vorocrust_vtk::write_nearestNeighbor(dirname+"/astroid_nearest_vertices.vtu", alg_astroid.trees.VC_kd_sharp_corners, query);
+    vorocrust_vtk::write_kNearestNeighbors(dirname+"/astroid_k_nearest_vertices.vtu", alg_astroid.trees.VC_kd_sharp_corners, query, 25);
+    vorocrust_vtk::write_radiusSearch(dirname+"/astroid_radius_10.vtu", alg_astroid.trees.VC_kd_faces, query, 10.0);
+    vorocrust_vtk::write_radiusSearch("astroid_radius_20.vtu", alg_astroid.trees.VC_kd_faces, query, 20.0);
 
-    vorocrust_vtk::write_nearestNeighborToSegment(dirname+"/elad_nearest_to_segment.vtu", alg_elad.trees.VC_kd_sharp_corners, {Vector3D(-200, 250, 0), Vector3D(200, 250, 0)}, 1e3);
+    vorocrust_vtk::write_nearestNeighborToSegment(dirname+"/astroid_nearest_to_segment.vtu", alg_astroid.trees.VC_kd_sharp_corners, {Vector3D(-200, 250, 0), Vector3D(200, 250, 0)}, 1e3);
 
-    vorocrust_vtk::write_nearestNeighbor(dirname+"/elad_nearest_edges.vtu", alg_elad.trees.VC_kd_sharp_edges, query);
-    vorocrust_vtk::write_nearestNeighbor(dirname+"/elad_nearest_faces.vtu", alg_elad.trees.VC_kd_faces, query);
+    vorocrust_vtk::write_nearestNeighbor(dirname+"/astroid_nearest_edges.vtu", alg_astroid.trees.VC_kd_sharp_edges, query);
+    vorocrust_vtk::write_nearestNeighbor(dirname+"/astroid_nearest_faces.vtu", alg_astroid.trees.VC_kd_faces, query);
 
-    vorocrust_vtk::write_ballTree(dirname+"/elad_sharp_corners_sampling.vtp", alg_elad.trees.ball_kd_vertices);
-    vorocrust_vtk::write_ballTree(dirname+"/elad_sharp_edges_sampling.vtp", alg_elad.trees.ball_kd_edges);
-    // vorocrust_vtk::write_ballTree(dirname+"/elad_sharp_faces_sampling.vtp", alg_elad.trees.ball_kd_faces);
+    vorocrust_vtk::write_ballTree(dirname+"/astroid_sharp_corners_sampling.vtp", alg_astroid.trees.ball_kd_vertices);
+    vorocrust_vtk::write_ballTree(dirname+"/astroid_sharp_edges_sampling.vtp", alg_astroid.trees.ball_kd_edges);
+    // vorocrust_vtk::write_ballTree(dirname+"/astroid_sharp_faces_sampling.vtp", alg_astroid.trees.ball_kd_faces);
 
-    // std::vector<std::vector<Vector3D>> leftover_eligble(alg_elad.facesDriver.eligble_faces.size(), std::vector<Vector3D>());
+    // std::vector<std::vector<Vector3D>> leftover_eligble(alg_astroid.facesDriver.eligble_faces.size(), std::vector<Vector3D>());
 
-    // for(std::size_t i=0 ;i<alg_elad.facesDriver.eligble_faces.size(); ++i){
-        // leftover_eligble[i] = alg_elad.facesDriver.eligble_faces[i].face;
+    // for(std::size_t i=0 ;i<alg_astroid.facesDriver.eligble_faces.size(); ++i){
+        // leftover_eligble[i] = alg_astroid.facesDriver.eligble_faces[i].face;
     // }
 
-    // vorocrust_vtk::write_vtu_faces(dirname+"/elad_leftover_eligble_faces.vtu", leftover_eligble);
+    // vorocrust_vtk::write_vtu_faces(dirname+"/astroid_leftover_eligble_faces.vtu", leftover_eligble);
 
-    // std::vector<Vector3D> seeds = alg_elad.getSeeds();
-    // vorocrust_vtk::write_points(dirname+"/elad_seeds.vtu", seeds);
+    // std::vector<Vector3D> seeds = alg_astroid.getSeeds();
+    // vorocrust_vtk::write_points(dirname+"/astroid_seeds.vtu", seeds);
     
-    // write_points(dirname+"/elad_seeds", seeds);
+    // write_points(dirname+"/astroid_seeds", seeds);
 
-    std::cout << "\n\nFINISH PART TWO\n\nCLICK TO END " << std::endl;
+    // std::cout << "\n\nFINISH PART TWO\n\nCLICK TO END " << std::endl;
 }
 
 
@@ -258,7 +258,7 @@ std::vector<Vector3D> load_seeds(std::string filename){
         myfile_z >> z;
 
         seeds.push_back(Vector3D(x, y, z));
-        // std::cout << "seed x: " << x << ", y: " << y << ", z: " << z << std::endl;
+        // // std::cout << "seed x: " << x << ", y: " << y << ", z: " << z << std::endl;
     }
 
     return seeds;
@@ -319,7 +319,7 @@ void box(){
 }
 
 void loadfox_and_split_seeds(){
-    std::cout << "\nRead From File\n------------------------\n\n" << std::endl;
+    // std::cout << "\nRead From File\n------------------------\n\n" << std::endl;
     auto vertices_from_file = read_vertices("data/fox/vertices.txt");
 
     PL_Complex plc_from_file(vertices_from_file);
@@ -333,7 +333,7 @@ void loadfox_and_split_seeds(){
     }
 
 
-    std::cout << std::endl;
+    // std::cout << std::endl;
 
     VoroCrustAlgorithm alg_fox(plc_from_file, M_PI*0.1, M_PI*0.1, 100., 0.3, 0.13);
 
@@ -349,13 +349,13 @@ void loadfox_and_split_seeds(){
 
 }
 
-void loadelad_and_split_seeds(){
-    std::cout << "\nRead From File\n------------------------\n\n" << std::endl;
-    auto vertices_from_file = read_vertices("data/elad/vertices.txt");
+void loadastroid_and_split_seeds(){
+    // std::cout << "\nRead From File\n------------------------\n\n" << std::endl;
+    auto vertices_from_file = read_vertices("data/astroid/vertices.txt");
 
     PL_Complex plc_from_file(vertices_from_file);
 
-    auto faces_from_file = read_faces("data/elad/faces.txt");
+    auto faces_from_file = read_faces("data/astroid/faces.txt");
 
     int i = 0;
     for(auto& face_indices : faces_from_file){
@@ -364,18 +364,18 @@ void loadelad_and_split_seeds(){
     }
 
 
-    std::cout << std::endl;
+    // std::cout << std::endl;
 
-    VoroCrustAlgorithm alg_elad(plc_from_file, M_PI*0.1, M_PI*0.1, 100., 0.3, 0.13);
+    VoroCrustAlgorithm alg_astroid(plc_from_file, M_PI*20./180., M_PI*20./180., 100., 0.3, 0.13);
 
-    auto const& seeds = load_seeds("elad/elad_seeds");
+    auto const& seeds = load_seeds("astroid/astroid_seeds");
 
-    auto const& [in_seeds, out_seeds] =  alg_elad.determineIfSeedsAreInsideOrOutside(seeds);
-    write_points("elad/elad_in_seeds", in_seeds);
-    write_points("elad/elad_out_seeds", out_seeds);
+    auto const& [in_seeds, out_seeds] =  alg_astroid.determineIfSeedsAreInsideOrOutside(seeds);
+    write_points("astroid/astroid_in_seeds", in_seeds);
+    write_points("astroid/astroid_out_seeds", out_seeds);
 
-    vorocrust_vtk::write_points("elad/elad_seeds_in.vtu", in_seeds);
-    vorocrust_vtk::write_points("elad/elad_seeds_out.vtu", out_seeds);
+    vorocrust_vtk::write_points("astroid/astroid_seeds_in.vtu", in_seeds);
+    vorocrust_vtk::write_points("astroid/astroid_seeds_out.vtu", out_seeds);
 
 
 }
@@ -389,8 +389,8 @@ int main(int argc, char *argv[]){
     // getchar();
     // loadfox_and_split_seeds();
 
-    elad();
-    loadelad_and_split_seeds();
+    astroid();
+    loadastroid_and_split_seeds();
 
     // box();
 
@@ -403,7 +403,7 @@ std::vector<Vector3D> read_vertices(std::string filename){
     std::fstream myfile(filename, std::ios_base::in);
     
     auto number_of_lines = std::count(std::istreambuf_iterator<char>(myfile), std::istreambuf_iterator<char>(), '\n');
-    std::cout << "Reading vertices data from file: " << filename << ", number of lines (vertices): " << number_of_lines << std::endl;
+    // std::cout << "Reading vertices data from file: " << filename << ", number of lines (vertices): " << number_of_lines << std::endl;
     myfile.clear();
     myfile.seekg(0);
     std::vector<Vector3D> vertices_from_file = std::vector<Vector3D>(number_of_lines, Vector3D());
@@ -426,7 +426,7 @@ std::vector<std::vector<unsigned int>> read_faces(std::string filename){
     std::fstream myfile(filename, std::ios_base::in);
 
     auto number_of_lines = std::count(std::istreambuf_iterator<char>(myfile), std::istreambuf_iterator<char>(), '\n');
-    std::cout << "Reading vertices data from file: " << filename << ", number of lines (vertices): " << number_of_lines << "\n";
+    // std::cout << "Reading vertices data from file: " << filename << ", number of lines (vertices): " << number_of_lines << "\n";
 
     myfile.clear();
     myfile.seekg(0);
