@@ -165,7 +165,7 @@ void astroid(){
 
     // std::cout << std::endl;
 
-    VoroCrustAlgorithm alg_astroid(plc_from_file, M_PI*20./180., M_PI*20./180., 100., 0.3, 0.13);
+    VoroCrustAlgorithm alg_astroid(plc_from_file, M_PI*30./180., M_PI*30./180., 100., 0.3, 0.13);
     
     // // std::cout << alg_astroid.repr() << std::endl;
 
@@ -224,22 +224,22 @@ void astroid(){
 
     vorocrust_vtk::write_ballTree(dirname+"/astroid_sharp_corners_sampling.vtp", alg_astroid.trees.ball_kd_vertices);
     vorocrust_vtk::write_ballTree(dirname+"/astroid_sharp_edges_sampling.vtp", alg_astroid.trees.ball_kd_edges);
-    // vorocrust_vtk::write_ballTree(dirname+"/astroid_sharp_faces_sampling.vtp", alg_astroid.trees.ball_kd_faces);
+    vorocrust_vtk::write_ballTree(dirname+"/astroid_sharp_faces_sampling.vtp", alg_astroid.trees.ball_kd_faces);
 
-    // std::vector<std::vector<Vector3D>> leftover_eligble(alg_astroid.facesDriver.eligble_faces.size(), std::vector<Vector3D>());
+    std::vector<std::vector<Vector3D>> leftover_eligble(alg_astroid.facesDriver.eligble_faces.size(), std::vector<Vector3D>());
 
-    // for(std::size_t i=0 ;i<alg_astroid.facesDriver.eligble_faces.size(); ++i){
-        // leftover_eligble[i] = alg_astroid.facesDriver.eligble_faces[i].face;
-    // }
+    for(std::size_t i=0 ;i<alg_astroid.facesDriver.eligble_faces.size(); ++i){
+        leftover_eligble[i] = alg_astroid.facesDriver.eligble_faces[i].face;
+    }
 
-    // vorocrust_vtk::write_vtu_faces(dirname+"/astroid_leftover_eligble_faces.vtu", leftover_eligble);
+    vorocrust_vtk::write_vtu_faces(dirname+"/astroid_leftover_eligble_faces.vtu", leftover_eligble);
 
-    // std::vector<Vector3D> seeds = alg_astroid.getSeeds();
-    // vorocrust_vtk::write_points(dirname+"/astroid_seeds.vtu", seeds);
+    std::vector<Vector3D> seeds = alg_astroid.getSeeds();
+    vorocrust_vtk::write_points(dirname+"/astroid_seeds.vtu", seeds);
     
-    // write_points(dirname+"/astroid_seeds", seeds);
+    write_points(dirname+"/astroid_seeds", seeds);
 
-    // std::cout << "\n\nFINISH PART TWO\n\nCLICK TO END " << std::endl;
+    std::cout << "\n\nFINISH PART TWO\n\nCLICK TO END " << std::endl;
 }
 
 
@@ -366,7 +366,7 @@ void loadastroid_and_split_seeds(){
 
     // std::cout << std::endl;
 
-    VoroCrustAlgorithm alg_astroid(plc_from_file, M_PI*20./180., M_PI*20./180., 100., 0.3, 0.13);
+    VoroCrustAlgorithm alg_astroid(plc_from_file, M_PI*30./180., M_PI*30./180., 100., 0.3, 0.13);
 
     auto const& seeds = load_seeds("astroid/astroid_seeds");
 
