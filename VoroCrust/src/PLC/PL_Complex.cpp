@@ -25,7 +25,7 @@ PL_Complex::PL_Complex(std::vector<Vector3D> const &vertices_) : vertices(),
 Edge PL_Complex::addEdge(Vertex const &v1, Vertex const &v2)
 {
     // first check if edge was already created by a different face.
-    for (auto &edge : edges)
+    for (auto const& edge : edges)
     {
         if (edge->checkIfEqual(v1, v2))
         {
@@ -60,9 +60,9 @@ void PL_Complex::addFace(std::vector<unsigned int> const &indices)
         exit(1);
     }
 
-    std::vector<Vertex> face_vertices = std::vector<Vertex>();
+    std::vector<Vertex> face_vertices;
 
-    for (auto &index : indices)
+    for (unsigned int const index : indices)
         face_vertices.push_back(vertices[index]);
 
     Face new_face_ptr = std::make_shared<VoroCrustFace>(face_vertices, faces.size());
@@ -173,8 +173,6 @@ void PL_Complex::detectFeatures(double const sharpTheta, double const flatTheta)
 
         // if the dihedral angle of an Edge is less than `PI-sharpTheta` it is sharp.
         double const dihedralAngle = edge->calcDihedralAngle();
-
-        std::cout << "Edge " << edge->index << ", dihedral angle = " << dihedralAngle / M_PI << "*pi" << std::endl;
 
         if (dihedralAngle < (M_PI - sharpTheta))
         {
