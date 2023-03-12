@@ -40,9 +40,11 @@ VoroCrustAlgorithm::VoroCrustAlgorithm( PL_Complex const& plc_,
 void VoroCrustAlgorithm::run() {
     
     //! TODO: Maybe all this need to be in the plc under detect features?
-    if(not plc->checkAllVerticesAreOnFace()) exit(1);
+    if(not plc->checkAllVerticesAreUnique()) exit(1);
 
     if(not plc->checkIfALLFacesAreFlat()) exit(1);
+
+    if(not plc->checkAllVerticesAreOnFace()) exit(1);
 
     plc->detectFeatures(sharpTheta, flatTheta);
 
