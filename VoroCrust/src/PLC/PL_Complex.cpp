@@ -93,6 +93,24 @@ void PL_Complex::addFace(std::vector<unsigned int> const &indices)
     faces.push_back(new_face_ptr);
 }
 
+bool PL_Complex::checkAllVerticesAreUnique() {
+    std::vector<Vector3D> vec_vertices;
+    vec_vertices.reserve(vertices.size());
+
+    for(auto const& vertex : vertices)
+        vec_vertices.push_back(vertex->vertex);
+    
+    auto const& new_vec_vertices = unsorted_unique<Vector3D>(vec_vertices);
+
+    if(new_vec_vertices.size() != vec_vertices.size()){
+        std::cout << "ERROR: some vertices are not unique" << std::endl;
+        std::cout << "number : " << (vec_vertices.size()-new_vec_vertices.size()) << std::endl;
+        return false;
+    }
+
+    return true;
+}
+
 bool PL_Complex::checkAllVerticesAreOnFace()
 {
     for (auto &vertex : vertices)

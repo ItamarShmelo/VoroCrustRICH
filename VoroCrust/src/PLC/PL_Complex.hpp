@@ -76,6 +76,9 @@ class PL_Complex
         */
         void addFace(std::vector<unsigned int> const& indices);
 
+        /*! \brief Checks if all vertices are unique. */
+        bool checkAllVerticesAreUnique();
+
         /*! \brief Checks if all the vertices are assigned at least on face.*/
         bool checkAllVerticesAreOnFace();
 
