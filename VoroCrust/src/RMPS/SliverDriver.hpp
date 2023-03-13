@@ -4,10 +4,10 @@
 #include "../trees.hpp"
 #include <array>
 
-enum Dim {
-    CORNER = 0,
-    EDGE = 1,
-    FACE = 2
+enum class Dim {
+    CORNER,
+    EDGE,
+    FACE
 };
 
 struct BallInfo {
