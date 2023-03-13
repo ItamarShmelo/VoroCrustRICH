@@ -40,6 +40,10 @@ struct SurfacePatch {
 class PL_Complex 
 {
     public:
+        enum class Location {
+            IN,
+            OUT
+        };
 
         //! \brief the PLC mesh vertices.
         std::vector<Vertex> vertices;
