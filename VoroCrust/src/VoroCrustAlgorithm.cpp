@@ -130,6 +130,8 @@ std::pair<std::vector<Seed>, std::vector<Seed>> VoroCrustAlgorithm::determineIfS
     }
 
     std::vector<Seed> in_seeds, out_seeds;
+    in_seeds.reserve(seeds.size());
+    out_seeds.reserve(seeds.size());
 
     int i = 0;
     for(auto const& seed : seeds) {
