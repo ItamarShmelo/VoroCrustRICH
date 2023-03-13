@@ -10,6 +10,13 @@ enum class Dim {
     FACE
 };
 
+struct Seed {
+    Vector3D p;
+    double radius;
+
+    Seed() : p(0.0, 0.0, 0.0), radius(-1.0) {}
+    Seed(Vector3D const& p_, double radius_) : p(p_), radius(radius_) {}
+};
 struct BallInfo {
     std::size_t index;
     Dim dim;
