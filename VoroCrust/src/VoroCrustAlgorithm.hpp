@@ -40,11 +40,13 @@ class VoroCrustAlgorithm {
         /*! \brief runs the VoroCrust Algorithm*/
         void run();
 
-        std::vector<Vector3D> getSeeds() const;
+        std::vector<Seed> getSeeds() const;
 
         std::string repr() const;
 
-        std::pair<std::vector<Vector3D>, std::vector<Vector3D>> determineIfSeedsAreInsideOrOutside(std::vector<Vector3D> const& seeds) const;
+        std::pair<std::vector<Seed>, std::vector<Seed>> determineIfSeedsAreInsideOrOutside(std::vector<Seed> const& seeds) const;
+
+        std::pair<std::vector<Vector3D>, std::vector<Vector3D>> calcVolumeSeedsUniform(std::vector<Seed> const& seeds, std::size_t const num_points_x, std::size_t const num_points_y, std::size_t const num_points_z) const;
     
     private:
         /*! \brief enforces the Lipschitzness for a strata ball_tree

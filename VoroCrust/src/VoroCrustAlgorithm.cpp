@@ -113,11 +113,11 @@ bool VoroCrustAlgorithm::enforceLipschitzness(VoroCrust_KD_Tree_Ball& ball_tree)
     return isBallsShrunk;
 }
 
-std::vector<Vector3D> VoroCrustAlgorithm::getSeeds() const {
+std::vector<Seed> VoroCrustAlgorithm::getSeeds() const {
     return sliverDriver.getSeeds(trees);
 }
 
-std::pair<std::vector<Vector3D>, std::vector<Vector3D>> VoroCrustAlgorithm::determineIfSeedsAreInsideOrOutside(std::vector<Vector3D> const& seeds) const {
+std::pair<std::vector<Seed>, std::vector<Seed>> VoroCrustAlgorithm::determineIfSeedsAreInsideOrOutside(std::vector<Seed> const& seeds) const {
 
     // if(seeds.size() % 2 != 0){
     //     std::cout << "ERROR: seeds is not even" << std::endl;
@@ -129,19 +129,19 @@ std::pair<std::vector<Vector3D>, std::vector<Vector3D>> VoroCrustAlgorithm::dete
         exit(1);
     }
 
-    std::vector<Vector3D> in_seeds, out_seeds;
+    std::vector<Seed> in_seeds, out_seeds;
 
     int i = 0;
-    for(Vector3D const& seed : seeds) {
+    for(auto const& seed : seeds) {
         // determine if a seed is in or out using the ray casting algorithm
         
         int count = 0;
         for(Face const& face : plc->faces) {
-            auto const& [success, p_inter] = face->pointXYaxisRayIntersectsAt(seed);
+            auto const& [success, p_inter] = face->pointXYaxisRayIntersectsAt(seed.p);
 
             if(not success) continue;
 
-            if(p_inter.z > seed.z && face->pointIsInsideFace(p_inter)){
+            if(p_inter.z > seed.p.z && face->pointIsInsideFace(p_inter)){
                 count++;
             }
         }
@@ -153,7 +153,9 @@ std::pair<std::vector<Vector3D>, std::vector<Vector3D>> VoroCrustAlgorithm::dete
         }
     }
 
-    return std::pair<std::vector<Vector3D>, std::vector<Vector3D>>(in_seeds, out_seeds);
+    return std::make_pair(in_seeds, out_seeds);
+}
+
 }
 
 std::string VoroCrustAlgorithm::repr() const {
