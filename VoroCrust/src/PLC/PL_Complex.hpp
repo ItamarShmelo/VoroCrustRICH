@@ -110,6 +110,10 @@ class PL_Complex
             \param face
         */
         SurfacePatch createSurfacePatch(Face const& face);
+
+        std::array<double, 6> getBoundingBox() const;
+
+        Location determineLocation(Vector3D const& p) const; 
         
         std::string repr() const;
 
