@@ -489,6 +489,30 @@ std::array<double, 6> PL_Complex::getBoundingBox() const {
 
     return std::array<double, 6>({ll_x, ll_y, ll_z, ur_x, ur_y, ur_z});
 }
+
+PL_Complex::Location PL_Complex::determineLocation(Vector3D const& p) const {
+    // determine if a point is in or out using the ray casting algorithm
+    int count = 0;
+    for(Face const& face : faces) {
+        
+        if(face->isPointCompletelyOffFace(p)) continue;
+
+        auto const& [success, p_inter] = face->pointXYaxisRayIntersectsAt(p);
+
+        if(not success) continue;
+
+        if(p_inter.z > p.z && face->pointIsInsideFace(p_inter)){
+            count++;
+        }
+    }
+
+    if(count % 2 == 0){
+        return Location::OUT;
+    } else {
+        return Location::IN;
+    }
+}
+
 std::string PL_Complex::repr() const
 {
     std::ostringstream s;
