@@ -61,6 +61,9 @@ class VoroCrustFace
         //! \brief returns `true` if point is inside face
         bool pointIsInsideFace(Vector3D const& point) const;
 
+        //! \brief returns `true` if point is completely off face (all vertices x or y are above or below the point x or y)
+        bool isPointCompletelyOffFace(Vector3D const& p) const;
+
         std::string repr() const;
 
 };

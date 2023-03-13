@@ -115,6 +115,35 @@ bool VoroCrustFace::pointIsInsideFace(Vector3D const& point) const {
     return sameSide(point, a, b, c) && sameSide(point, b, a, c) && sameSide(point, c, a, b);
 }
 
+bool VoroCrustFace::isPointCompletelyOffFace(Vector3D const& p) const {
+    //! ASSUMPTION: face is a triangle
+    auto const& v1 = vertices[0]->vertex;
+    auto const& v2 = vertices[1]->vertex;
+    auto const& v3 = vertices[2]->vertex;
+
+    bool above_z = (p.z > v1.z && p.z > v2.z && p.z > v3.z);
+    
+    if(above_z) return above_z;
+
+    bool below_x = (p.x < v1.x && p.x < v2.x && p.x < v3.x);
+
+    if(below_x) return below_x;
+
+    bool below_y = (p.y < v1.y && p.y < v2.y && p.y < v3.y);
+
+    if(below_y) return below_y;
+
+    bool above_x = (p.x > v1.x && p.x > v2.x && p.x > v3.x);
+
+    if(above_x) return above_x;
+
+    bool above_y = (p.y > v1.y && p.y > v2.y && p.y > v3.y);
+
+    if(above_y) return above_y;
+
+    return false;
+}
+
 std::string VoroCrustFace::repr() const
 {
     std::ostringstream s;
