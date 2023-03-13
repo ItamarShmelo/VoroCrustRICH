@@ -1,7 +1,7 @@
 #include "SliverDriver.hpp"
 #include <iostream>
 
-std::vector<Vector3D> unsorted_unique(std::vector<Vector3D> const& vec, double const tol);
+std::vector<Seed> unsorted_unique(std::vector<Seed> const& vec, double const tol);
 
 SliverDriver::SliverDriver(double const L_Lipschitz_) : L_Lipschitz(L_Lipschitz_), r_new_corner_balls(), r_new_edge_balls(), r_new_face_balls(), number_of_slivers_eliminated(0), max_radius_corner_edge(0) {}
 
@@ -321,14 +321,14 @@ bool SliverDriver::eliminateSlivers(Trees &trees){
     return number_of_slivers_eliminated != 0;
 }
 
-std::vector<Vector3D> SliverDriver::getSeeds(Trees const& trees) const {
+std::vector<Seed> SliverDriver::getSeeds(Trees const& trees) const {
     //! CODEDUPLICATION:
     double const max_radius_corner = *std::max_element(trees.ball_kd_vertices.ball_radii.begin(), trees.ball_kd_vertices.ball_radii.end());
     double const max_radius_edge = *std::max_element(trees.ball_kd_edges.ball_radii.begin(), trees.ball_kd_edges.ball_radii.end());
 
     max_radius_corner_edge = std::max(max_radius_corner, max_radius_edge);
 
-    std::vector<Vector3D> seeds;
+    std::vector<Seed> seeds;
 
     VoroCrust_KD_Tree_Ball const& faces_ball_tree = trees.ball_kd_faces;
     for (std::size_t i = 0; i < faces_ball_tree.points.size(); ++i)
@@ -361,17 +361,19 @@ std::vector<Vector3D> SliverDriver::getSeeds(Trees const& trees) const {
 
             }
             
-            if(not is_seed_1_covered) seeds.push_back(seed_1);
-            if(not is_seed_2_covered) seeds.push_back(seed_2);
+            double const seed_radius = (getR(ball_1) + getR(ball_2) + getR(ball_3)) / 3.0;
+
+            if(not is_seed_1_covered) seeds.push_back(Seed(seed_1, seed_radius));
+            if(not is_seed_2_covered) seeds.push_back(Seed(seed_2, seed_radius));
         }
     }
     
-    seeds = unsorted_unique(seeds, 1e-5);
+    seeds = unsorted_unique(seeds, 1e-6);
     
     return seeds;
 }
 
-std::vector<Vector3D> unsorted_unique(std::vector<Vector3D> const& vec, double const tol) {
+std::vector<Seed> unsorted_unique(std::vector<Seed> const& vec, double const tol) {
     std::size_t const vec_size = vec.size();
 
     std::vector<bool> isDeleted(vec_size, false);
@@ -381,7 +383,7 @@ std::vector<Vector3D> unsorted_unique(std::vector<Vector3D> const& vec, double c
         for(std::size_t j=i+1; j<vec_size; ++j){
             if(isDeleted[j]) continue;
 
-            bool const res = (abs(vec[i] - vec[j]) < tol);
+            bool const res = (distance(vec[i].p, vec[j].p) < tol);
             
             isDeleted[j] = res;
             if(res) ++size_deleted;
@@ -390,7 +392,7 @@ std::vector<Vector3D> unsorted_unique(std::vector<Vector3D> const& vec, double c
 
 
 
-    std::vector<Vector3D> new_vec(vec_size - size_deleted, Vector3D());
+    std::vector<Seed> new_vec(vec_size - size_deleted, Seed());
     //! FORDEBUG: remove
     std::cout << "original size:" << vec_size <<", new_size: " << new_vec.size() << std::endl;
 

@@ -50,7 +50,7 @@ class SliverDriver {
 
         bool eliminateSlivers(Trees &trees);
 
-        std::vector<Vector3D> getSeeds(Trees const& trees) const;
+        std::vector<Seed> getSeeds(Trees const& trees) const;
 
     private:
         mutable double max_radius_corner_edge;
