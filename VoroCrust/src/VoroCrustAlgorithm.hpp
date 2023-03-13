@@ -47,6 +47,8 @@ class VoroCrustAlgorithm {
         std::pair<std::vector<Seed>, std::vector<Seed>> determineIfSeedsAreInsideOrOutside(std::vector<Seed> const& seeds) const;
 
         std::pair<std::vector<Vector3D>, std::vector<Vector3D>> calcVolumeSeedsUniform(std::vector<Seed> const& seeds, std::size_t const num_points_x, std::size_t const num_points_y, std::size_t const num_points_z) const;
+
+        std::pair<std::vector<Vector3D>, std::vector<Vector3D>> calcVolumeSeedsNonUniform(std::vector<Seed> const& seeds) const;
     
     private:
         /*! \brief enforces the Lipschitzness for a strata ball_tree
