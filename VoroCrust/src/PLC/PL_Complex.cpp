@@ -469,6 +469,26 @@ SurfacePatch PL_Complex::createSurfacePatch(Face const &face)
     return patch;
 }
 
+std::array<double, 6> PL_Complex::getBoundingBox() const {
+    double ll_x, ll_y, ll_z; // lower left
+    double ur_x, ur_y, ur_z; // upper right
+    ll_x = ll_y = ll_z = std::numeric_limits<double>::max();
+    ur_x = ur_y = ur_z = -std::numeric_limits<double>::max();
+
+    for(Vertex const& vertex : vertices){
+        Vector3D const& p = vertex->vertex;
+
+        ll_x = std::min(p.x, ll_x);
+        ll_y = std::min(p.y, ll_y);
+        ll_z = std::min(p.z, ll_z);
+
+        ur_x = std::max(p.x, ur_x);
+        ur_y = std::max(p.y, ur_y);
+        ur_z = std::max(p.z, ur_z);    
+    }
+
+    return std::array<double, 6>({ll_x, ll_y, ll_z, ur_x, ur_y, ur_z});
+}
 std::string PL_Complex::repr() const
 {
     std::ostringstream s;
