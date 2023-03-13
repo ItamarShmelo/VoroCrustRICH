@@ -145,6 +145,24 @@ std::pair<std::vector<Seed>, std::vector<Seed>> VoroCrustAlgorithm::determineIfS
     return std::make_pair(in_seeds, out_seeds);
 }
 
+VoroCrust_KD_Tree_Ball makeSeedBallTree(std::vector<Seed> const& seeds){
+    
+    std::size_t const seeds_size = seeds.size();
+
+    std::vector<Vector3D> points;
+    std::vector<double> radii;
+
+    points.reserve(seeds_size);
+    radii.reserve(seeds_size);
+
+    for(auto const& seed : seeds){
+        points.push_back(seed.p);
+        radii.push_back(seed.radius);
+    }
+
+    return VoroCrust_KD_Tree_Ball(points, std::vector<Vector3D>(seeds_size, Vector3D(0.0, 0.0, 0.0)), radii, std::vector<std::size_t>(seeds_size, 0), std::vector<std::size_t>(seeds_size, 0));
+}
+
 std::pair<std::vector<Vector3D>, std::vector<Vector3D>> VoroCrustAlgorithm::calcVolumeSeedsUniform(std::vector<Seed> const& seeds, std::size_t const num_points_x, std::size_t const num_points_y, std::size_t const num_points_z) const {
     auto const [ll_x, ll_y, ll_z, ur_x, ur_y, ur_z] = plc->getBoundingBox(); // upper right
 

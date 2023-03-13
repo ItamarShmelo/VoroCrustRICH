@@ -57,5 +57,7 @@ class VoroCrustAlgorithm {
         bool sliverElimination();
 };
 
+VoroCrust_KD_Tree_Ball makeSeedBallTree(std::vector<Seed> const& seeds);
+
 
 #endif /* VOROCRUST_ALGORITHM */
