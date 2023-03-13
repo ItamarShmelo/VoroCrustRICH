@@ -1,6 +1,7 @@
 #include "VoroCrustAlgorithm.hpp"
 #include <cmath>
 #include <iostream>
+#include <boost/random.hpp>
 
 VoroCrustAlgorithm::VoroCrustAlgorithm( PL_Complex const& plc_, 
                                         double const sharpTheta_, 
