@@ -230,3 +230,79 @@ std::string VoroCrustAlgorithm::repr() const {
 
     return s.str();
 }
+
+std::pair<std::vector<Vector3D>, std::vector<Vector3D>> VoroCrustAlgorithm::calcVolumeSeedsNonUniform(std::vector<Seed> const& seeds) const {
+    Vector3D const empty_vec(0.0, 0.0, 0.0);
+
+    auto const [ll_x, ll_y, ll_z, ur_x, ur_y, ur_z] = plc->getBoundingBox();
+    auto const len_x = ur_x - ll_x;
+    auto const len_y = ur_y - ll_y;
+    auto const len_z = ur_z - ll_z;
+
+    auto const& [in_seeds_boundary, out_seeds_boundary] = determineIfSeedsAreInsideOrOutside(seeds);
+    auto const& in_seeds_tree = makeSeedBallTree(in_seeds_boundary);
+    
+    VoroCrust_KD_Tree_Ball volume_seeds_tree;
+
+    // lightweight dart-throwing
+    boost::random::variate_generator uni01_gen(boost::mt19937(std::time(nullptr)), boost::random::uniform_01<>());
+
+    std::size_t miss_counter = 0;
+    std::size_t num_of_samples = 0;
+    while(miss_counter < 100){
+        Vector3D const p(ll_x+len_x*uni01_gen(), ll_y+len_y*uni01_gen(), ll_z+len_z*uni01_gen());
+        
+        if(plc->determineLocation(p) == PL_Complex::Location::OUT){
+            miss_counter++;
+            continue;
+        }
+
+        //! CODEDUPLICATION:
+    
+        auto index_s = in_seeds_tree.nearestNeighbor(p);
+        auto const& p_s = in_seeds_tree.points[index_s];
+        auto const r_s = in_seeds_tree.ball_radii[index_s];
+
+        if(distance(p_s, p) < r_s){
+            miss_counter++;
+            continue;
+        }
+        
+        
+        double r_volume = std::numeric_limits<double>::max();
+        if(not volume_seeds_tree.points.empty()){
+            auto index_nearest = volume_seeds_tree.nearestNeighbor(p);
+            auto const& p_nearest = volume_seeds_tree.points[index_nearest];
+            auto const r_nearest = volume_seeds_tree.ball_radii[index_nearest];
+
+            if(distance(p_nearest, p) < r_nearest){
+                miss_counter++;
+                continue;
+            }
+
+            r_volume = r_nearest + L_Lipschitz*distance(p, p_nearest);
+        }
+        
+        double const r = std::min({maxRadius, r_s + L_Lipschitz*distance(p, p_s), r_volume});
+        volume_seeds_tree.insert(p, empty_vec, r, 0, 0);
+        miss_counter=0;
+        num_of_samples++;
+        std::cout << "sample : "  << num_of_samples << "\n";
+    }
+
+    volume_seeds_tree.remakeTree();
+    
+    auto in_seeds = std::move(volume_seeds_tree.points);
+    auto in_seeds_boundry_vec = std::move(in_seeds_tree.points);
+
+    in_seeds.insert(in_seeds.end(), in_seeds_boundry_vec.begin(), in_seeds_boundry_vec.end());
+
+    std::vector<Vector3D> out_seeds;
+    out_seeds.reserve(out_seeds_boundary.size()+100);
+
+    for(auto const out_seed : out_seeds_boundary) {
+        out_seeds.push_back(out_seed.p);
+    }
+
+    return std::pair(in_seeds, out_seeds);
+}
