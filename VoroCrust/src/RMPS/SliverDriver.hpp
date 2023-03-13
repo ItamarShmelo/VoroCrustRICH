@@ -26,7 +26,9 @@ struct BallInfo {
     friend bool operator==(BallInfo const& lhs, BallInfo const& rhs);
 };
 
-using Ball = std::pair<Vector3D, double const>;
+using Ball = std::pair<Vector3D, double const>; // center, radius
+inline double getR(Ball const& b) { return b.second; }
+
 using Triplet = std::pair<std::size_t, std::size_t>; // Triplet is p, Triplet.first, Triplet.second
 using InfoQuartet = std::array<BallInfo const, 4>;
 using BallQuartet = std::array<Ball const, 4>;
