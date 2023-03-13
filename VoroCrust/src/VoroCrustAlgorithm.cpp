@@ -156,6 +156,83 @@ std::pair<std::vector<Seed>, std::vector<Seed>> VoroCrustAlgorithm::determineIfS
     return std::make_pair(in_seeds, out_seeds);
 }
 
+std::pair<std::vector<Vector3D>, std::vector<Vector3D>> VoroCrustAlgorithm::calcVolumeSeedsUniform(std::vector<Seed> const& seeds, std::size_t const num_points_x, std::size_t const num_points_y, std::size_t const num_points_z) const {
+    double ll_x, ll_y, ll_z; // lower left
+    double ur_x, ur_y, ur_z; // upper right
+    ll_x = ll_y = ll_z = std::numeric_limits<double>::max();
+    ur_x = ur_y = ur_z = -std::numeric_limits<double>::max();
+
+    for(Vertex const& vertex : plc->vertices){
+        Vector3D const& p = vertex->vertex;
+
+        ll_x = std::min(p.x, ll_x);
+        ll_y = std::min(p.y, ll_y);
+        ll_z = std::min(p.z, ll_z);
+
+        ur_x = std::max(p.x, ur_x);
+        ur_y = std::max(p.y, ur_y);
+        ur_z = std::max(p.z, ur_z);    
+    }
+
+    auto const len_x = ur_x - ll_x;
+    auto const len_y = ur_y - ll_y;
+    auto const len_z = ur_z - ll_z;
+
+    auto const step_x = len_x / num_points_x;
+    auto const step_y = len_y / num_points_y;
+    auto const step_z = len_z / num_points_z;
+
+    auto const total_num_points = num_points_x * num_points_y * num_points_z;
+    auto [in_seeds_boundary, out_seeds_boundary] = determineIfSeedsAreInsideOrOutside(seeds);
+
+    auto const in_seeds_boundary_size = in_seeds_boundary.size();
+    std::vector<Vector3D> in_seeds, out_seeds;
+    
+    in_seeds.reserve(in_seeds_boundary_size + total_num_points + 100);
+    out_seeds.reserve(out_seeds_boundary.size()+100);
+
+    for(std::size_t i=0; i < num_points_x; ++i)
+        for(std::size_t j=0; j < num_points_y; ++j)
+            for(std::size_t k=0; k < num_points_z; ++k){
+                Vector3D const seed(ll_x + step_x*i, ll_y + step_y*j, ll_z + step_z*k);
+
+                //! CODE:DUPLICATION:
+                int count = 0;
+                for(Face const& face : plc->faces) {
+                    auto const& [success, p_inter] = face->pointXYaxisRayIntersectsAt(seed);
+
+                    if(not success) continue;
+
+                    if(p_inter.z > seed.z && face->pointIsInsideFace(p_inter)){
+                        count++;
+                    }
+                }
+
+                if(count % 2 == 1){
+                    bool add_seed = true;
+                    for(auto const& in_seed : in_seeds_boundary){
+                        auto const& p_in_seed = in_seed.p;
+                        auto const r_in_seed = in_seed.radius;
+
+                        if(distance(p_in_seed, seed) < r_in_seed){
+                            add_seed = false;
+                            break;
+                        }
+                    }
+                    
+                    if(add_seed) in_seeds.push_back(seed);
+                } 
+        }
+
+    for(auto const out_seed : out_seeds_boundary) {
+        out_seeds.push_back(out_seed.p);
+    }
+
+    for(auto const in_seed : in_seeds_boundary){
+        in_seeds.push_back(in_seed.p);
+    }
+
+    return std::make_pair(in_seeds, out_seeds);
 }
 
 std::string VoroCrustAlgorithm::repr() const {
