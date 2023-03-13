@@ -185,6 +185,8 @@ std::pair<std::vector<Vector3D>, std::vector<Vector3D>> VoroCrustAlgorithm::calc
     in_seeds.reserve(in_seeds_boundary_size + total_num_points + 100);
     out_seeds.reserve(out_seeds_boundary.size()+100);
 
+    auto const& in_seeds_tree = makeSeedBallTree(in_seeds_boundary);
+
     for(std::size_t i=0; i < num_points_x; ++i){
         for(std::size_t j=0; j < num_points_y; ++j){
             for(std::size_t k=0; k < num_points_z; ++k){
@@ -195,17 +197,14 @@ std::pair<std::vector<Vector3D>, std::vector<Vector3D>> VoroCrustAlgorithm::calc
                 if(location == PL_Complex::Location::IN){
                     // if seed is inside check that it is not contained in a boundary seed
                     bool add_seed = true;
-                    for(auto const& in_seed : in_seeds_boundary){
-                        auto const& p_in_seed = in_seed.p;
-                        auto const r_in_seed = in_seed.radius;
+                    auto index = in_seeds_tree.nearestNeighbor(seed);
 
-                        if(distance(p_in_seed, seed) < r_in_seed){
-                            add_seed = false;
-                            break;
-                        }
+                    auto const& p_in_seed = in_seeds_tree.points[index];
+                    auto const r_in_seed = in_seeds_tree.ball_radii[index];
+
+                    if(distance(p_in_seed, seed) > r_in_seed){
+                        if(add_seed) in_seeds.push_back(seed);
                     }
-                    
-                    if(add_seed) in_seeds.push_back(seed);
                 } 
             }
         }
