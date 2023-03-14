@@ -167,7 +167,7 @@ VoroCrust_KD_Tree_Ball makeSeedBallTree(std::vector<Seed> const& seeds){
 }
 
 std::pair<std::vector<Vector3D>, std::vector<Vector3D>> VoroCrustAlgorithm::calcVolumeSeedsUniform(std::vector<Seed> const& seeds, std::size_t const num_points_x, std::size_t const num_points_y, std::size_t const num_points_z) const {
-    auto const [ll_x, ll_y, ll_z, ur_x, ur_y, ur_z] = plc->getBoundingBox(); // upper right
+    auto const [ll_x, ll_y, ll_z, ur_x, ur_y, ur_z] = plc->getBoundingBox();
 
     auto const len_x = ur_x - ll_x;
     auto const len_y = ur_y - ll_y;
@@ -210,7 +210,7 @@ std::pair<std::vector<Vector3D>, std::vector<Vector3D>> VoroCrustAlgorithm::calc
             }
         }
     }
-    
+
     for(auto const out_seed : out_seeds_boundary) {
         out_seeds.push_back(out_seed.p);
     }
@@ -231,7 +231,7 @@ std::string VoroCrustAlgorithm::repr() const {
     return s.str();
 }
 
-std::pair<std::vector<Vector3D>, std::vector<Vector3D>> VoroCrustAlgorithm::calcVolumeSeedsNonUniform(std::vector<Seed> const& seeds) const {
+std::pair<std::vector<Vector3D>, std::vector<Vector3D>> VoroCrustAlgorithm::calcVolumeSeedsNonUniform(std::vector<Seed> const& seeds, double const maxSize) {
     Vector3D const empty_vec(0.0, 0.0, 0.0);
 
     auto const [ll_x, ll_y, ll_z, ur_x, ur_y, ur_z] = plc->getBoundingBox();
@@ -246,51 +246,57 @@ std::pair<std::vector<Vector3D>, std::vector<Vector3D>> VoroCrustAlgorithm::calc
 
     // lightweight dart-throwing
     boost::random::variate_generator uni01_gen(boost::mt19937(std::time(nullptr)), boost::random::uniform_01<>());
-
-    std::size_t miss_counter = 0;
     std::size_t num_of_samples = 0;
-    while(miss_counter < 100){
-        Vector3D const p(ll_x+len_x*uni01_gen(), ll_y+len_y*uni01_gen(), ll_z+len_z*uni01_gen());
-        
-        if(plc->determineLocation(p) == PL_Complex::Location::OUT){
-            miss_counter++;
-            continue;
-        }
-
-        //! CODEDUPLICATION:
-    
-        auto index_s = in_seeds_tree.nearestNeighbor(p);
-        auto const& p_s = in_seeds_tree.points[index_s];
-        auto const r_s = in_seeds_tree.ball_radii[index_s];
-
-        if(distance(p_s, p) < r_s){
-            miss_counter++;
-            continue;
-        }
-        
-        
-        double r_volume = std::numeric_limits<double>::max();
-        if(not volume_seeds_tree.points.empty()){
-            auto index_nearest = volume_seeds_tree.nearestNeighbor(p);
-            auto const& p_nearest = volume_seeds_tree.points[index_nearest];
-            auto const r_nearest = volume_seeds_tree.ball_radii[index_nearest];
-
-            if(distance(p_nearest, p) < r_nearest){
+    double eps = 10*std::numeric_limits<double>::epsilon();
+    do {
+        std::size_t miss_counter = 0;
+        while(miss_counter < 100){
+            Vector3D const p(ll_x + eps + (len_x - 2*eps)*uni01_gen(), 
+                             ll_y + eps + (len_y - 2*eps)*uni01_gen(), 
+                             ll_z + eps + (len_z - 2*eps)*uni01_gen());
+            
+            if(plc->determineLocation(p) == PL_Complex::Location::OUT){
                 miss_counter++;
                 continue;
             }
 
-            r_volume = r_nearest + L_Lipschitz*distance(p, p_nearest);
-        }
+            //! CODEDUPLICATION:
         
-        double const r = std::min({maxRadius, r_s + L_Lipschitz*distance(p, p_s), r_volume});
-        volume_seeds_tree.insert(p, empty_vec, r, 0, 0);
-        miss_counter=0;
-        num_of_samples++;
-        std::cout << "sample : "  << num_of_samples << "\n";
-    }
+            auto index_s = in_seeds_tree.nearestNeighbor(p);
+            auto const& p_s = in_seeds_tree.points[index_s];
+            auto const r_s = in_seeds_tree.ball_radii[index_s];
 
-    volume_seeds_tree.remakeTree();
+            if(distance(p_s, p) < r_s){
+                miss_counter++;
+                continue;
+            }
+            
+            
+            double r_volume = std::numeric_limits<double>::max();
+            if(not volume_seeds_tree.points.empty()){
+                auto index_nearest = volume_seeds_tree.nearestNeighbor(p);
+                auto const& p_nearest = volume_seeds_tree.points[index_nearest];
+                auto const r_nearest = volume_seeds_tree.ball_radii[index_nearest];
+
+                if(distance(p_nearest, p) < r_nearest){
+                    miss_counter++;
+                    continue;
+                }
+
+                r_volume = r_nearest + L_Lipschitz*distance(p, p_nearest);
+            }
+            
+            double const r = std::min({maxSize, r_s + L_Lipschitz*distance(p, p_s), r_volume});
+            volume_seeds_tree.insert(p, empty_vec, r, 0, 0);
+            std::cout << "sample : "  << num_of_samples << ", miss counter : " << miss_counter << "\n";
+
+            miss_counter=0;
+            num_of_samples++;
+            if(num_of_samples % 10000 == 0) volume_seeds_tree.remakeTree();
+        }
+
+        volume_seeds_tree.remakeTree();
+    } while(enforceLipschitzness(volume_seeds_tree));
     
     auto in_seeds = std::move(volume_seeds_tree.points);
     auto in_seeds_boundry_vec = std::move(in_seeds_tree.points);
