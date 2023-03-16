@@ -494,12 +494,14 @@ PL_Complex::Location PL_Complex::determineLocation(Vector3D const& p) const {
     // determine if a point is in or out using the ray casting algorithm
     int count = 0;
     for(Face const& face : faces) {
-        
         if(face->isPointCompletelyOffFace(p)) continue;
 
         auto const& [success, p_inter] = face->pointXYaxisRayIntersectsAt(p);
 
         if(not success) continue;
+        
+        //! EPSILONTICA:
+        if(distance(p_inter, p) < 1e-8) return Location::OUT;
 
         if(p_inter.z > p.z && face->pointIsInsideFace(p_inter)){
             count++;
