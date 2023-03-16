@@ -151,11 +151,16 @@ class VoroCrust_KD_Tree_Ball : public VoroCrust_KD_Tree_Boundary {
         //! \brief returns the overlapping balls of ball defined by `center` `radius`, only overlapping balls with centers up to `r_max`
         std::vector<std::size_t> getOverlappingBalls(Vector3D const& center, double const radius, double const r_max) const;
 
+        std::pair<Vector3D, double> getBall(std::size_t const index) const { return std::pair(points[index], ball_radii[index]); }
+
         //! \brief returns the nearest Ball to p as a pair <center, radius>
-        std::pair<Vector3D, double> getBallNearestNeighbor(Vector3D const& p) const;
+        std::pair<Vector3D, double> getBallNearestNeighbor(Vector3D const& p) const {return getBall(nearestNeighbor(p));}
 
         //! \brief return true if p is contained in the ball with the nearest center 
-        bool isContainedInNearestBall(Vector3D const& p) const;
+        bool isContainedInNearestBall(Vector3D const& p) const {
+            auto const& [center, radius] = getBallNearestNeighbor(p);
+            return distance(p, center) < radius;
+        }        
 };
 
 
