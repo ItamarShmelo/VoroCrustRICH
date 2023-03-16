@@ -495,3 +495,13 @@ std::vector<std::size_t> VoroCrust_KD_Tree_Ball::getOverlappingBalls(Vector3D co
 
     return overlapping_balls_indices;
 }
+
+std::pair<Vector3D, double> VoroCrust_KD_Tree_Ball::getBallNearestNeighbor(Vector3D const& p) const {
+    auto const index = nearestNeighbor(p);
+    return std::pair(points[index], ball_radii[index]);
+}
+
+bool VoroCrust_KD_Tree_Ball::isContainedInNearestBall(Vector3D const& p) const {
+    auto const& [center, radius] = getBallNearestNeighbor(p);
+    return distance(p, center) < radius;
+}
