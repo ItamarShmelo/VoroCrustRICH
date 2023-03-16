@@ -47,7 +47,7 @@ std::vector<BallInfo> SliverDriver::groupOverlappingBalls(BallInfo const& ball_i
     }
 
     // erase the current ball from the overlapping balls
-    int const index = it - overlapping_balls.begin();
+    auto const index = it - overlapping_balls.begin();
     overlapping_balls.erase(overlapping_balls.begin() + index);
 
     return overlapping_balls;

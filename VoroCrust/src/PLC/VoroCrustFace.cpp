@@ -35,7 +35,7 @@ double VoroCrustFace::calcSignedArea(){
     Vector3D const& v = vertices[0]->vertex;
 
     Vector3D signed_area_vec({0, 0, 0});
-    for (unsigned int i=1; i<vertices.size()-1; ++i){
+    for (std::size_t i=1; i<vertices.size()-1; ++i){
         Vector3D const& v1 = vertices[i]->vertex - v;
         Vector3D const& v2 = vertices[i+1]->vertex - v;
 

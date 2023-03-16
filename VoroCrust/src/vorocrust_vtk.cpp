@@ -427,9 +427,9 @@ void write_kNearestNeighbors(std::filesystem::path const& filename,
 
     data->SetValue(num_points, 1); // query point
 
-    std::vector<int> indices_nearest_neighbors = tree.kNearestNeighbors(query, k);
+    auto const& indices_nearest_neighbors = tree.kNearestNeighbors(query, k);
 
-    for(int const index_nearest : indices_nearest_neighbors)
+    for(auto const index_nearest : indices_nearest_neighbors)
         data->SetValue(index_nearest, 2);
 
     ugrid->GetCellData()->AddArray(data);
@@ -501,9 +501,9 @@ void write_radiusSearch(std::filesystem::path const& filename,
 
     data->SetValue(num_points, 1); // query point
 
-    std::vector<int> indices_nearest_neighbors = tree.radiusSearch(query, radius);
+    auto const& indices_nearest_neighbors = tree.radiusSearch(query, radius);
 
-    for(int const index_nearest : indices_nearest_neighbors)
+    for(auto const index_nearest : indices_nearest_neighbors)
         data->SetValue(index_nearest, 2);
 
     ugrid->GetCellData()->AddArray(data);

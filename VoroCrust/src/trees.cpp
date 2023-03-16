@@ -46,7 +46,7 @@ std::tuple<std::vector<Vector3D>, std::vector<Vector3D>, std::vector<std::size_t
     // calculate the total length of all edges and the start length of each individual edge
     // i.e. the total length up to it. 
     double total_len = 0;
-    for(unsigned int i=0; i<edges.size(); ++i){
+    for(std::size_t i=0; i<edges.size(); ++i){
         Edge const& edge = edges[i];
         start_len[i] = total_len;
 
@@ -100,7 +100,7 @@ std::tuple<std::vector<Vector3D>, std::vector<Vector3D>, std::vector<std::size_t
     // calculate the total area and the start area of each face
     // i.e. the total area up to the face
     double total_area = 0.0;
-    for(unsigned int i=0; i<faces.size(); ++i){
+    for(std::size_t i=0; i<faces.size(); ++i){
         Face const& face = faces[i];
         start_area[i] = total_area;
 
@@ -119,7 +119,7 @@ std::tuple<std::vector<Vector3D>, std::vector<Vector3D>, std::vector<std::size_t
 
         // find the face it lies on
         auto const iter_lower_bound = std::lower_bound(start_area.begin(), start_area.end(), sample_area);
-        int face_index = std::distance(start_area.begin(), iter_lower_bound) - 1;
+        auto face_index = std::distance(start_area.begin(), iter_lower_bound) - 1;
 
         Face const& face = faces[face_index];
         

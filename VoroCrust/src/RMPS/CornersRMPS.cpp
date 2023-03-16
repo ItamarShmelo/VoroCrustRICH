@@ -54,7 +54,7 @@ double CornersRMPS::calculateInitialRadius(EligbleCorner const& corner, Trees co
     
     if(not corner_ball_tree.empty()){
         // find nearest ball center
-        int nearestBall_index = corner_ball_tree.nearestNeighbor(corner->vertex);
+        auto const nearestBall_index = corner_ball_tree.nearestNeighbor(corner->vertex);
 
         Vector3D const& nearestBallCenter = corner_ball_tree.points[nearestBall_index];
         dist_q = distance(corner->vertex, nearestBallCenter); //||p-q||
@@ -72,7 +72,7 @@ double CornersRMPS::calculateSmoothnessLimitation(EligbleCorner const& corner, T
     VoroCrust_KD_Tree_Boundary const& faces_boundary_tree = trees.VC_kd_faces;
 
     // find nearest sharp corner
-    int nearestSharpCorner_index = corner_boundary_tree.kNearestNeighbors(corner->vertex, 2)[1];
+    auto const nearestSharpCorner_index = corner_boundary_tree.kNearestNeighbors(corner->vertex, 2)[1];
     Vector3D const& nearestSharpCorner = corner_boundary_tree.points[nearestSharpCorner_index];
 
     double const dist_nearest_corner = distance(corner->vertex, nearestSharpCorner); //||p-q^*||

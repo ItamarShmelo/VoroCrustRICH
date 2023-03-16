@@ -5,7 +5,7 @@
  
 //! TODO: index should be std::size_t and everything else (except axis) which is unsigned should be std::size_t
 
-NodePtr newNode(int index, int axis){
+NodePtr newNode(std::size_t index, std::size_t axis){
     NodePtr node = std::make_shared<Node>();
 
     node->index = index;
@@ -29,24 +29,24 @@ void VoroCrust_KD_Tree::makeTree(std::vector<Vector3D> const& points_){
     clear();
 
     points = points_;
-    std::vector<int> indices(points.size()); 
+    std::vector<std::size_t> indices(points.size()); 
     std::iota(indices.begin(), indices.end(), 0); // after iota : indices[0] = 0, indices[1] = 1 etc..
     
-    root = buildRecursive(indices.data(), static_cast<int>(points.size()), 0);
+    root = buildRecursive(indices.data(), static_cast<std::size_t>(points.size()), 0);
 }
 
-NodePtr VoroCrust_KD_Tree::buildRecursive(int * indices, int npoints, int depth){
+NodePtr VoroCrust_KD_Tree::buildRecursive(std::size_t * indices, std::size_t npoints, std::size_t depth){
     if(npoints <= 0){
         return nullptr;
     }
 
-    int const axis = depth % DIM; // which axis now divides the data
-    int const mid  = (npoints - 1) / 2;
+    std::size_t const axis = depth % DIM; // which axis now divides the data
+    std::size_t const mid  = (npoints - 1) / 2;
     
     // find the median point, nth_element also weak sorts the array around `mid` i.e.
     //  for i < mid : points[indices[i]][axis] <= points[indices[mid]][axis] and
     //  for i > mid : points[indices[mid]][axis] <= points[indices[i]][axis]
-    std::nth_element(indices, indices + mid, indices + npoints, [&](int lhs, int rhs){
+    std::nth_element(indices, indices + mid, indices + npoints, [&](std::size_t lhs, std::size_t rhs){
         return points[lhs][axis] < points[rhs][axis];
     });
 
@@ -58,8 +58,8 @@ NodePtr VoroCrust_KD_Tree::buildRecursive(int * indices, int npoints, int depth)
     return node;
 }
 
-int VoroCrust_KD_Tree::nearestNeighbor(Vector3D const& query) const {
-    int guess = 0;
+std::size_t VoroCrust_KD_Tree::nearestNeighbor(Vector3D const& query) const {
+    std::size_t guess = 0;
     double minDist = std::numeric_limits<double>::max();
 
     nearestNeighborRecursive(query, root, &guess, &minDist);
@@ -67,7 +67,7 @@ int VoroCrust_KD_Tree::nearestNeighbor(Vector3D const& query) const {
     return guess;
 }
 
-void VoroCrust_KD_Tree::nearestNeighborRecursive(Vector3D const& query, NodePtr const& node, int *guess, double *minDist) const {
+void VoroCrust_KD_Tree::nearestNeighborRecursive(Vector3D const& query, NodePtr const& node, std::size_t *guess, double *minDist) const {
     if(node.get() == nullptr) return;
 
     Vector3D const& train = points[node->index];
@@ -80,7 +80,7 @@ void VoroCrust_KD_Tree::nearestNeighborRecursive(Vector3D const& query, NodePtr 
         *guess = node->index;
     }
 
-    int const axis = node->axis;
+    std::size_t const axis = node->axis;
     // which node subtree to search tree
     NodePtr const& node_first = query[axis] < train[axis] ? node->left : node->right;
     
@@ -95,7 +95,7 @@ void VoroCrust_KD_Tree::nearestNeighborRecursive(Vector3D const& query, NodePtr 
     }
 }
 
-std::vector<int> VoroCrust_KD_Tree::kNearestNeighbors(Vector3D const& query, unsigned int const k) const {
+std::vector<std::size_t> VoroCrust_KD_Tree::kNearestNeighbors(Vector3D const& query, std::size_t const k) const {
     if(k > points.size()){
         std::cout << "Error: kNearestNeighbors, `k` can't be larger then number of points" << std::endl;
         exit(1);
@@ -103,19 +103,19 @@ std::vector<int> VoroCrust_KD_Tree::kNearestNeighbors(Vector3D const& query, uns
 
     std::vector<double> minDist(k, std::numeric_limits<double>::max());
 
-    std::vector<int> indices(k, -1);
+    std::vector<std::size_t> indices(k, -1);
 
     kNearestNeighborsRecursive(query, k, root, indices, minDist);
     return indices;
 }
 
-void VoroCrust_KD_Tree::kNearestNeighborsRecursive(Vector3D const& query, int const k, NodePtr const& node, std::vector<int>& indices, std::vector<double> &minDist) const{
+void VoroCrust_KD_Tree::kNearestNeighborsRecursive(Vector3D const& query, std::size_t const k, NodePtr const& node, std::vector<std::size_t>& indices, std::vector<double> &minDist) const{
     if(node.get() == nullptr) return;
 
     Vector3D const& train = points[node->index];
 
     double const dist = distance(train, query);
-    int i;
+    std::size_t i;
     for(i = k; i > 0; --i){
         if(dist > minDist[i-1])
             break;
@@ -129,7 +129,7 @@ void VoroCrust_KD_Tree::kNearestNeighborsRecursive(Vector3D const& query, int co
         minDist.pop_back();
     }
 
-    int const axis = node->axis;
+    std::size_t const axis = node->axis;
     NodePtr node_first = query[axis] < train[axis] ? node->left : node->right;
 
     kNearestNeighborsRecursive(query, k, node_first, indices, minDist);
@@ -142,13 +142,13 @@ void VoroCrust_KD_Tree::kNearestNeighborsRecursive(Vector3D const& query, int co
     }
 }
 
-std::vector<int> VoroCrust_KD_Tree::radiusSearch(Vector3D const& query, double const radius) const {
-    std::vector<int> indices;
+std::vector<std::size_t> VoroCrust_KD_Tree::radiusSearch(Vector3D const& query, double const radius) const {
+    std::vector<std::size_t> indices;
     radiusSearchRecursive(query, radius, root, indices);
     return indices;
 }
 
-void VoroCrust_KD_Tree::radiusSearchRecursive(Vector3D const& query, double const radius, NodePtr const& node, std::vector<int> &indices) const {
+void VoroCrust_KD_Tree::radiusSearchRecursive(Vector3D const& query, double const radius, NodePtr const& node, std::vector<std::size_t> &indices) const {
     if(node.get() == nullptr) return;
 
     Vector3D const& train = points[node->index];
@@ -157,7 +157,7 @@ void VoroCrust_KD_Tree::radiusSearchRecursive(Vector3D const& query, double cons
 
     if(dist < radius) indices.push_back(node->index);
 
-    int const axis = node->axis;
+    std::size_t const axis = node->axis;
     NodePtr node_first = query[axis] < train[axis] ? node->left : node->right;
 
     radiusSearchRecursive(query, radius, node_first, indices);
@@ -170,15 +170,15 @@ void VoroCrust_KD_Tree::radiusSearchRecursive(Vector3D const& query, double cons
     }
 }
 
-int VoroCrust_KD_Tree::nearestNeighborToSegment(std::array<Vector3D, 2> const& segment) const {
-    int guess = 0;
+std::size_t VoroCrust_KD_Tree::nearestNeighborToSegment(std::array<Vector3D, 2> const& segment) const {
+    std::size_t guess = 0;
     double minDist = std::numeric_limits<double>::max();
 
     nearestNeighborToSegmentRecursive(segment, root, guess, minDist);
     return guess;
 }
 
-void VoroCrust_KD_Tree::nearestNeighborToSegmentRecursive(std::array<Vector3D, 2> const& segment, NodePtr const& node, int &guess, double &minDist) const{
+void VoroCrust_KD_Tree::nearestNeighborToSegmentRecursive(std::array<Vector3D, 2> const& segment, NodePtr const& node, std::size_t &guess, double &minDist) const{
     if(node.get() == nullptr) return;
 
     Vector3D const& train = points[node->index];
@@ -190,7 +190,7 @@ void VoroCrust_KD_Tree::nearestNeighborToSegmentRecursive(std::array<Vector3D, 2
         guess = node->index;
     }
 
-    int const axis = node->axis;
+    std::size_t const axis = node->axis;
 
     Vector3D const& point0 = segment[0];
     Vector3D const& point1 = segment[1];
@@ -250,7 +250,7 @@ void VoroCrust_KD_Tree::insert(Vector3D const& point){
 }
 
 void VoroCrust_KD_Tree::insertRecursive(Vector3D const& point, NodePtr const& node){
-    int const axis = node->axis;
+    std::size_t const axis = node->axis;
     Vector3D const& train = points[node->index];
 
     // if point[axis] is on the left of node go left
@@ -276,10 +276,10 @@ void VoroCrust_KD_Tree::insertRecursive(Vector3D const& point, NodePtr const& no
 void VoroCrust_KD_Tree::remakeTree(){
     root.reset(); // root = nullptr
 
-    std::vector<int> indices(points.size());
+    std::vector<std::size_t> indices(points.size());
     std::iota(indices.begin(), indices.end(), 0);
     
-    root = buildRecursive(indices.data(), static_cast<int>(points.size()), 0);
+    root = buildRecursive(indices.data(), static_cast<std::size_t>(points.size()), 0);
 }
 
 bool VoroCrust_KD_Tree::operator==(VoroCrust_KD_Tree const& t) const {
@@ -328,8 +328,8 @@ void VoroCrust_KD_Tree_Boundary::insert(Vector3D const& point, Vector3D const& v
     plc_index.push_back(plc_index_);
 }
 
-int VoroCrust_KD_Tree_Boundary::nearestNonCosmoothPointEdge(Vector3D const& query, Vector3D const& vec, std::size_t const f_index, double const angle) const {
-    int guess = -1;
+std::size_t VoroCrust_KD_Tree_Boundary::nearestNonCosmoothPointEdge(Vector3D const& query, Vector3D const& vec, std::size_t const f_index, double const angle) const {
+    std::size_t guess = -1;
     double minDist = std::numeric_limits<double>::max();
 
     nearestNonCosmoothPointEdgeRecursive(query, vec, f_index, angle, root, guess, minDist);
@@ -343,7 +343,7 @@ double CalcAngleAssumedSameOrientation(Vector3D const& v1, Vector3D const& v2){
     return acos(std::abs(ScalarProd(v1, v2)) / abs(v1) / abs(v2));
 }
 
-void VoroCrust_KD_Tree_Boundary::nearestNonCosmoothPointEdgeRecursive(Vector3D const& query, Vector3D const& vec, std::size_t const f_index, double const angle, NodePtr const& node, int &guess, double &minDist) const {
+void VoroCrust_KD_Tree_Boundary::nearestNonCosmoothPointEdgeRecursive(Vector3D const& query, Vector3D const& vec, std::size_t const f_index, double const angle, NodePtr const& node, std::size_t &guess, double &minDist) const {
     if(node.get() == nullptr) return;
 
     Vector3D const& train = points[node->index];
@@ -368,7 +368,7 @@ void VoroCrust_KD_Tree_Boundary::nearestNonCosmoothPointEdgeRecursive(Vector3D c
         }
     }
 
-    int const axis = node->axis;
+    std::size_t const axis = node->axis;
 
     NodePtr const& node_first = query[axis] < train[axis] ? node->left : node->right;
 
@@ -383,8 +383,8 @@ void VoroCrust_KD_Tree_Boundary::nearestNonCosmoothPointEdgeRecursive(Vector3D c
     }
 }
 
-int VoroCrust_KD_Tree_Boundary::nearestNonCosmoothPointFace(Vector3D const& query, Vector3D const& vec, std::size_t const f_index, double const angle1) const {
-    int guess = -1;
+std::size_t VoroCrust_KD_Tree_Boundary::nearestNonCosmoothPointFace(Vector3D const& query, Vector3D const& vec, std::size_t const f_index, double const angle1) const {
+    std::size_t guess = -1;
     double minDist = std::numeric_limits<double>::max();
 
     nearestNonCosmoothPointFaceRecursive(query, vec, f_index, angle1, root, guess, minDist);
@@ -394,11 +394,11 @@ int VoroCrust_KD_Tree_Boundary::nearestNonCosmoothPointFace(Vector3D const& quer
 
 
 //! CODEDUPLICATION: This is same exact as nearestNonCosmoothPointEdge right now!!!!
-void VoroCrust_KD_Tree_Boundary::nearestNonCosmoothPointFaceRecursive(Vector3D const& query, Vector3D const& vec, std::size_t const f_index, double const angle1, NodePtr const& node, int &guess, double &minDist) const {
+void VoroCrust_KD_Tree_Boundary::nearestNonCosmoothPointFaceRecursive(Vector3D const& query, Vector3D const& vec, std::size_t const f_index, double const angle1, NodePtr const& node, std::size_t &guess, double &minDist) const {
 
     if(node.get() == nullptr) return;
 
-    int const index = node->index;
+    std::size_t const index = node->index;
     Vector3D const& train = points[index];
 
     if(f_index == feature_index[index]){
@@ -425,8 +425,8 @@ void VoroCrust_KD_Tree_Boundary::nearestNonCosmoothPointFaceRecursive(Vector3D c
 }
 
 
-int VoroCrust_KD_Tree_Boundary::nearestNeighborExcludingFeatures(Vector3D const& query, std::vector<std::size_t> const& to_exclude) const {
-    int guess = -1;
+std::size_t VoroCrust_KD_Tree_Boundary::nearestNeighborExcludingFeatures(Vector3D const& query, std::vector<std::size_t> const& to_exclude) const {
+    std::size_t guess = -1;
     double minDist = std::numeric_limits<double>::max();
 
     nearestNeighborExcludingFeaturesRecursive(query, to_exclude, root, guess, minDist);
@@ -434,11 +434,11 @@ int VoroCrust_KD_Tree_Boundary::nearestNeighborExcludingFeatures(Vector3D const&
     return guess;
 }
 
-void VoroCrust_KD_Tree_Boundary::nearestNeighborExcludingFeaturesRecursive(Vector3D const& query, std::vector<std::size_t> const& to_exclude, NodePtr const& node, int &guess, double &minDist) const {
+void VoroCrust_KD_Tree_Boundary::nearestNeighborExcludingFeaturesRecursive(Vector3D const& query, std::vector<std::size_t> const& to_exclude, NodePtr const& node, std::size_t &guess, double &minDist) const {
     
     if(node.get() == nullptr) return;
 
-    int const index = node->index;
+    std::size_t const index = node->index;
     Vector3D const& train = points[index];
 
     if(std::find(to_exclude.begin(), to_exclude.end(), feature_index[index]) == to_exclude.end()){
@@ -450,7 +450,7 @@ void VoroCrust_KD_Tree_Boundary::nearestNeighborExcludingFeaturesRecursive(Vecto
         }
     }
 
-    int const axis = node->axis;
+    std::size_t const axis = node->axis;
 
     NodePtr const& node_first = query[axis] < train[axis] ? node->left : node->right;
     
@@ -483,7 +483,7 @@ void VoroCrust_KD_Tree_Ball::insert(Vector3D const& point, Vector3D const& vec, 
 
 std::vector<std::size_t> VoroCrust_KD_Tree_Ball::getOverlappingBalls(Vector3D const& center, double const radius, double const r_max) const {
     
-    std::vector<int> suspects = radiusSearch(center, r_max);
+    std::vector<std::size_t> suspects = radiusSearch(center, r_max);
 
     std::vector<std::size_t> overlapping_balls_indices;
 

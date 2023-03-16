@@ -78,7 +78,7 @@ class PL_Complex
         /*! \brief adds a face to the PLC
             \param indices vector of indices of the `vertices` of the Face.
         */
-        void addFace(std::vector<unsigned int> const& indices);
+        void addFace(std::vector<std::size_t> const& indices);
 
         /*! \brief Checks if all vertices are unique. */
         bool checkAllVerticesAreUnique();

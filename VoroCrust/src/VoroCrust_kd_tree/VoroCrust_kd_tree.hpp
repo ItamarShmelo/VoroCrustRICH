@@ -16,16 +16,16 @@ using NodePtr = std::shared_ptr<Node>;
 struct Node
 {
     //! \brief index of point in the VoroCrust_KD_Tree::points vector
-    int index;
+    std::size_t index;
     //! \brief depth % DIM. depth of node is depth in the tree
-    int axis;
+    std::size_t axis;
     //! \brief pointers to left and right nodes in tree
     NodePtr left, right;
 
     Node() : index(0), axis(0), left(nullptr), right(nullptr) {}
 };
 
-NodePtr newNode(int index, int axis);
+NodePtr newNode(std::size_t index, std::size_t axis);
 
 class VoroCrust_KD_Tree {
     public:
@@ -56,18 +56,18 @@ class VoroCrust_KD_Tree {
         void remakeTree();
 
         //! \brief finds nearest neighbor in tree to `query`
-        int nearestNeighbor(Vector3D const& query) const;
+        std::size_t nearestNeighbor(Vector3D const& query) const;
 
         /*! \brief finds the `k` nearest neighbors to `query` in the tree 
             \param query
             \param k number of nearest neighbors */
-        std::vector<int> kNearestNeighbors(Vector3D const& query, unsigned int const k) const;
+        std::vector<std::size_t> kNearestNeighbors(Vector3D const& query, std::size_t const k) const;
         
         //! \brief finds all points with a distance to query that is less than radius
-        std::vector<int> radiusSearch(Vector3D const& query, double const radius) const;
+        std::vector<std::size_t> radiusSearch(Vector3D const& query, double const radius) const;
 
         //! \brief finds the nearest point in the tree to some given `segment`
-        int nearestNeighborToSegment(std::array<Vector3D, 2> const& segment) const;
+        std::size_t nearestNeighborToSegment(std::array<Vector3D, 2> const& segment) const;
 
         //! \brief checks if two trees are equal
         bool operator==(VoroCrust_KD_Tree const& tree) const;
@@ -76,22 +76,22 @@ class VoroCrust_KD_Tree {
 
     private:
         //! \brief builds the tree recursively
-        NodePtr buildRecursive(int *indices, int npoints, int depth);
+        NodePtr buildRecursive(std::size_t *indices, std::size_t npoints, std::size_t depth);
 
         //! \brief recursively checks where to insert the new point
         void insertRecursive(Vector3D const& point, NodePtr const& node);
 
         //! \brief finds nearest neighbor recursively in tree to `query`
-        void nearestNeighborRecursive(Vector3D const& query, NodePtr const& node, int *guess, double *minDist) const;
+        void nearestNeighborRecursive(Vector3D const& query, NodePtr const& node, std::size_t *guess, double *minDist) const;
         
         //! \brief finds the `k` nearest neighbors in the tree recursively
-        void kNearestNeighborsRecursive(Vector3D const& query, int const k, NodePtr const& node, std::vector<int>& indices, std::vector<double> &minDist) const;        
+        void kNearestNeighborsRecursive(Vector3D const& query, std::size_t const k, NodePtr const& node, std::vector<std::size_t>& indices, std::vector<double> &minDist) const;        
         
         //! \brief finds all points with a distance to query that is less than radius recursively
-        void radiusSearchRecursive(Vector3D const& query, double const radius, NodePtr const& node, std::vector<int> &indices) const;
+        void radiusSearchRecursive(Vector3D const& query, double const radius, NodePtr const& node, std::vector<std::size_t> &indices) const;
 
         //! \brief finds the nearest point in the tree for some given `segment` recursively
-        void nearestNeighborToSegmentRecursive(std::array<Vector3D, 2> const& segment, NodePtr const& node, int &guess, double &minDist) const;
+        void nearestNeighborToSegmentRecursive(std::array<Vector3D, 2> const& segment, NodePtr const& node, std::size_t &guess, double &minDist) const;
         
         //! \brief calculates the distance of the `point` from a `segment`
         double distancePointToSegment(std::array<Vector3D, 2> const& segment, Vector3D const& point) const;
@@ -118,21 +118,21 @@ class VoroCrust_KD_Tree_Boundary : public VoroCrust_KD_Tree {
         void insert(Vector3D const& point, Vector3D const& vec, std::size_t f_index, std::size_t plc_index_);
 
         //! \brief finds the nearest point in the tree wthat is not cosmooth with `query`
-        int nearestNonCosmoothPointEdge(Vector3D const& query, Vector3D const& vec, std::size_t const f_index, double const angle) const;
+        std::size_t nearestNonCosmoothPointEdge(Vector3D const& query, Vector3D const& vec, std::size_t const f_index, double const angle) const;
 
-        int nearestNonCosmoothPointFace(Vector3D const& query, Vector3D const& vec, std::size_t const f_index, double const angle1) const;
+        std::size_t nearestNonCosmoothPointFace(Vector3D const& query, Vector3D const& vec, std::size_t const f_index, double const angle1) const;
 
-        int nearestNeighborExcludingFeatures(Vector3D const& query, std::vector<std::size_t> const& to_exclude) const;
+        std::size_t nearestNeighborExcludingFeatures(Vector3D const& query, std::vector<std::size_t> const& to_exclude) const;
 
         //!
     private:
 
         //! \brief finds the nearest non cosmooth point to `query` recursively 
-        void nearestNonCosmoothPointEdgeRecursive(Vector3D const& query, Vector3D const& vec, std::size_t const f_index, double const angle, NodePtr const& node, int &guess, double &minDist) const;
+        void nearestNonCosmoothPointEdgeRecursive(Vector3D const& query, Vector3D const& vec, std::size_t const f_index, double const angle, NodePtr const& node, std::size_t &guess, double &minDist) const;
 
-        void nearestNonCosmoothPointFaceRecursive(Vector3D const& query, Vector3D const& vec, std::size_t const f_index, double const angle1, NodePtr const& node, int &guess, double &minDist) const;
+        void nearestNonCosmoothPointFaceRecursive(Vector3D const& query, Vector3D const& vec, std::size_t const f_index, double const angle1, NodePtr const& node, std::size_t &guess, double &minDist) const;
 
-        void nearestNeighborExcludingFeaturesRecursive(Vector3D const& query, std::vector<std::size_t> const& to_exclude, NodePtr const& node, int &guess, double &minDist) const;
+        void nearestNeighborExcludingFeaturesRecursive(Vector3D const& query, std::vector<std::size_t> const& to_exclude, NodePtr const& node, std::size_t &guess, double &minDist) const;
 
 };
 

@@ -110,9 +110,9 @@ bool FacesRMPS::checkIfPointIsDeeplyCovered(Vector3D const& p, Trees const& tree
         // maximal radius for centers which balls can deeply cover p
         double const r_max = (r_q + L_Lipschitz*distance(p, q)) / (1.0 - L_Lipschitz); 
 
-        std::vector<int> const& suspects = faces_ball_tree.radiusSearch(p, r_max);
+        auto const& suspects = faces_ball_tree.radiusSearch(p, r_max);
 
-        for(int const i : suspects) {
+        for(auto const i : suspects) {
             Vector3D const& center = faces_ball_tree.points[i];
             double const r = faces_ball_tree.ball_radii[i];
 
@@ -134,9 +134,9 @@ bool FacesRMPS::checkIfPointIsDeeplyCovered(Vector3D const& p, Trees const& tree
     // maximal radius for cetners which balls can deeply cover p
     double const r_max = (r_q + L_Lipschitz*distance(p, q)) / (1.0 - L_Lipschitz); 
     
-    std::vector<int> const& suspects = edges_ball_tree.radiusSearch(p, r_max);
+    auto const& suspects = edges_ball_tree.radiusSearch(p, r_max);
 
-    for(int const i : suspects) {
+    for(auto const i : suspects) {
         Vector3D const& center = edges_ball_tree.points[i];
         double const r = edges_ball_tree.ball_radii[i];
 
@@ -240,9 +240,9 @@ void FacesRMPS::discardEligbleFacesContainedInEdgeBalls(Trees const& trees) {
         
         // maximal radius for centers which balls can cover v1 hence the face
         double const r_max = (r_q + L_Lipschitz*distance(v1, q)) / (1.0 - L_Lipschitz);
-        std::vector<int> const& suspects = edges_ball_tree.radiusSearch(v1, r_max);
+        auto const& suspects = edges_ball_tree.radiusSearch(v1, r_max);
 
-        for(int const j : suspects) {
+        for(auto const j : suspects) {
             Vector3D const& center = edges_ball_tree.points[j];
             double const r = edges_ball_tree.ball_radii[j]*(1. - alpha);
 
@@ -258,7 +258,7 @@ double FacesRMPS::calculateSmoothnessLimitation(Vector3D const& p, EligbleFace c
     // Corners
     VoroCrust_KD_Tree_Boundary const& corners_boundary_tree = trees.VC_kd_sharp_corners;
 
-    int const nearestSharpCorner_index = corners_boundary_tree.nearestNeighbor(p);
+    auto const nearestSharpCorner_index = corners_boundary_tree.nearestNeighbor(p);
     Vector3D const& nearestSharpCorner = corners_boundary_tree.points[nearestSharpCorner_index];
 
     double const dist_nearest_corner = distance(p, nearestSharpCorner);
@@ -266,7 +266,7 @@ double FacesRMPS::calculateSmoothnessLimitation(Vector3D const& p, EligbleFace c
     // Edges
     VoroCrust_KD_Tree_Boundary const& edges_boundary_tree = trees.VC_kd_sharp_edges;
 
-    int const nearestPointOnSharpEdge_index = edges_boundary_tree.nearestNeighbor(p);
+    auto const nearestPointOnSharpEdge_index = edges_boundary_tree.nearestNeighbor(p);
     Vector3D const& nearestPointOnSharpEdge = edges_boundary_tree.points[nearestPointOnSharpEdge_index];
 
     double const dist_nearest_sharp_edge = distance(p, nearestPointOnSharpEdge);
@@ -324,11 +324,11 @@ bool FacesRMPS::discardEligbleFaces(Trees const& trees) {
 
         double const r_max = (nn_face_ball_radius + L_Lipschitz*distance(face.face[0], nn_face_ball_center)) / (1.0 - L_Lipschitz); 
 
-        std::vector<int> const& balls_to_check_faces = faces_ball_tree.radiusSearch(face.face[0], r_max);
+        auto const& balls_to_check_faces = faces_ball_tree.radiusSearch(face.face[0], r_max);
 
         bool discard = false;
         
-        for(int const ball_index : balls_to_check_faces) {
+        for(auto const ball_index : balls_to_check_faces) {
             //! MIGHTBEUNECESSARY: all relevent balls should already be in the same patch
             discard = discard || isEligbleFaceDeeplyCoveredInFaceBall(face, trees, ball_index);
         }
@@ -392,7 +392,7 @@ bool FacesRMPS::doSampling(VoroCrust_KD_Tree_Ball &faces_ball_tree, Trees const&
 
     std::cout << "total_area = " << total_area << ", num_of_eligble_faces = " << eligble_faces.size() << std::endl;
 
-    int miss_counter = 0;
+    std::size_t miss_counter = 0;
 
     while(not eligble_faces.empty()) {
         
@@ -427,12 +427,12 @@ bool FacesRMPS::doSampling(VoroCrust_KD_Tree_Ball &faces_ball_tree, Trees const&
 
         double radius = calculateInitialRadius(p, face_index, trees);
 
-        std::vector<int> const& centers_in_new_ball_indices = faces_ball_tree.radiusSearch(p, radius);
+        auto const& centers_in_new_ball_indices = faces_ball_tree.radiusSearch(p, radius);
 
         if(not centers_in_new_ball_indices.empty()){
             if(uni01_gen() < rejection_probability) continue;
 
-            for(int const center_index : centers_in_new_ball_indices){
+            for(auto const center_index : centers_in_new_ball_indices){
                 Vector3D const& center_in = faces_ball_tree.points[center_index];
                 radius = std::min(radius, distance(p, center_in) / (1. - alpha));
             }

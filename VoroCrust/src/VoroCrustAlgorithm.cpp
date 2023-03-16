@@ -15,7 +15,7 @@ VoroCrustAlgorithm::VoroCrustAlgorithm( PL_Complex const& plc_,
                                                               maxRadius(maxRadius_),
                                                               L_Lipschitz(L_Lipschitz_),
                                                               alpha(alpha_),
-                                                              maximal_num_iter(15),
+                                                              maximal_num_iter(1),
                                                               cornersDriver(maxRadius_, L_Lipschitz_, sharpTheta_, plc),
                                                               edgesDriver(maxRadius_, L_Lipschitz_, alpha_, sharpTheta_, plc),
                                                               facesDriver(maxRadius_, L_Lipschitz_, alpha_, sharpTheta_, plc),
@@ -85,7 +85,7 @@ void VoroCrustAlgorithm::run() {
 }
 
 bool VoroCrustAlgorithm::enforceLipschitzness(VoroCrust_KD_Tree_Ball& ball_tree){
-    long const num_of_points = ball_tree.points.size();
+    std::size_t const num_of_points = ball_tree.points.size();
     
     bool isBallsShrunk = false;
     std::size_t number_of_balls_shrunk = 0;
@@ -93,12 +93,12 @@ bool VoroCrustAlgorithm::enforceLipschitzness(VoroCrust_KD_Tree_Ball& ball_tree)
     std::cout << "Running enforceLipschitzness " << std::endl;
     // go through all pairs i != j and enforce r_i <= r_j + L * ||p_i - p_j||
     //! MAYBE: only consider the overlapping balls or balls up to radius r_i?
-    for(long i = 0; i<num_of_points; ++i){
+    for(std::size_t i = 0; i<num_of_points; ++i){
         Vector3D const& p_i = ball_tree.points[i];
         double const r_i = ball_tree.ball_radii[i];
-        std::vector<int> const& suspects = ball_tree.radiusSearch(p_i, 1.5*r_i);
+        auto const& suspects = ball_tree.radiusSearch(p_i, 1.5*r_i);
 
-        for(int const j : suspects){
+        for(auto const j : suspects){
             if(i == j) continue;
             double const dist = distance(p_i, ball_tree.points[j]);
             

@@ -45,10 +45,10 @@ Edge PL_Complex::addEdge(Vertex const &v1, Vertex const &v2)
     return new_edge_ptr;
 }
 
-void PL_Complex::addFace(std::vector<unsigned int> const &indices)
+void PL_Complex::addFace(std::vector<std::size_t> const &indices)
 {
     //! WARNING: unique needs vector to be sorted so this does nothing actually... 
-    if (indices.size() != unsorted_unique<unsigned int>(indices).size())
+    if (indices.size() != unsorted_unique<std::size_t>(indices).size())
     {
         std::cout << "ERROR: Repeated indices in PL_Complex::addFace!" << std::endl;
         exit(1);
@@ -62,7 +62,7 @@ void PL_Complex::addFace(std::vector<unsigned int> const &indices)
 
     std::vector<Vertex> face_vertices;
 
-    for (unsigned int const index : indices)
+    for (auto const index : indices)
         face_vertices.push_back(vertices[index]);
 
     Face new_face_ptr = std::make_shared<VoroCrustFace>(face_vertices, faces.size());
@@ -492,7 +492,7 @@ std::array<double, 6> PL_Complex::getBoundingBox() const {
 
 PL_Complex::Location PL_Complex::determineLocation(Vector3D const& p) const {
     // determine if a point is in or out using the ray casting algorithm
-    int count = 0;
+    std::size_t count = 0;
     for(Face const& face : faces) {
         if(face->isPointCompletelyOffFace(p)) continue;
 
