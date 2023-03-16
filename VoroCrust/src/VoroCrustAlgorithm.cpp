@@ -134,7 +134,6 @@ std::pair<std::vector<Seed>, std::vector<Seed>> VoroCrustAlgorithm::determineIfS
     in_seeds.reserve(seeds.size());
     out_seeds.reserve(seeds.size());
 
-    int i = 0;
     for(auto const& seed : seeds) {
         auto const location = plc->determineLocation(seed.p);
 
