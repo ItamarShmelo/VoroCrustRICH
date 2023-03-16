@@ -186,15 +186,10 @@ std::pair<std::vector<Vector3D>, std::vector<Vector3D>> VoroCrustAlgorithm::calc
     out_seeds.reserve(out_seeds_boundary.size()+100);
 
     auto const& in_seeds_tree = makeSeedBallTree(in_seeds_boundary);
-
-    for(std::size_t i=0; i < num_points_x; ++i){
-        for(std::size_t j=0; j < num_points_y; ++j){
-            for(std::size_t k=0; k < num_points_z; ++k){
+    Vector3D const nudge(1e-5, 1e-5, 1e-5);
                 Vector3D const seed(ll_x + step_x*i, ll_y + step_y*j, ll_z + step_z*k);
 
-                auto const location = plc->determineLocation(seed);
-
-                if(location == PL_Complex::Location::IN){
+                if(plc->determineLocation(seed+nudge) == PL_Complex::Location::IN && plc->determineLocation(seed-nudge) == PL_Complex::Location::IN){
                     // if seed is inside check that it is not contained in a boundary seed
                     bool add_seed = true;
                     auto index = in_seeds_tree.nearestNeighbor(seed);
