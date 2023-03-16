@@ -150,7 +150,7 @@ double EdgesRMPS::calculateSmoothnessLimitation(Vector3D const& p, EligbleEdge c
 
     Vector3D const& parallel = edge_sampled[1] - edge_sampled[0];
 
-    long const nn_non_cosmooth_index = edges_boundary_tree.nearestNonCosmoothPointEdge(p, parallel, edge_sampled.crease_index, sharpTheta);
+    long const nn_non_cosmooth_index = edges_boundary_tree.nearestNonCosmoothPoint(p, parallel, edge_sampled.crease_index, sharpTheta);
 
     if(nn_non_cosmooth_index >= 0){
 
@@ -174,7 +174,7 @@ double EdgesRMPS::calculateSmoothnessLimitation(Vector3D const& p, EligbleEdge c
         std::size_t const patch_index = face->patch_index;
         patches_to_exclude.push_back(patch_index);
 
-        long const nn_noncosmooth_on_face_index = faces_boundary_tree.nearestNonCosmoothPointFace(p, face->calcNormal(), patch_index, sharpTheta);
+        long const nn_noncosmooth_on_face_index = faces_boundary_tree.nearestNonCosmoothPoint(p, face->calcNormal(), patch_index, sharpTheta);
 
         if(nn_noncosmooth_on_face_index < 0) continue;
 

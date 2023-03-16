@@ -86,7 +86,7 @@ double CornersRMPS::calculateSmoothnessLimitation(EligbleCorner const& corner, T
         std::size_t const crease_index = edge->crease_index;
         creases_exclude.push_back(crease_index);
 
-        long const nn_noncosmooth_on_edge_index = edges_boundary_tree.nearestNonCosmoothPointEdge(corner->vertex, edge->vertex2->vertex - edge->vertex1->vertex, crease_index, sharpTheta);
+        long const nn_noncosmooth_on_edge_index = edges_boundary_tree.nearestNonCosmoothPoint(corner->vertex, edge->vertex2->vertex - edge->vertex1->vertex, crease_index, sharpTheta);
 
         // no noncosmooth point on the crease (very likely)
         if(nn_noncosmooth_on_edge_index < 0) continue;
@@ -112,7 +112,7 @@ double CornersRMPS::calculateSmoothnessLimitation(EligbleCorner const& corner, T
         patches_to_exclude.push_back(patch_index); // might have multiple times the same patch
 
 
-        long const nn_noncosmooth_on_face_index = faces_boundary_tree.nearestNonCosmoothPointFace(corner->vertex, face->calcNormal(), patch_index, sharpTheta);
+        long const nn_noncosmooth_on_face_index = faces_boundary_tree.nearestNonCosmoothPoint(corner->vertex, face->calcNormal(), patch_index, sharpTheta);
 
         // no noncosmooth point on the patch (very likely)
         if(nn_noncosmooth_on_face_index < 0) continue;

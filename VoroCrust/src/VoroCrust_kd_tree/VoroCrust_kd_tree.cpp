@@ -328,11 +328,11 @@ void VoroCrust_KD_Tree_Boundary::insert(Vector3D const& point, Vector3D const& v
     plc_index.push_back(plc_index_);
 }
 
-long VoroCrust_KD_Tree_Boundary::nearestNonCosmoothPointEdge(Vector3D const& query, Vector3D const& vec, std::size_t const f_index, double const angle) const {
+long VoroCrust_KD_Tree_Boundary::nearestNonCosmoothPoint(Vector3D const& query, Vector3D const& vec, std::size_t const f_index, double const angle) const {
     long guess = -1;
     double minDist = std::numeric_limits<double>::max();
 
-    nearestNonCosmoothPointEdgeRecursive(query, vec, f_index, angle, root, guess, minDist);
+    nearestNonCosmoothPointRecursive(query, vec, f_index, angle, root, guess, minDist);
 
     return guess;
 }
@@ -343,7 +343,7 @@ double CalcAngleAssumedSameOrientation(Vector3D const& v1, Vector3D const& v2){
     return acos(std::abs(ScalarProd(v1, v2)) / abs(v1) / abs(v2));
 }
 
-void VoroCrust_KD_Tree_Boundary::nearestNonCosmoothPointEdgeRecursive(Vector3D const& query, Vector3D const& vec, std::size_t const f_index, double const angle, NodePtr const& node, long &guess, double &minDist) const {
+void VoroCrust_KD_Tree_Boundary::nearestNonCosmoothPointRecursive(Vector3D const& query, Vector3D const& vec, std::size_t const f_index, double const angle, NodePtr const& node, long &guess, double &minDist) const {
     if(node.get() == nullptr) return;
 
     Vector3D const& train = points[node->index];
@@ -372,58 +372,16 @@ void VoroCrust_KD_Tree_Boundary::nearestNonCosmoothPointEdgeRecursive(Vector3D c
 
     NodePtr const& node_first = query[axis] < train[axis] ? node->left : node->right;
 
-    nearestNonCosmoothPointEdgeRecursive(query, vec, f_index, angle, node_first, guess, minDist);
+    nearestNonCosmoothPointRecursive(query, vec, f_index, angle, node_first, guess, minDist);
     
     double const diff = fabs(query[axis] - train[axis]);
     // if distance to current dividing axis to other node is `more` then `minDist` 
     // then we can discard this subtree 
     if(diff < minDist){
         NodePtr const& node_second = query[axis] < train[axis] ? node->right : node->left;
-        nearestNonCosmoothPointEdgeRecursive(query, vec, f_index, angle, node_second, guess, minDist);
+        nearestNonCosmoothPointRecursive(query, vec, f_index, angle, node_second, guess, minDist);
     }
 }
-
-long VoroCrust_KD_Tree_Boundary::nearestNonCosmoothPointFace(Vector3D const& query, Vector3D const& vec, std::size_t const f_index, double const angle1) const {
-    long guess = -1;
-    double minDist = std::numeric_limits<double>::max();
-
-    nearestNonCosmoothPointFaceRecursive(query, vec, f_index, angle1, root, guess, minDist);
-    
-    return guess;
-}
-
-
-//! CODEDUPLICATION: This is same exact as nearestNonCosmoothPointEdge right now!!!!
-void VoroCrust_KD_Tree_Boundary::nearestNonCosmoothPointFaceRecursive(Vector3D const& query, Vector3D const& vec, std::size_t const f_index, double const angle1, NodePtr const& node, long &guess, double &minDist) const {
-
-    if(node.get() == nullptr) return;
-
-    std::size_t const index = node->index;
-    Vector3D const& train = points[index];
-
-    if(f_index == feature_index[index]){
-        double const dist = distance(train, query);
-
-        if(dist < minDist){
-            Vector3D const& v_pq = query - train;
-            Vector3D const& v_sigma_q = vectors[node->index];
-            Vector3D const& v_tau_p = vec;
-            
-            //! FORDEBUGGING: should be in the if 
-            // double const angle_v_pq_v_sigma_q = CalcAngleAssumedSameOrientation(v_sigma_q, v_pq);
-            double const angle_v_sigma_q_v_tau_p = CalcAngle(v_sigma_q, v_tau_p);
-
-            // cosmoothness test
-            if(angle_v_sigma_q_v_tau_p > angle1){
-                minDist = dist;
-                guess = node->index;
-            }
-        }
-    }
-
-
-}
-
 
 long VoroCrust_KD_Tree_Boundary::nearestNeighborExcludingFeatures(Vector3D const& query, std::vector<std::size_t> const& to_exclude) const {
     long guess = -1;
