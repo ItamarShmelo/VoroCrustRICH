@@ -27,7 +27,7 @@ std::pair<double const, std::vector<double> const> EdgesRMPS::calculateTotalLeng
         total_len += edge_len;
     }    
 
-    return std::pair<double const, std::vector<double> const> (total_len, start_len);
+    return std::pair(total_len, start_len);
 }
 
 void EdgesRMPS::divideEligbleEdges(){
@@ -59,10 +59,7 @@ bool EdgesRMPS::checkIfPointIsDeeplyCovered(Vector3D const& p, Trees const& tree
     VoroCrust_KD_Tree_Ball const& edges_ball_tree = trees.ball_kd_edges;
 
     if(not edges_ball_tree.empty()){
-        std::size_t const nn_index = edges_ball_tree.nearestNeighbor(p);
-
-        Vector3D const& q = edges_ball_tree.points[nn_index];
-        double const r_q = edges_ball_tree.ball_radii[nn_index];
+        auto const& [q, r_q] = edges_ball_tree.getBallNearestNeighbor(p);
 
         // maximal radius for centers which balls can deeply cover p 
         double const r_max = (r_q + L_Lipschitz*distance(p, q)) / (1.0 - L_Lipschitz); 
@@ -70,8 +67,7 @@ bool EdgesRMPS::checkIfPointIsDeeplyCovered(Vector3D const& p, Trees const& tree
         auto const& suspects = edges_ball_tree.radiusSearch(p, r_max);
         
         for(auto const i : suspects){
-            Vector3D const& center = edges_ball_tree.points[i];
-            double const r = edges_ball_tree.ball_radii[i];
+            auto const& [center, r] = edges_ball_tree.getBall(i);
 
             double const dist = distance(p, center);
             if(dist <= r*(1.0 - alpha)){
@@ -79,10 +75,8 @@ bool EdgesRMPS::checkIfPointIsDeeplyCovered(Vector3D const& p, Trees const& tree
             }
         }
     }
-    std::size_t const nn_corner_index = corners_ball_tree.nearestNeighbor(p);
-
-    Vector3D const& center = corners_ball_tree.points[nn_corner_index];
-    double const radius = corners_ball_tree.ball_radii[nn_corner_index];
+    
+    auto const& [center, radius] = corners_ball_tree.getBallNearestNeighbor(p);
 
     return distance(p, center) <= radius*(1.0-alpha);
 }
@@ -105,7 +99,7 @@ std::tuple<bool, std::size_t const, Vector3D const> EdgesRMPS::sampleEligbleEdge
     double const factor = (sample - start_len[edge_index]) / abs(edge_vec);
     Vector3D const& point = edge[0] + factor*edge_vec;
 
-    return std::tuple<bool, std::size_t const, Vector3D const>(true, edge_index, point);
+    return std::tuple(true, edge_index, point);
 }
 
 void EdgesRMPS::discardEligbleEdgesContainedInCornerBalls(Trees const& trees){
@@ -118,24 +112,22 @@ void EdgesRMPS::discardEligbleEdgesContainedInCornerBalls(Trees const& trees){
         Crease const& edge_crease = plc->creases[edge.crease_index];
         
         if(edge_crease.front()->vertex1->isSharp){        
-            std::size_t const nn_index = corners_ball_tree.nearestNeighbor(edge_crease.front()->vertex1->vertex);
+            auto const& [center, r] = corners_ball_tree.getBallNearestNeighbor(edge_crease.front()->vertex1->vertex);
 
-            Vector3D const& center = corners_ball_tree.points[nn_index];
-            double const r = corners_ball_tree.ball_radii[nn_index]*(1. - alpha);
+            double const r_deeply = r*(1. - alpha);
 
-            if(distance(edge[0], center) <= r && distance(edge[1], center) <= r){
+            if(distance(edge[0], center) <= r_deeply && distance(edge[1], center) <= r_deeply){
                 isDeleted[i] = true;
                 continue;
             }
         }
         
         if(edge_crease.back()->vertex2->isSharp){        
-            std::size_t const nn_index = corners_ball_tree.nearestNeighbor(edge_crease.back()->vertex2->vertex);
+            auto const& [center, r] = corners_ball_tree.getBallNearestNeighbor(edge_crease.back()->vertex2->vertex);
 
-            Vector3D const& center = corners_ball_tree.points[nn_index];
-            double const r = corners_ball_tree.ball_radii[nn_index]*(1. - alpha);
+            double const r_deeply = r*(1. - alpha);
 
-            if(distance(edge[0], center) <= r && distance(edge[1], center) <= r){
+            if(distance(edge[0], center) <= r_deeply && distance(edge[1], center) <= r_deeply){
                 isDeleted[i] = true;
             }
         }
@@ -200,17 +192,12 @@ double EdgesRMPS::calculateSmoothnessLimitation(Vector3D const& p, EligbleEdge c
     }
 
     return std::min({dist_nearest_corner, dist_non_cosmooth_edge, dist_non_cosmooth_face});
-
-    
-
-    return dist_non_cosmooth_edge;
 }
 
 bool EdgesRMPS::isEligbleEdgeDeeplyCoveredInEdgeBall(EligbleEdge const& edge, Trees const& trees, std::size_t const ball_index) const {
-    VoroCrust_KD_Tree_Ball const& edges_ball_tree = trees.ball_kd_edges;
+    auto const& [center, radius] = trees.ball_kd_edges.getBall(ball_index);
 
-    Vector3D const& center = edges_ball_tree.points[ball_index];
-    double const r_deeply = edges_ball_tree.ball_radii[ball_index] * (1.0 - alpha);
+    double const r_deeply = radius * (1.0 - alpha);
 
     // if edge is deeply covered return true
     return (distance(center, edge[0]) <= r_deeply) && (distance(center, edge[1]) <= r_deeply);
@@ -229,14 +216,12 @@ bool EdgesRMPS::discardEligbleEdges(Trees const& trees){
         
         //! MIGHTBEUNECESSARY: this might be unecessary because I can take the nearest neighbor to one of the vertices
         // of the edge and use the r_max test (see FacesRMPS)
-        std::size_t const i_nn_edge_ball = trees.ball_kd_edges.nearestNeighbor(edge.edge[0]);
-        Vector3D const& nn_edge_ball_center = trees.ball_kd_edges.points[i_nn_edge_ball];
-        double const nn_edge_ball_radius = trees.ball_kd_edges.ball_radii[i_nn_edge_ball];
+        auto const& [nn_edge_ball_center, nn_edge_ball_radius] = trees.ball_kd_edges.getBallNearestNeighbor(edge.edge[0]);
 
         double const r_max = (nn_edge_ball_radius + L_Lipschitz*distance(edge.edge[0], nn_edge_ball_center)) / (1.0 - L_Lipschitz); 
 
         auto const& balls_to_check_edges = trees.ball_kd_edges.radiusSearch(edge.edge[0], r_max);
-
+        
         bool discard = false;
         for(auto const ball_index : balls_to_check_edges){
             //! MIGHTBEUNECESSARY: all relevent balls should already be in the same crease
@@ -283,10 +268,7 @@ double EdgesRMPS::calculateInitialRadius(Vector3D const& point, std::size_t cons
     }
 
     // limitation from Lipschitzness
-    std::size_t const nn_edge_ball = edges_ball_tree.nearestNeighbor(point);
-    Vector3D const& q = edges_ball_tree.points[nn_edge_ball];
-    double const r_q = edges_ball_tree.ball_radii[nn_edge_ball];
-
+    auto const& [q, r_q] = edges_ball_tree.getBallNearestNeighbor(point);
     double const dist = distance(point, q);
 
     return std::min({maxRadius, 0.49*r_smooth, r_q + L_Lipschitz*dist});
@@ -339,15 +321,7 @@ bool EdgesRMPS::doSampling(VoroCrust_KD_Tree_Ball &edges_ball_tree, Trees const&
         
         double radius = calculateInitialRadius(p, edge_index, trees);
 
-        //! REDUNDENT: this is done in `calculateInitialRadius` by calculateSmoothnessLimitation
-        // limitation from proximity to a sharp corner 
-        auto nn_corner = trees.ball_kd_vertices.nearestNeighbor(p);
-        Vector3D const& center_corner = trees.ball_kd_vertices.points[nn_corner];
-
-        radius = std::min({radius, 0.49*distance(p, center_corner)});
-
         auto const& centers_in_new_ball_indices = edges_ball_tree.radiusSearch(p, radius);
-
         if(not centers_in_new_ball_indices.empty()){
             if(uni01_gen() < rejection_probability) continue;
 
