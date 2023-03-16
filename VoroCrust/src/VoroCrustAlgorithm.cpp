@@ -284,82 +284,27 @@ std::pair<std::vector<Vector3D>, std::vector<Vector3D>> VoroCrustAlgorithm::calc
             }
 
             //! CODEDUPLICATION:
-            bool in_boundary_ball = false;
-            auto const& suspects_in = in_seeds_tree.kNearestNeighbors(p, 8);
-            for(auto const index_s : suspects_in){
-                auto const& p_s = in_seeds_tree.points[index_s];
-                auto const r_s = in_seeds_tree.ball_radii[index_s];
-
-                if(distance(p_s, p) < r_s){
-                    in_boundary_ball = true;
-                    break;                    
-                }
-            }
-
-            auto const& suspects_out = out_seeds_tree.kNearestNeighbors(p, 8);
-            for(auto const index_s : suspects_out){
-                auto const& p_s = out_seeds_tree.points[index_s];
-                auto const r_s = out_seeds_tree.ball_radii[index_s];
-
-                if(distance(p_s, p) < r_s){
-                    in_boundary_ball = true;
-                    break;                    
-                }
-            }
-
-            {
-                auto const& ball_tree = trees.ball_kd_vertices;
-                auto const index_s = ball_tree.nearestNeighbor(p);
-                auto const& p_b = ball_tree.points[index_s];
-                auto const r_b = ball_tree.ball_radii[index_s];
-
-                if(distance(p_b, p) < r_b){
-                    in_boundary_ball = true;
-                }
-            }
-            
-            {
-                auto const& ball_tree = trees.ball_kd_edges;
-                auto const index_s = ball_tree.nearestNeighbor(p);
-                auto const& p_b = ball_tree.points[index_s];
-                auto const r_b = ball_tree.ball_radii[index_s];
-
-                if(distance(p_b, p) < r_b){
-                    in_boundary_ball = true;
-                }
-            }
-
-            {
-                auto const& ball_tree = trees.ball_kd_faces;
-                auto const index_s = ball_tree.nearestNeighbor(p);
-                auto const& p_b = ball_tree.points[index_s];
-                auto const r_b = ball_tree.ball_radii[index_s];
-
-                if(distance(p_b, p) < r_b){
-                    in_boundary_ball = true;
-                }
-            }
+            bool in_boundary_ball = in_seeds_tree.isContainedInNearestBall(p)           || 
+                                    out_seeds_tree.isContainedInNearestBall(p)          || 
+                                    trees.ball_kd_vertices.isContainedInNearestBall(p)  || 
+                                    trees.ball_kd_edges.isContainedInNearestBall(p)     || 
+                                    trees.ball_kd_faces.isContainedInNearestBall(p);
 
             if(in_boundary_ball){
                 miss_counter++;
                 continue;
             }
             
-            auto const index_s = in_seeds_tree.nearestNeighbor(p);
-            auto const& p_s = in_seeds_tree.points[index_s];
-            auto const r_s = in_seeds_tree.ball_radii[index_s];
+            auto const& [p_s, r_s] = in_seeds_tree.getBallNearestNeighbor(p);
             
             double r_volume = std::numeric_limits<double>::max();
             if(not volume_seeds_tree.points.empty()){
-                auto index_nearest = volume_seeds_tree.nearestNeighbor(p);
-                auto const& p_nearest = volume_seeds_tree.points[index_nearest];
-                auto const r_nearest = volume_seeds_tree.ball_radii[index_nearest];
-
-                if(distance(p_nearest, p) < r_nearest){
+                if(volume_seeds_tree.isContainedInNearestBall(p)){
                     miss_counter++;
                     continue;
                 }
 
+                auto const& [p_nearest, r_nearest] = volume_seeds_tree.getBallNearestNeighbor(p);
                 r_volume = r_nearest + L_Lipschitz*distance(p, p_nearest);
             }
             
