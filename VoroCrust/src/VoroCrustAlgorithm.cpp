@@ -263,16 +263,17 @@ std::pair<std::vector<Vector3D>, std::vector<Vector3D>> VoroCrustAlgorithm::calc
 
     auto const& [in_seeds_boundary, out_seeds_boundary] = determineIfSeedsAreInsideOrOutside(seeds);
     auto const& in_seeds_tree = makeSeedBallTree(in_seeds_boundary);
+    auto const& out_seeds_tree = makeSeedBallTree(out_seeds_boundary);
     
     VoroCrust_KD_Tree_Ball volume_seeds_tree;
 
     // lightweight dart-throwing
     boost::random::variate_generator uni01_gen(boost::mt19937(std::time(nullptr)), boost::random::uniform_01<>());
     std::size_t num_of_samples = 0;
-    double eps = 10*std::numeric_limits<double>::epsilon();
+    constexpr double eps = 10*std::numeric_limits<double>::epsilon();
     do {
         std::size_t miss_counter = 0;
-        while(miss_counter < 100){
+        while(miss_counter < 1000){
             Vector3D const p(ll_x + eps + (len_x - 2*eps)*uni01_gen(), 
                              ll_y + eps + (len_y - 2*eps)*uni01_gen(), 
                              ll_z + eps + (len_z - 2*eps)*uni01_gen());
@@ -283,16 +284,70 @@ std::pair<std::vector<Vector3D>, std::vector<Vector3D>> VoroCrustAlgorithm::calc
             }
 
             //! CODEDUPLICATION:
-        
-            auto index_s = in_seeds_tree.nearestNeighbor(p);
-            auto const& p_s = in_seeds_tree.points[index_s];
-            auto const r_s = in_seeds_tree.ball_radii[index_s];
+            bool in_boundary_ball = false;
+            auto const& suspects_in = in_seeds_tree.kNearestNeighbors(p, 8);
+            for(auto const index_s : suspects_in){
+                auto const& p_s = in_seeds_tree.points[index_s];
+                auto const r_s = in_seeds_tree.ball_radii[index_s];
 
-            if(distance(p_s, p) < r_s){
+                if(distance(p_s, p) < r_s){
+                    in_boundary_ball = true;
+                    break;                    
+                }
+            }
+
+            auto const& suspects_out = out_seeds_tree.kNearestNeighbors(p, 8);
+            for(auto const index_s : suspects_out){
+                auto const& p_s = out_seeds_tree.points[index_s];
+                auto const r_s = out_seeds_tree.ball_radii[index_s];
+
+                if(distance(p_s, p) < r_s){
+                    in_boundary_ball = true;
+                    break;                    
+                }
+            }
+
+            {
+                auto const& ball_tree = trees.ball_kd_vertices;
+                auto const index_s = ball_tree.nearestNeighbor(p);
+                auto const& p_b = ball_tree.points[index_s];
+                auto const r_b = ball_tree.ball_radii[index_s];
+
+                if(distance(p_b, p) < r_b){
+                    in_boundary_ball = true;
+                }
+            }
+            
+            {
+                auto const& ball_tree = trees.ball_kd_edges;
+                auto const index_s = ball_tree.nearestNeighbor(p);
+                auto const& p_b = ball_tree.points[index_s];
+                auto const r_b = ball_tree.ball_radii[index_s];
+
+                if(distance(p_b, p) < r_b){
+                    in_boundary_ball = true;
+                }
+            }
+
+            {
+                auto const& ball_tree = trees.ball_kd_faces;
+                auto const index_s = ball_tree.nearestNeighbor(p);
+                auto const& p_b = ball_tree.points[index_s];
+                auto const r_b = ball_tree.ball_radii[index_s];
+
+                if(distance(p_b, p) < r_b){
+                    in_boundary_ball = true;
+                }
+            }
+
+            if(in_boundary_ball){
                 miss_counter++;
                 continue;
             }
             
+            auto const index_s = in_seeds_tree.nearestNeighbor(p);
+            auto const& p_s = in_seeds_tree.points[index_s];
+            auto const r_s = in_seeds_tree.ball_radii[index_s];
             
             double r_volume = std::numeric_limits<double>::max();
             if(not volume_seeds_tree.points.empty()){
@@ -328,7 +383,7 @@ std::pair<std::vector<Vector3D>, std::vector<Vector3D>> VoroCrustAlgorithm::calc
     std::vector<Vector3D> out_seeds;
     out_seeds.reserve(out_seeds_boundary.size()+100);
 
-    for(auto const out_seed : out_seeds_boundary) {
+    for(auto const& out_seed : out_seeds_boundary) {
         out_seeds.push_back(out_seed.p);
     }
 
