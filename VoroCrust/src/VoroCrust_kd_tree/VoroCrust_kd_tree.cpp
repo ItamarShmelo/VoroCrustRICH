@@ -383,18 +383,18 @@ void VoroCrust_KD_Tree_Boundary::nearestNonCosmoothPointEdgeRecursive(Vector3D c
     }
 }
 
-int VoroCrust_KD_Tree_Boundary::nearestNonCosmoothPointFace(Vector3D const& query, Vector3D const& vec, std::size_t const f_index, double const angle1, double const angle2) const {
+int VoroCrust_KD_Tree_Boundary::nearestNonCosmoothPointFace(Vector3D const& query, Vector3D const& vec, std::size_t const f_index, double const angle1) const {
     int guess = -1;
     double minDist = std::numeric_limits<double>::max();
 
-    nearestNonCosmoothPointFaceRecursive(query, vec, f_index, angle1, angle2, root, guess, minDist);
+    nearestNonCosmoothPointFaceRecursive(query, vec, f_index, angle1, root, guess, minDist);
     
     return guess;
 }
 
 
 //! CODEDUPLICATION: This is same exact as nearestNonCosmoothPointEdge right now!!!!
-void VoroCrust_KD_Tree_Boundary::nearestNonCosmoothPointFaceRecursive(Vector3D const& query, Vector3D const& vec, std::size_t const f_index, double const angle1, double const angle2, NodePtr const& node, int &guess, double &minDist) const {
+void VoroCrust_KD_Tree_Boundary::nearestNonCosmoothPointFaceRecursive(Vector3D const& query, Vector3D const& vec, std::size_t const f_index, double const angle1, NodePtr const& node, int &guess, double &minDist) const {
 
     if(node.get() == nullptr) return;
 

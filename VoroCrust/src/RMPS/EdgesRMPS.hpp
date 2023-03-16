@@ -60,7 +60,7 @@ class EdgesRMPS {
         void divideEligbleEdges();
 
         //! \brief checks if `p` is deeply covered by any ball in edges_ball_tree
-        bool checkIfPointIsDeeplyCovered(Vector3D const& p, std::size_t const edge_index, Trees const& trees) const;
+        bool checkIfPointIsDeeplyCovered(Vector3D const& p, Trees const& trees) const;
 
         /*! \brief sample the eligble edges
             \return <success, edge_index, sample> where success is a bool flag and is false if sampling failed

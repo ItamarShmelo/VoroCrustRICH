@@ -113,7 +113,7 @@ double CornersRMPS::calculateSmoothnessLimitation(EligbleCorner const& corner, T
         patches_to_exclude.push_back(patch_index); // might have multiple times the same patch
 
 
-        long const nn_noncosmooth_on_face_index = faces_boundary_tree.nearestNonCosmoothPointFace(corner->vertex, face->calcNormal(), patch_index, sharpTheta, M_PI_2-sharpTheta);
+        long const nn_noncosmooth_on_face_index = faces_boundary_tree.nearestNonCosmoothPointFace(corner->vertex, face->calcNormal(), patch_index, sharpTheta);
 
         // no noncosmooth point on the patch (very likely)
         if(nn_noncosmooth_on_face_index < 0) continue;

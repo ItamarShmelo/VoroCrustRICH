@@ -23,7 +23,7 @@ struct BallInfo {
 
     BallInfo(std::size_t const index_, Dim const dim_) : index(index_), dim(dim_) {}
 
-    friend bool operator==(BallInfo const& lhs, BallInfo const& rhs);
+    friend bool operator==(BallInfo const& lhs, BallInfo const& rhs) { return (lhs.index == rhs.index) && (lhs.dim == rhs.dim); }
 };
 
 using Ball = std::pair<Vector3D, double const>; // center, radius
@@ -67,11 +67,11 @@ class SliverDriver {
 
         std::vector<Triplet> formTripletsOfOverlappingBalls(std::vector<BallInfo> const& overlapping_balls, Trees const& trees) const;
 
-        void dealWithHalfCoveredSeeds(InfoQuartet const& balls_info, BallQuartet const& balls, Trees const& trees);
+        void dealWithHalfCoveredSeeds(InfoQuartet const& balls_info, BallQuartet const& balls);
 
         Ball getBall(BallInfo const& ball_info, Trees const& trees) const;
 
-        void setRadiusOfBall(double const r_new, BallInfo const& ball_info, Trees const& trees);
+        void setRadiusOfBall(double const r_new, BallInfo const& ball_info);
 
 };
 

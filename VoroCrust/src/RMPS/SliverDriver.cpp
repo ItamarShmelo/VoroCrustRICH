@@ -150,11 +150,11 @@ void SliverDriver::dealWithTriplets(BallInfo const& ball_info_1, Triplet const& 
         InfoQuartet info_quartet = {ball_info_1, ball_info_2, ball_info_3, ball_info_4};
         BallQuartet ball_quartet = {ball_1, ball_2, ball_3, ball_4};
 
-        if(half_covered_seed) dealWithHalfCoveredSeeds(info_quartet, ball_quartet, trees);
+        if(half_covered_seed) dealWithHalfCoveredSeeds(info_quartet, ball_quartet);
     }
 }
 
-void SliverDriver::dealWithHalfCoveredSeeds(InfoQuartet const& balls_info, BallQuartet const& balls, Trees const& trees){
+void SliverDriver::dealWithHalfCoveredSeeds(InfoQuartet const& balls_info, BallQuartet const& balls){
     int least_shrinkage = -1;
     double r_new = -1.0;
 
@@ -196,15 +196,10 @@ void SliverDriver::dealWithHalfCoveredSeeds(InfoQuartet const& balls_info, BallQ
         }
     }
 
-    if(least_shrinkage>=0) setRadiusOfBall(r_new, balls_info[least_shrinkage], trees);
+    if(least_shrinkage>=0) setRadiusOfBall(r_new, balls_info[least_shrinkage]);
 }
 
-
-bool operator==(BallInfo const& lhs, BallInfo const& rhs) {
-    return (lhs.index == rhs.index) && (lhs.dim == rhs.dim);
-}
-
-void SliverDriver::setRadiusOfBall(double const r_new, BallInfo const& ball_info, Trees const& trees) {
+void SliverDriver::setRadiusOfBall(double const r_new, BallInfo const& ball_info) {
     if(ball_info.dim == Dim::CORNER){
         if(r_new < r_new_corner_balls[ball_info.index]) number_of_slivers_eliminated++;
         r_new_corner_balls[ball_info.index] = std::min(r_new, r_new_corner_balls[ball_info.index]);

@@ -54,7 +54,7 @@ void EdgesRMPS::divideEligbleEdges(){
     isDeleted = std::vector<bool>(eligble_edges.size(), false);
 }
 
-bool EdgesRMPS::checkIfPointIsDeeplyCovered(Vector3D const& p, std::size_t const edge_index, Trees const& trees) const {
+bool EdgesRMPS::checkIfPointIsDeeplyCovered(Vector3D const& p, Trees const& trees) const {
     VoroCrust_KD_Tree_Ball const& corners_ball_tree = trees.ball_kd_vertices;
     VoroCrust_KD_Tree_Ball const& edges_ball_tree = trees.ball_kd_edges;
 
@@ -182,7 +182,7 @@ double EdgesRMPS::calculateSmoothnessLimitation(Vector3D const& p, EligbleEdge c
         std::size_t const patch_index = face->patch_index;
         patches_to_exclude.push_back(patch_index);
 
-        long const nn_noncosmooth_on_face_index = faces_boundary_tree.nearestNonCosmoothPointFace(p, face->calcNormal(), patch_index, sharpTheta, M_PI_2-sharpTheta);
+        long const nn_noncosmooth_on_face_index = faces_boundary_tree.nearestNonCosmoothPointFace(p, face->calcNormal(), patch_index, sharpTheta);
 
         if(nn_noncosmooth_on_face_index < 0) continue;
 
@@ -329,7 +329,7 @@ bool EdgesRMPS::doSampling(VoroCrust_KD_Tree_Ball &edges_ball_tree, Trees const&
             continue;
         }
 
-        if(checkIfPointIsDeeplyCovered(p, edge_index, trees)){
+        if(checkIfPointIsDeeplyCovered(p, trees)){
             miss_counter += 1;
             continue;
         }
