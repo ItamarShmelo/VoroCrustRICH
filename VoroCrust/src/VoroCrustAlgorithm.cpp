@@ -233,11 +233,11 @@ std::pair<std::vector<Vector3D>, std::vector<Vector3D>> VoroCrustAlgorithm::calc
         }
     }
 
-    for(auto const out_seed : out_seeds_boundary) {
+    for(auto const& out_seed : out_seeds_boundary) {
         out_seeds.push_back(out_seed.p);
     }
 
-    for(auto const in_seed : in_seeds_boundary){
+    for(auto const& in_seed : in_seeds_boundary){
         in_seeds.push_back(in_seed.p);
     }
 
