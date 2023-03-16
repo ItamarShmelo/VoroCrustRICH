@@ -54,11 +54,10 @@ double CornersRMPS::calculateInitialRadius(EligbleCorner const& corner, Trees co
     
     if(not corner_ball_tree.empty()){
         // find nearest ball center
-        auto const nearestBall_index = corner_ball_tree.nearestNeighbor(corner->vertex);
+        auto const& [nearestBallCenter, neareset_r] = corner_ball_tree.getBallNearestNeighbor(corner->vertex);
 
-        Vector3D const& nearestBallCenter = corner_ball_tree.points[nearestBall_index];
-        dist_q = distance(corner->vertex, nearestBallCenter); //||p-q||
-        r_q = corner_ball_tree.ball_radii[nearestBall_index];
+        r_q = neareset_r;
+        dist_q = distance(corner->vertex, nearestBallCenter); // ||p-q||
     }
     
     double const dist_q_prime = calculateSmoothnessLimitation(corner, trees);
