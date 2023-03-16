@@ -12,7 +12,7 @@
 
 std::vector<Seed> unsorted_unique(std::vector<Seed> const& vec, double const tol);
 std::vector<Vector3D> read_vertices(std::string filename);
-std::vector<std::vector<unsigned int>> read_faces(std::string filename);
+std::vector<std::vector<std::size_t>> read_faces(std::string filename);
 void write_seeds(std::string filename, std::vector<Seed> const& points);
 void write_points(std::string filename, std::vector<Vector3D> const& points);
 std::vector<Seed> load_seeds(std::string filename);
@@ -340,7 +340,7 @@ std::vector<Vector3D> read_vertices(std::string filename){
     std::vector<Vector3D> vertices_from_file = std::vector<Vector3D>(number_of_lines, Vector3D());
 
     double x, y, z;
-    unsigned int i = 0;
+    std::size_t i = 0;
     while (myfile >> x)
     {   
         myfile >> y;
@@ -353,7 +353,7 @@ std::vector<Vector3D> read_vertices(std::string filename){
     return vertices_from_file;
 }
 
-std::vector<std::vector<unsigned int>> read_faces(std::string filename){
+std::vector<std::vector<std::size_t>> read_faces(std::string filename){
     std::fstream myfile(filename, std::ios_base::in);
 
     auto number_of_lines = std::count(std::istreambuf_iterator<char>(myfile), std::istreambuf_iterator<char>(), '\n');
@@ -362,19 +362,19 @@ std::vector<std::vector<unsigned int>> read_faces(std::string filename){
     myfile.clear();
     myfile.seekg(0);
 
-    std::vector<std::vector<unsigned int>> faces_from_file = std::vector<std::vector<unsigned int>>(number_of_lines, std::vector<unsigned int>({0, 0, 0}));
+    std::vector<std::vector<std::size_t>> faces_from_file = std::vector<std::vector<std::size_t>>(number_of_lines, std::vector<std::size_t>({0, 0, 0}));
     
     double v1, v2, v3;
     
-    unsigned int i=0;
+    std::size_t i=0;
     while(myfile >> v1){
 
         myfile >> v2;
         myfile >> v3;
 
-        faces_from_file[i][0]=static_cast<unsigned int>(v1);
-        faces_from_file[i][1]=static_cast<unsigned int>(v2);
-        faces_from_file[i][2]=static_cast<unsigned int>(v3);
+        faces_from_file[i][0]=static_cast<std::size_t>(v1);
+        faces_from_file[i][1]=static_cast<std::size_t>(v2);
+        faces_from_file[i][2]=static_cast<std::size_t>(v3);
         i++;
     }
 
