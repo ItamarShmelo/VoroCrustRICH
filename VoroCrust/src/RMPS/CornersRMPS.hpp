@@ -5,6 +5,7 @@
 #include "../../../source/3D/GeometryCommon/Vector3D.hpp"
 #include "../trees.hpp"
 #include "../VoroCrust_kd_tree/VoroCrust_kd_tree.hpp"
+#include <list>
 
 using EligbleCorner = Vertex;
 
@@ -14,7 +15,7 @@ class CornersRMPS {
         double const L_Lipschitz;
         double const sharpTheta;
         std::shared_ptr<PL_Complex const> plc;
-        std::vector<EligbleCorner> eligble_corners; // should be private
+        std::list<EligbleCorner> eligble_corners; // should be private
 
         CornersRMPS(double const maxRadius_, double const L_Lipschitz_, double const sharpTheta, std::shared_ptr<PL_Complex> const& plc_);
         ~CornersRMPS() = default;

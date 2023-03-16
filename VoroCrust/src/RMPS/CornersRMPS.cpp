@@ -35,9 +35,13 @@ EligbleCorner CornersRMPS::newSample(){
 
     // sample a random index;
     std::size_t const index = rand_gen();
-    EligbleCorner sample = eligble_corners[index];
-
-    eligble_corners.erase(eligble_corners.begin() + index);
+    
+    auto it = eligble_corners.cbegin();
+    
+    for(std::size_t i=0; i < index; ++it, ++i);
+    
+    EligbleCorner sample = *it;
+    eligble_corners.erase(it);
 
     return sample;
 }
