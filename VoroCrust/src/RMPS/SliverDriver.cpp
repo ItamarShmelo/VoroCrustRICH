@@ -361,7 +361,7 @@ std::vector<Seed> SliverDriver::getSeeds(Trees const& trees) const {
 
             }
             
-            double const seed_radius = (getR(ball_1) + getR(ball_2) + getR(ball_3)) / 3.0;
+            double const seed_radius = std::max({getR(ball_1), getR(ball_2), getR(ball_3)});
 
             if(not is_seed_1_covered) seeds.push_back(Seed(seed_1, seed_radius));
             if(not is_seed_2_covered) seeds.push_back(Seed(seed_2, seed_radius));
