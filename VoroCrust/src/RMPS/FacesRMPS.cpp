@@ -101,7 +101,7 @@ void FacesRMPS::divideEligbleFaces() {
 bool FacesRMPS::checkIfPointIsDeeplyCovered(Vector3D const& p, Trees const& trees) const {
     VoroCrust_KD_Tree_Ball const& faces_ball_tree = trees.ball_kd_faces;
 
-    if(not faces_ball_tree.points.empty()){
+    if(not faces_ball_tree.empty()){
         std::size_t const nn_index = faces_ball_tree.nearestNeighbor(p);
         
         Vector3D const& q = faces_ball_tree.points[nn_index];
@@ -366,7 +366,7 @@ double FacesRMPS::calculateInitialRadius(Vector3D const& p, std::size_t const fa
     //limitation from cosmoothness
     double const r_smooth = calculateSmoothnessLimitation(p, face, trees);
 
-    if(faces_ball_tree.points.empty()){
+    if(faces_ball_tree.empty()){
         return std::min(maxRadius, 0.49*r_smooth);
     }
 

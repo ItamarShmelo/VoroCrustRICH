@@ -72,6 +72,8 @@ class VoroCrust_KD_Tree {
         //! \brief checks if two trees are equal
         bool operator==(VoroCrust_KD_Tree const& tree) const;
 
+        bool empty() const { return points.empty(); }
+
     private:
         //! \brief builds the tree recursively
         NodePtr buildRecursive(int *indices, int npoints, int depth);

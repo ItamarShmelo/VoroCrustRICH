@@ -58,7 +58,7 @@ bool EdgesRMPS::checkIfPointIsDeeplyCovered(Vector3D const& p, std::size_t const
     VoroCrust_KD_Tree_Ball const& corners_ball_tree = trees.ball_kd_vertices;
     VoroCrust_KD_Tree_Ball const& edges_ball_tree = trees.ball_kd_edges;
 
-    if(not edges_ball_tree.points.empty()){
+    if(not edges_ball_tree.empty()){
         std::size_t const nn_index = edges_ball_tree.nearestNeighbor(p);
 
         Vector3D const& q = edges_ball_tree.points[nn_index];
@@ -278,7 +278,7 @@ double EdgesRMPS::calculateInitialRadius(Vector3D const& point, std::size_t cons
     // limitation from cosmoothness
     double const r_smooth = calculateSmoothnessLimitation(point, edge, trees);
 
-    if(edges_ball_tree.points.empty()){
+    if(edges_ball_tree.empty()){
         return std::min(maxRadius, 0.49*r_smooth);
     }
 

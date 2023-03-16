@@ -298,7 +298,7 @@ std::pair<std::vector<Vector3D>, std::vector<Vector3D>> VoroCrustAlgorithm::calc
             auto const& [p_s, r_s] = in_seeds_tree.getBallNearestNeighbor(p);
             
             double r_volume = std::numeric_limits<double>::max();
-            if(not volume_seeds_tree.points.empty()){
+            if(not volume_seeds_tree.empty()){
                 if(volume_seeds_tree.isContainedInNearestBall(p)){
                     miss_counter++;
                     continue;

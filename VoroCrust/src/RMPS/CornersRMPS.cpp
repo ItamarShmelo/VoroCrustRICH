@@ -48,7 +48,7 @@ double CornersRMPS::calculateInitialRadius(EligbleCorner const& corner, Trees co
     double r_q = std::numeric_limits<double>::max();
     double dist_q = 0.0;
     
-    if(not corner_ball_tree.points.empty()){
+    if(not corner_ball_tree.empty()){
         // find nearest ball center
         int nearestBall_index = corner_ball_tree.nearestNeighbor(corner->vertex);
 
