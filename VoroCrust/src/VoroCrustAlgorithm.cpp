@@ -186,20 +186,48 @@ std::pair<std::vector<Vector3D>, std::vector<Vector3D>> VoroCrustAlgorithm::calc
     out_seeds.reserve(out_seeds_boundary.size()+100);
 
     auto const& in_seeds_tree = makeSeedBallTree(in_seeds_boundary);
+    auto const& out_seeds_tree = makeSeedBallTree(out_seeds_boundary);
+    
+    //! EPSILONTICA:
     Vector3D const nudge(1e-5, 1e-5, 1e-5);
+
+    for(std::size_t i=1; i < num_points_x; ++i){
+        for(std::size_t j=1; j < num_points_y; ++j){
+            for(std::size_t k=1; k < num_points_z; ++k){
                 Vector3D const seed(ll_x + step_x*i, ll_y + step_y*j, ll_z + step_z*k);
 
                 if(plc->determineLocation(seed+nudge) == PL_Complex::Location::IN && plc->determineLocation(seed-nudge) == PL_Complex::Location::IN){
                     // if seed is inside check that it is not contained in a boundary seed
-                    bool add_seed = true;
-                    auto index = in_seeds_tree.nearestNeighbor(seed);
+                    auto add_point = true;
+                    {
+                        auto const& suspects = in_seeds_tree.kNearestNeighbors(seed, 8);
 
-                    auto const& p_in_seed = in_seeds_tree.points[index];
-                    auto const r_in_seed = in_seeds_tree.ball_radii[index];
+                        for(auto const index : suspects){
+                            auto const& p_in_seed = in_seeds_tree.points[index];
+                            auto const r_in_seed = in_seeds_tree.ball_radii[index];
 
-                    if(distance(p_in_seed, seed) > r_in_seed){
-                        if(add_seed) in_seeds.push_back(seed);
+                            if(distance(p_in_seed, seed) < r_in_seed){
+                                add_point = false;
+                                break;
+                            }
+                        }
                     }
+                    //! CODEDUPLICATION:
+                    if(add_point){
+                        auto const& suspects = out_seeds_tree.kNearestNeighbors(seed, 8);
+
+                        for(auto const index : suspects){
+                            auto const& p_out_seed = out_seeds_tree.points[index];
+                            auto const r_out_seed = out_seeds_tree.ball_radii[index];
+
+                            if(distance(p_out_seed, seed) < r_out_seed){
+                                add_point = false;
+                                break;
+                            }
+                        }
+                    }
+
+                    if(add_point) in_seeds.push_back(seed);
                 } 
             }
         }
