@@ -388,9 +388,9 @@ void VoroCrust_KD_Tree_Boundary::nearestNonCosmoothPointRecursive(Vector3D const
     }
 }
 
-long VoroCrust_KD_Tree_Boundary::nearestNeighborExcludingFeatures(Vector3D const& query, std::vector<std::size_t> const& to_exclude) const {
+long VoroCrust_KD_Tree_Boundary::nearestNeighborExcludingFeatures(Vector3D const& query, std::vector<std::size_t> const& to_exclude, double const initial_min_dist) const {
     long guess = -1;
-    double minDist = std::numeric_limits<double>::max();
+    double minDist = initial_min_dist;
 
     nearestNeighborExcludingFeaturesRecursive(query, to_exclude, root, guess, minDist);
 

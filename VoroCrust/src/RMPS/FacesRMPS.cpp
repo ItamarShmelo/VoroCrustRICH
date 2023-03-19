@@ -289,7 +289,9 @@ double FacesRMPS::calculateSmoothnessLimitation(Vector3D const& p, EligbleFace c
         dist_non_cosmooth_face = std::min(dist_non_cosmooth_face, distance(p, nn_non_cosmooth_p));
     }
 
-    long const nn_different_patch = faces_boundary_tree.nearestNeighborExcludingFeatures(p, {face_sampled.patch_index});
+    initial_min_dist = std::min(initial_min_dist, dist_non_cosmooth_face);
+
+    long const nn_different_patch = faces_boundary_tree.nearestNeighborExcludingFeatures(p, {face_sampled.patch_index}, initial_min_dist);
 
     if(nn_different_patch >= 0){
         Vector3D const& nn_different_patch_p = faces_boundary_tree.points[nn_different_patch];

@@ -158,7 +158,9 @@ double EdgesRMPS::calculateSmoothnessLimitation(Vector3D const& p, EligbleEdge c
         dist_non_cosmooth_edge = distance(p, nn_non_cosmooth_p);
     }
 
-    long const nn_different_crease = edges_boundary_tree.nearestNeighborExcludingFeatures(p, {edge_sampled.crease_index});
+    initial_min_dist = std::min(initial_min_dist, dist_non_cosmooth_edge);
+
+    long const nn_different_crease = edges_boundary_tree.nearestNeighborExcludingFeatures(p, {edge_sampled.crease_index}, initial_min_dist);
 
     // found any nearest neighbors
     if(nn_different_crease >= 0){
@@ -191,7 +193,10 @@ double EdgesRMPS::calculateSmoothnessLimitation(Vector3D const& p, EligbleEdge c
         
         dist_non_cosmooth_face = std::min(dist_non_cosmooth_face, distance(p, nn_non_cosmooth_p));
     }
-    long const nn_different_patch = faces_boundary_tree.nearestNeighborExcludingFeatures(p, patches_to_exclude);
+
+    dist_non_cosmooth_edge = std::min(dist_non_cosmooth_edge, dist_non_cosmooth_face);
+
+    long const nn_different_patch = faces_boundary_tree.nearestNeighborExcludingFeatures(p, patches_to_exclude, initial_min_dist);
 
     if(nn_different_patch >= 0){
         Vector3D const& nn_different_patch_p = faces_boundary_tree.points[nn_different_patch];
