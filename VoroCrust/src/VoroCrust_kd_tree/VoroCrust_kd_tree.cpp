@@ -62,12 +62,12 @@ std::size_t VoroCrust_KD_Tree::nearestNeighbor(Vector3D const& query) const {
     std::size_t guess = 0;
     double minDist = std::numeric_limits<double>::max();
 
-    nearestNeighborRecursive(query, root, &guess, &minDist);
+    nearestNeighborRecursive(query, root, guess, minDist);
 
     return guess;
 }
 
-void VoroCrust_KD_Tree::nearestNeighborRecursive(Vector3D const& query, NodePtr const& node, std::size_t *guess, double *minDist) const {
+void VoroCrust_KD_Tree::nearestNeighborRecursive(Vector3D const& query, NodePtr const& node, std::size_t &guess, double &minDist) const {
     if(node.get() == nullptr) return;
 
     Vector3D const& train = points[node->index];
@@ -75,9 +75,9 @@ void VoroCrust_KD_Tree::nearestNeighborRecursive(Vector3D const& query, NodePtr 
     double const dist = distance(train, query);
 
     // if distance to node is less the current minimal distance updae `minDist` and `guess`
-    if(dist < *minDist){
-        *minDist = dist;
-        *guess = node->index;
+    if(dist < minDist){
+        minDist = dist;
+        guess = node->index;
     }
 
     std::size_t const axis = node->axis;
@@ -89,7 +89,7 @@ void VoroCrust_KD_Tree::nearestNeighborRecursive(Vector3D const& query, NodePtr 
     double const diff = fabs(query[axis] - train[axis]);
     // if distance to current dividing axis to other node is `more` then `minDist` 
     // then we can discard this subtree 
-    if(diff < *minDist){
+    if(diff < minDist){
         NodePtr const& node_second = query[axis] < train[axis] ? node->right : node->left;
         nearestNeighborRecursive(query, node_second, guess, minDist);
     }

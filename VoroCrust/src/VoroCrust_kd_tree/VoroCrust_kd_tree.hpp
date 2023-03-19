@@ -82,7 +82,7 @@ class VoroCrust_KD_Tree {
         void insertRecursive(Vector3D const& point, NodePtr const& node);
 
         //! \brief finds nearest neighbor recursively in tree to `query`
-        void nearestNeighborRecursive(Vector3D const& query, NodePtr const& node, std::size_t *guess, double *minDist) const;
+        void nearestNeighborRecursive(Vector3D const& query, NodePtr const& node, std::size_t &guess, double &minDist) const;
         
         //! \brief finds the `k` nearest neighbors in the tree recursively
         void kNearestNeighborsRecursive(Vector3D const& query, std::size_t const k, NodePtr const& node, std::vector<std::size_t>& indices, std::vector<double> &minDist) const;        
