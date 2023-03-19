@@ -87,31 +87,28 @@ void VoroCrustAlgorithm::run() {
 bool VoroCrustAlgorithm::enforceLipschitzness(VoroCrust_KD_Tree_Ball& ball_tree){
     std::size_t const num_of_points = ball_tree.points.size();
     
-    bool isBallsShrunk = false;
     std::size_t number_of_balls_shrunk = 0;
 
     std::cout << "Running enforceLipschitzness " << std::endl;
-    // go through all pairs i != j and enforce r_i <= r_j + L * ||p_i - p_j||
-    //! MAYBE: only consider the overlapping balls or balls up to radius r_i?
+    // For each ball i enforce lipschitzness (going through all balls up to distance r_i/L_Lipschitz)
     for(std::size_t i = 0; i<num_of_points; ++i){
-        Vector3D const& p_i = ball_tree.points[i];
-        double const r_i = ball_tree.ball_radii[i];
-        auto const& suspects = ball_tree.radiusSearch(p_i, 1.5*r_i);
-
+        auto const [p_i, r_i] = ball_tree.getBall(i);
+        
+        auto const& suspects = ball_tree.radiusSearch(p_i, r_i/L_Lipschitz);
         for(auto const j : suspects){
-            if(i == j) continue;
-            double const dist = distance(p_i, ball_tree.points[j]);
+
+            auto const& [p_j, r_j] = ball_tree.getBall(j);
+            double const dist = distance(p_i, p_j);
             
-            if(r_i > ball_tree.ball_radii[j] + L_Lipschitz*dist){
-                isBallsShrunk = true;
+            if(r_i > r_j + L_Lipschitz*dist){
                 number_of_balls_shrunk++;
-                ball_tree.ball_radii[i] = ball_tree.ball_radii[j] + L_Lipschitz*dist;
+                ball_tree.ball_radii[i] = r_j + L_Lipschitz*dist;
             }
         }
     }
 
     std::cout << "enforceLipschitzness : " << number_of_balls_shrunk << " balls shrunk" << std::endl;
-    return isBallsShrunk;
+    return number_of_balls_shrunk > 0;
 }
 
 std::vector<Seed> VoroCrustAlgorithm::getSeeds() const {
