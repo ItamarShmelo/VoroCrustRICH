@@ -78,6 +78,8 @@ double CornersRMPS::calculateSmoothnessLimitation(EligbleCorner const& corner, T
     double dist_nearest_non_cosmooth_edge = std::numeric_limits<double>::max();
     double dist_nearest_non_cosmooth_face = std::numeric_limits<double>::max();
 
+    double initial_min_dist = std::min(dist_nearest_corner, maxRadius);
+
     // find neareset non cosmooth point on the edges
     std::vector<std::size_t> creases_exclude;
     for(Edge const& edge : corner->edges){
@@ -85,8 +87,9 @@ double CornersRMPS::calculateSmoothnessLimitation(EligbleCorner const& corner, T
         
         std::size_t const crease_index = edge->crease_index;
         creases_exclude.push_back(crease_index);
+        std::vector<Vector3D> parallel({edge->vertex2->vertex - edge->vertex1->vertex});
 
-        long const nn_noncosmooth_on_edge_index = edges_boundary_tree.nearestNonCosmoothPoint(corner->vertex, edge->vertex2->vertex - edge->vertex1->vertex, crease_index, sharpTheta);
+        long const nn_noncosmooth_on_edge_index = edges_boundary_tree.nearestNonCosmoothPoint(corner->vertex, parallel, crease_index, sharpTheta, initial_min_dist);
 
         // no noncosmooth point on the crease (very likely)
         if(nn_noncosmooth_on_edge_index < 0) continue;
@@ -104,15 +107,20 @@ double CornersRMPS::calculateSmoothnessLimitation(EligbleCorner const& corner, T
         dist_nearest_non_cosmooth_edge = std::min(dist_nearest_non_cosmooth_edge, distance(corner->vertex, nn_different_crease_p));
     }
     
-
+    initial_min_dist = std::min(initial_min_dist, dist_nearest_non_cosmooth_edge);
     //find neareset non cosmooth point on the face
     std::vector<std::size_t> patches_to_exclude;
-    for(Face const& face : corner->faces){
-        std::size_t const patch_index = face->patch_index;
-        patches_to_exclude.push_back(patch_index); // might have multiple times the same patch
+    for(auto const& patch_faces : corner->divided_faces){
+        std::size_t const patch_index = patch_faces[0]->patch_index;
+        patches_to_exclude.push_back(patch_index);
+        
+        std::vector<Vector3D> normals;
+        normals.reserve(patch_faces.size());        
+        for(Face const& face : patch_faces){
+            normals.push_back(face->calcNormal());
+        }
 
-
-        long const nn_noncosmooth_on_face_index = faces_boundary_tree.nearestNonCosmoothPoint(corner->vertex, face->calcNormal(), patch_index, sharpTheta);
+        long const nn_noncosmooth_on_face_index = faces_boundary_tree.nearestNonCosmoothPoint(corner->vertex, normals, patch_index, sharpTheta, initial_min_dist);
 
         // no noncosmooth point on the patch (very likely)
         if(nn_noncosmooth_on_face_index < 0) continue;

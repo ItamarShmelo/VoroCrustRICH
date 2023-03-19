@@ -3,7 +3,8 @@
 
 VoroCrustVertex::VoroCrustVertex(Vector3D const& vertex_, 
                                  std::size_t const index_) : vertex(vertex_), 
-                                                             faces(), 
+                                                             faces(),
+                                                             divided_faces(), 
                                                              index(index_),
                                                              isSharp(false){}
 

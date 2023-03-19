@@ -18,6 +18,7 @@ class VoroCrustVertex
         Vector3D vertex; 
         //! \brief Faces incident to the Vertex.
         std::vector<Face> faces;
+        std::vector<std::vector<Face>> divided_faces;
         //! \brief Edges incident to the Vertex.
         std::vector<Edge> edges;
 

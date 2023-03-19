@@ -18,7 +18,8 @@ public:
     Vertex vertex2; 
 
     //! \brief the Faces incident to the Edge
-    std::vector<Face> faces; 
+    std::vector<Face> faces;
+    std::vector<std::vector<Face>> divided_faces;
     
     //! \brief Edge index in the plc edges array
     std::size_t index; 

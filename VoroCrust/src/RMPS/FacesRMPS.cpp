@@ -277,7 +277,11 @@ double FacesRMPS::calculateSmoothnessLimitation(Vector3D const& p, EligbleFace c
     VoroCrust_KD_Tree_Boundary const& faces_boundary_tree = trees.VC_kd_faces;
     Face const& plc_face = plc->faces[face_sampled.plc_index];
 
-    long const nn_non_cosmooth_index = faces_boundary_tree.nearestNonCosmoothPoint(p, plc_face->calcNormal(), face_sampled.patch_index, sharpTheta);
+    double initial_min_dist = std::min({dist_nearest_corner, dist_nearest_sharp_edge, maxRadius});
+    
+    std::vector<Vector3D> normal({plc_face->calcNormal()});
+    
+    long const nn_non_cosmooth_index = faces_boundary_tree.nearestNonCosmoothPoint(p, normal, face_sampled.patch_index, sharpTheta, initial_min_dist);
 
     if(nn_non_cosmooth_index >= 0){
         Vector3D const& nn_non_cosmooth_p = faces_boundary_tree.points[nn_non_cosmooth_index];
