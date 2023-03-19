@@ -4,6 +4,7 @@
 #include <numeric>
 #include <functional>
 #include <queue>
+#include <set>
 #include "../unsorted_unique.hpp"
 
 PL_Complex::PL_Complex(std::vector<Vector3D> const &vertices_) : vertices(),
@@ -275,6 +276,8 @@ void PL_Complex::detectFeatures(double const sharpTheta, double const flatTheta)
     buildCreases();
 
     buildSurfacePatches();
+
+    divideFacesOfVerticesAndEdgesToPatches();
 }
 
 void PL_Complex::buildCreases()
@@ -513,6 +516,40 @@ PL_Complex::Location PL_Complex::determineLocation(Vector3D const& p) const {
     } else {
         return Location::IN;
     }
+}
+
+void PL_Complex::divideFacesOfVerticesAndEdgesToPatches(){
+    for(Vertex const& vertex : vertices){
+        vertex->divided_faces = divideFacesToPatches(vertex->faces);
+    }
+
+    for(Edge const& edge : edges){
+        edge->divided_faces = divideFacesToPatches(edge->faces);
+    }
+}
+
+std::vector<std::vector<Face>> divideFacesToPatches(std::vector<Face> const& faces) {
+    std::vector<std::vector<Face>> faces_divided;
+    
+    std::set<std::size_t> surface_patch_indices;
+
+    for(Face const& face : faces){
+        surface_patch_indices.insert(face->patch_index);
+    }
+
+    for(std::size_t const patch_index : surface_patch_indices){
+        std::vector<Face> patch_faces;
+
+        for(Face const& face : faces){
+            if(face->patch_index == patch_index){
+                patch_faces.push_back(face);
+            }
+        }
+
+        faces_divided.push_back(patch_faces);
+    }
+
+    return faces_divided;
 }
 
 std::string PL_Complex::repr() const

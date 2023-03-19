@@ -120,7 +120,10 @@ class PL_Complex
         private:
             //! \brief Orders the crease s.t. crease[0]->vertex1 is the start and crease[end]->vertex2 is the end and crease[i]->vertex2 == crease[i+1]->vertex1
             void orderCrease(Crease &crease);
+
+            void divideFacesOfVerticesAndEdgesToPatches();
 };
 
+std::vector<std::vector<Face>> divideFacesToPatches(std::vector<Face> const& faces);
 
 #endif /* PL_Complex_HPP */
