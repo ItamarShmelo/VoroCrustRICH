@@ -84,32 +84,24 @@ double CornersRMPS::calculateSmoothnessLimitation(EligbleCorner const& corner, T
     std::vector<std::size_t> creases_exclude;
     for(Edge const& edge : corner->edges){
         if(not edge->isSharp) continue;
-        
         std::size_t const crease_index = edge->crease_index;
         creases_exclude.push_back(crease_index);
+        
         std::vector<Vector3D> parallel({edge->vertex2->vertex - edge->vertex1->vertex});
 
-        long const nn_noncosmooth_on_edge_index = edges_boundary_tree.nearestNonCosmoothPoint(corner->vertex, parallel, crease_index, sharpTheta, initial_min_dist);
+        double const distance_to_nearest_noncosmooth = edges_boundary_tree.distanceToNearestNonCosmoothPoint(corner->vertex, parallel, crease_index, sharpTheta, initial_min_dist);
 
-        // no noncosmooth point on the crease (very likely)
-        if(nn_noncosmooth_on_edge_index < 0) continue;
-
-        Vector3D const& nn_non_cosmooth_p = edges_boundary_tree.points[nn_noncosmooth_on_edge_index];
-
-        dist_nearest_non_cosmooth_edge = std::min(dist_nearest_non_cosmooth_edge, distance(corner->vertex, nn_non_cosmooth_p));
+        dist_nearest_non_cosmooth_edge = std::min(distance_to_nearest_noncosmooth, dist_nearest_non_cosmooth_edge);
     }
 
     initial_min_dist = std::min(initial_min_dist, dist_nearest_non_cosmooth_edge);
 
-    long const nn_different_crease = edges_boundary_tree.nearestNeighborExcludingFeatures(corner->vertex, creases_exclude, initial_min_dist);
-    // found any nearest neighbors
-    if(nn_different_crease >= 0){
-        Vector3D const& nn_different_crease_p = edges_boundary_tree.points[nn_different_crease];
+    double const distance_different_crease = edges_boundary_tree.distanceToNearestNeighborExcludingFeatures(corner->vertex, creases_exclude, initial_min_dist);
 
-        dist_nearest_non_cosmooth_edge = std::min(dist_nearest_non_cosmooth_edge, distance(corner->vertex, nn_different_crease_p));
-    }
+    dist_nearest_non_cosmooth_edge = std::min(distance_different_crease, dist_nearest_non_cosmooth_edge);
     
     initial_min_dist = std::min(initial_min_dist, dist_nearest_non_cosmooth_edge);
+    
     //find neareset non cosmooth point on the face
     std::vector<std::size_t> patches_to_exclude;
     for(auto const& patch_faces : corner->divided_faces){
@@ -122,26 +114,16 @@ double CornersRMPS::calculateSmoothnessLimitation(EligbleCorner const& corner, T
             normals.push_back(face->calcNormal());
         }
 
-        long const nn_noncosmooth_on_face_index = faces_boundary_tree.nearestNonCosmoothPoint(corner->vertex, normals, patch_index, sharpTheta, initial_min_dist);
-
-        // no noncosmooth point on the patch (very likely)
-        if(nn_noncosmooth_on_face_index < 0) continue;
-
-        Vector3D const& nn_non_cosmooth_p = faces_boundary_tree.points[nn_noncosmooth_on_face_index];
+        double const distance_nearest_noncosmooth = faces_boundary_tree.distanceToNearestNonCosmoothPoint(corner->vertex, normals, patch_index, sharpTheta, initial_min_dist);
         
-        dist_nearest_non_cosmooth_face = std::min(dist_nearest_non_cosmooth_face, distance(corner->vertex, nn_non_cosmooth_p));
+        dist_nearest_non_cosmooth_face = std::min(distance_nearest_noncosmooth, dist_nearest_non_cosmooth_face);
     }
     
     initial_min_dist = std::min(initial_min_dist, dist_nearest_non_cosmooth_face);
 
-    long const nn_different_patch = faces_boundary_tree.nearestNeighborExcludingFeatures(corner->vertex, patches_to_exclude, initial_min_dist);
+    double const distance_different_patch = faces_boundary_tree.distanceToNearestNeighborExcludingFeatures(corner->vertex, patches_to_exclude, initial_min_dist);
 
-    // found any nearest neighbors
-    if(nn_different_patch >= 0){
-        Vector3D const& nn_different_patch_p = faces_boundary_tree.points[nn_different_patch];
-
-        dist_nearest_non_cosmooth_face = std::min(dist_nearest_non_cosmooth_face, distance(corner->vertex, nn_different_patch_p));
-    }
+    dist_nearest_non_cosmooth_face = std::min(distance_different_patch, dist_nearest_non_cosmooth_face);
 
     return std::min({dist_nearest_corner, dist_nearest_non_cosmooth_edge, dist_nearest_non_cosmooth_face});
 }

@@ -58,6 +58,8 @@ class VoroCrust_KD_Tree {
         //! \brief finds nearest neighbor in tree to `query`
         std::size_t nearestNeighbor(Vector3D const& query) const;
 
+        double distanceToNearestNeighbor(Vector3D const& query, double const initial_min_dist) const;
+
         /*! \brief finds the `k` nearest neighbors to `query` in the tree 
             \param query
             \param k number of nearest neighbors */
@@ -120,7 +122,11 @@ class VoroCrust_KD_Tree_Boundary : public VoroCrust_KD_Tree {
         //! \brief finds the nearest point in the tree wthat is not cosmooth with `query`
         long nearestNonCosmoothPoint(Vector3D const& query, std::vector<Vector3D> const& vecs, std::size_t const f_index, double const angle, double const initial_min_dist) const;
 
+        double distanceToNearestNonCosmoothPoint(Vector3D const& query, std::vector<Vector3D> const& vecs, std::size_t const f_index, double const angle, double const initial_min_dist) const;
+
         long nearestNeighborExcludingFeatures(Vector3D const& query, std::vector<std::size_t> const& to_exclude, double const initial_min_dist) const;
+
+        double distanceToNearestNeighborExcludingFeatures(Vector3D const& query, std::vector<std::size_t> const& to_exclude, double const initial_min_dist) const;
 
         //!
     private:

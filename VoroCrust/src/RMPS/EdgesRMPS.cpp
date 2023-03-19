@@ -140,40 +140,26 @@ double EdgesRMPS::calculateSmoothnessLimitation(Vector3D const& p, EligbleEdge c
     VoroCrust_KD_Tree_Boundary const& faces_boundary_tree = trees.VC_kd_faces;
 
     // find nearest sharp corner
-    auto const nearestSharpCorner_index = corners_boundary_tree.nearestNeighbor(p);
-    Vector3D const& nearestSharpCorner = corners_boundary_tree.points[nearestSharpCorner_index];
+    double const dist_nearest_corner = corners_boundary_tree.distanceToNearestNeighbor(p, maxRadius);
 
-    double const dist_nearest_corner = distance(p, nearestSharpCorner);
-    double dist_non_cosmooth_edge = std::numeric_limits<double>::max();
-    double dist_non_cosmooth_face = std::numeric_limits<double>::max();
 
     double initial_min_dist = std::min(dist_nearest_corner, maxRadius);
     std::vector<Vector3D> const parallel({edge_sampled[1] - edge_sampled[0]});
 
-    long const nn_non_cosmooth_index = edges_boundary_tree.nearestNonCosmoothPoint(p, parallel, edge_sampled.crease_index, sharpTheta, initial_min_dist);
-
-    if(nn_non_cosmooth_index >= 0){
-
-        Vector3D const& nn_non_cosmooth_p = edges_boundary_tree.points[nn_non_cosmooth_index];
-        dist_non_cosmooth_edge = distance(p, nn_non_cosmooth_p);
-    }
+    double dist_non_cosmooth_edge = edges_boundary_tree.distanceToNearestNonCosmoothPoint(p, parallel, edge_sampled.crease_index, sharpTheta, initial_min_dist);
 
     initial_min_dist = std::min(initial_min_dist, dist_non_cosmooth_edge);
 
-    long const nn_different_crease = edges_boundary_tree.nearestNeighborExcludingFeatures(p, {edge_sampled.crease_index}, initial_min_dist);
+    double const dist_different_crease = edges_boundary_tree.distanceToNearestNeighborExcludingFeatures(p, {edge_sampled.crease_index}, initial_min_dist);
 
-    // found any nearest neighbors
-    if(nn_different_crease >= 0){
-        Vector3D const& nn_different_crease_p = edges_boundary_tree.points[nn_different_crease];
-
-        dist_non_cosmooth_edge = std::min(dist_non_cosmooth_edge, distance(p, nn_different_crease_p));
-    }
+    dist_non_cosmooth_edge = std::min(dist_different_crease, dist_non_cosmooth_edge);
 
     initial_min_dist = std::min(dist_non_cosmooth_edge, initial_min_dist);
 
     // find nearest non cosmooth point on face
     std::vector<std::size_t> patches_to_exclude;
     
+    double dist_non_cosmooth_face = std::numeric_limits<double>::max();
     for(auto const& patch_faces : plc->edges[edge_sampled.plc_index]->divided_faces){
         std::size_t const patch_index = patch_faces[0]->patch_index;
         patches_to_exclude.push_back(patch_index);
@@ -185,24 +171,16 @@ double EdgesRMPS::calculateSmoothnessLimitation(Vector3D const& p, EligbleEdge c
             normals.push_back(face->calcNormal());
         }
 
-        long const nn_noncosmooth_on_face_index = faces_boundary_tree.nearestNonCosmoothPoint(p, normals, patch_index, sharpTheta, initial_min_dist);
+        double const dist_neareset_non_cosmooth = faces_boundary_tree.distanceToNearestNonCosmoothPoint(p, normals, patch_index, sharpTheta, initial_min_dist);
 
-        if(nn_noncosmooth_on_face_index < 0) continue;
-
-        Vector3D const& nn_non_cosmooth_p = faces_boundary_tree.points[nn_noncosmooth_on_face_index];
-        
-        dist_non_cosmooth_face = std::min(dist_non_cosmooth_face, distance(p, nn_non_cosmooth_p));
+        dist_non_cosmooth_face = std::min(dist_neareset_non_cosmooth, dist_non_cosmooth_face);
     }
 
-    dist_non_cosmooth_edge = std::min(dist_non_cosmooth_edge, dist_non_cosmooth_face);
+    initial_min_dist = std::min(dist_non_cosmooth_edge, dist_non_cosmooth_face);
 
-    long const nn_different_patch = faces_boundary_tree.nearestNeighborExcludingFeatures(p, patches_to_exclude, initial_min_dist);
+    double const dist_different_patch = faces_boundary_tree.distanceToNearestNeighborExcludingFeatures(p, patches_to_exclude, initial_min_dist);
 
-    if(nn_different_patch >= 0){
-        Vector3D const& nn_different_patch_p = faces_boundary_tree.points[nn_different_patch];
-
-        dist_non_cosmooth_face = std::min(dist_non_cosmooth_face, distance(p, nn_different_patch_p));
-    }
+    dist_non_cosmooth_face = std::min(dist_different_patch, dist_non_cosmooth_face);
 
     return std::min({dist_nearest_corner, dist_non_cosmooth_edge, dist_non_cosmooth_face});
 }
@@ -302,8 +280,6 @@ bool EdgesRMPS::doSampling(VoroCrust_KD_Tree_Ball &edges_ball_tree, Trees const&
     std::size_t miss_counter = 0;
 
     while(not eligble_edges.empty()){
-        if(eligble_edges.size() > 1e6) return false;
-        //! PRINTFORDEBUG: remove it at the end
         auto const& [success, edge_index, p] = sampleEligbleEdges(total_len, start_len);
 
         if(!success) continue;
