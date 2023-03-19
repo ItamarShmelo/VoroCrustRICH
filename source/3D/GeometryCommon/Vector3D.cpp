@@ -250,7 +250,9 @@ double Projection(Vector3D const& v1, Vector3D const& v2)
 
 double CalcAngle(Vector3D const& v1, Vector3D const& v2)
 {
-	return acos(ScalarProd(v1, v2) / abs(v1) / abs(v2));
+	using std::min;
+	using std::max;
+	return acos(min(max(ScalarProd(v1, v2) / (abs(v1) * abs(v2)), -1.0), 1.0));
 }
 
 Vector3D Reflect(Vector3D const& v, Vector3D const& normal)
