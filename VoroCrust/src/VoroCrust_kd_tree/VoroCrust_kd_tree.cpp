@@ -67,6 +67,15 @@ std::size_t VoroCrust_KD_Tree::nearestNeighbor(Vector3D const& query) const {
     return guess;
 }
 
+double VoroCrust_KD_Tree::distanceToNearestNeighbor(Vector3D const& query, double const initial_min_dist) const {
+    std::size_t guess = 0;
+    double minDist = initial_min_dist;
+
+    nearestNeighborRecursive(query, root, guess, minDist);
+    
+    return minDist;
+}
+
 void VoroCrust_KD_Tree::nearestNeighborRecursive(Vector3D const& query, NodePtr const& node, std::size_t &guess, double &minDist) const {
     if(node.get() == nullptr) return;
 
@@ -337,10 +346,14 @@ long VoroCrust_KD_Tree_Boundary::nearestNonCosmoothPoint(Vector3D const& query, 
     return guess;
 }
 
+double VoroCrust_KD_Tree_Boundary::distanceToNearestNonCosmoothPoint(Vector3D const& query, std::vector<Vector3D> const& vecs, std::size_t const f_index, double const angle, double const initial_min_dist) const {
 
-//! \brief calculates the angles assuming v1, v2 have the same orientation
-double CalcAngleAssumedSameOrientation(Vector3D const& v1, Vector3D const& v2){
-    return acos(std::abs(ScalarProd(v1, v2)) / abs(v1) / abs(v2));
+    long guess = -1;
+    double minDist = initial_min_dist;
+
+    nearestNonCosmoothPointRecursive(query, vecs, f_index, angle, root, guess, minDist);
+
+    return minDist;
 }
 
 void VoroCrust_KD_Tree_Boundary::nearestNonCosmoothPointRecursive(Vector3D const& query, std::vector<Vector3D> const& vecs, std::size_t const f_index, double const angle, NodePtr const& node, long &guess, double &minDist) const {
@@ -395,6 +408,15 @@ long VoroCrust_KD_Tree_Boundary::nearestNeighborExcludingFeatures(Vector3D const
     nearestNeighborExcludingFeaturesRecursive(query, to_exclude, root, guess, minDist);
 
     return guess;
+}
+
+double VoroCrust_KD_Tree_Boundary::distanceToNearestNeighborExcludingFeatures(Vector3D const& query, std::vector<std::size_t> const& to_exclude, double const initial_min_dist) const {
+    long guess = -1;
+    double minDist = initial_min_dist;
+
+    nearestNeighborExcludingFeaturesRecursive(query, to_exclude, root, guess, minDist);
+
+    return minDist;
 }
 
 void VoroCrust_KD_Tree_Boundary::nearestNeighborExcludingFeaturesRecursive(Vector3D const& query, std::vector<std::size_t> const& to_exclude, NodePtr const& node, long &guess, double &minDist) const {
