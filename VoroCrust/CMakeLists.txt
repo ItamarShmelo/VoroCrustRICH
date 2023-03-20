@@ -13,7 +13,7 @@ message("Build Type: " ${CMAKE_BUILD_TYPE})
 message("CMAKE_CXX_FLAGS = " ${CMAKE_CXX_FLAGS})
 message("CMAKE_CXX_FLAGS_RELEASE = " ${CMAKE_CXX_FLAGS_RELEASE})
 
-set(CMAKE_CXX_FLAGS_DEBUG "-g -Wall")
+set(CMAKE_CXX_FLAGS_DEBUG "-g -Wall -Wextra")
 message("CMAKE_CXX_FLAGS_DEBUG = " ${CMAKE_CXX_FLAGS_DEBUG})
 message("CMAKE_Fortran_FLAGS = " ${CMAKE_Fortran_FLAGS})
 message("CMAKE_Fortran_FLAGS_RELEASE = " ${CMAKE_Fortran_FLAGS_RELEASE})
@@ -56,6 +56,15 @@ message("executable name ${EXE_NAME}")
 
 add_executable(${EXE_NAME} ${SRC_CPP} ${R3D} ${MISC})
 target_link_libraries(${EXE_NAME} PRIVATE ${VTK_LIBRARIES})
+
+if(${OMP})
+    message("Using OMP")
+
+    find_package(OpenMP)
+    if(OpenMP_CXX_FOUND)
+        target_link_libraries(${EXE_NAME} PUBLIC OpenMP::OpenMP_CXX)
+    endif()
+endif()
 
 vtk_module_autoinit(
   TARGETS ${EXE_NAME}
