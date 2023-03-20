@@ -71,20 +71,19 @@ std::vector<Triplet> SliverDriver::formTripletsOfOverlappingBalls(std::vector<Ba
 }
 
 Ball SliverDriver::getBall(BallInfo const& ball_info, Trees const& trees) const {
+    std::size_t const index = ball_info.index;
+
     if(ball_info.dim == Dim::FACE){
-        std::size_t const index = ball_info.index;
         return Ball(trees.ball_kd_faces.points[index], trees.ball_kd_faces.ball_radii[index]);
     }
 
     
     if(ball_info.dim == Dim::EDGE){
-        std::size_t const index = ball_info.index;
         return Ball(trees.ball_kd_edges.points[index], trees.ball_kd_edges.ball_radii[index]);
     }
 
     
     if(ball_info.dim == Dim::CORNER){
-        std::size_t const index = ball_info.index;
         return Ball(trees.ball_kd_vertices.points[index], trees.ball_kd_vertices.ball_radii[index]);
     }
 
@@ -162,12 +161,14 @@ void SliverDriver::dealWithHalfCoveredSeeds(InfoQuartet const& balls_info, BallQ
     // run over all triplets in quartet
     for(int i=0; i<4; ++i){
         for(int j=i+1; j<4; ++j){
-            for(int k=j+1; k < 4; ++k){
+            for(int k=j+1; k<4; ++k){
                 // find intersection seeds of triplets
                 auto const& [success, seed_p, seed_m] = calculateIntersectionSeeds(balls[i], balls[j], balls[k]);
 
+                // check if intersection of spheres is not disjoint
                 if(not success) continue;
 
+                // find the fourth index in the quartet
                 for(int m=0; m < 4; ++m){
                     if((i != m) && (j != m) && (k != m)){
                         l=m;
@@ -182,6 +183,7 @@ void SliverDriver::dealWithHalfCoveredSeeds(InfoQuartet const& balls_info, BallQ
 
                 double r_temp = std::numeric_limits<double>::max();
 
+                // check if seeds are half covered
                 if(is_seed_p_covered && !is_seed_m_covered){
                     r_temp = distance(seed_p, p4);
                 } else if(is_seed_m_covered && !is_seed_p_covered) {

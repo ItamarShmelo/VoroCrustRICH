@@ -241,13 +241,12 @@ double FacesRMPS::calculateSmoothnessLimitation(Vector3D const& p, EligbleFace c
     // Corners
     VoroCrust_KD_Tree_Boundary const& corners_boundary_tree = trees.VC_kd_sharp_corners;
 
-    double const dist_nearest_corner = corners_boundary_tree.distanceToNearestNeighbor(p, maxRadius);
+    double min_dist = corners_boundary_tree.distanceToNearestNeighbor(p, maxRadius / 0.49); // maxRadius is divided because r_smooth is multiplied by 0.49
     
     // Edges
-    double initial_min_dist = std::min(dist_nearest_corner, maxRadius);
     VoroCrust_KD_Tree_Boundary const& edges_boundary_tree = trees.VC_kd_sharp_edges;
 
-    double const dist_nearest_sharp_edge = edges_boundary_tree.distanceToNearestNeighbor(p, initial_min_dist);
+    min_dist = edges_boundary_tree.distanceToNearestNeighbor(p, min_dist);
 
     // Faces
     VoroCrust_KD_Tree_Boundary const& faces_boundary_tree = trees.VC_kd_faces;
@@ -255,17 +254,11 @@ double FacesRMPS::calculateSmoothnessLimitation(Vector3D const& p, EligbleFace c
     Face const& plc_face = plc->faces[face_sampled.plc_index];
     std::vector<Vector3D> normal({plc_face->calcNormal()});
 
-    initial_min_dist = std::min(initial_min_dist, dist_nearest_sharp_edge);
-    
-    double dist_non_cosmooth_face = faces_boundary_tree.distanceToNearestNonCosmoothPoint(p, normal, face_sampled.patch_index, sharpTheta, initial_min_dist);
+    min_dist = faces_boundary_tree.distanceToNearestNonCosmoothPoint(p, normal, face_sampled.patch_index, sharpTheta, min_dist);
 
-    initial_min_dist = std::min(initial_min_dist, dist_non_cosmooth_face);
+    min_dist = faces_boundary_tree.distanceToNearestNeighborExcludingFeatures(p, {face_sampled.patch_index}, min_dist);
 
-    double const distance_different_patch = faces_boundary_tree.distanceToNearestNeighborExcludingFeatures(p, {face_sampled.patch_index}, initial_min_dist);
-
-    dist_non_cosmooth_face = std::min(distance_different_patch, dist_non_cosmooth_face);
-
-    return std::min({dist_nearest_corner, dist_nearest_sharp_edge, dist_non_cosmooth_face});
+    return min_dist;
 }
 
 bool FacesRMPS::isEligbleFaceDeeplyCoveredInFaceBall(EligbleFace const& face, Trees const& trees, std::size_t const ball_index) const {

@@ -75,10 +75,8 @@ double CornersRMPS::calculateSmoothnessLimitation(EligbleCorner const& corner, T
     Vector3D const& nearestSharpCorner = corner_boundary_tree.points[nearestSharpCorner_index];
 
     double const dist_nearest_corner = distance(corner->vertex, nearestSharpCorner); //||p-q^*||
-    double dist_nearest_non_cosmooth_edge = std::numeric_limits<double>::max();
-    double dist_nearest_non_cosmooth_face = std::numeric_limits<double>::max();
 
-    double initial_min_dist = std::min(dist_nearest_corner, maxRadius);
+    double min_dist = std::min(dist_nearest_corner, maxRadius/0.49); // maxRadius is divided because r_smooth is multiplied by 0.49
 
     // find neareset non cosmooth point on the edges
     std::vector<std::size_t> creases_exclude;
@@ -89,19 +87,11 @@ double CornersRMPS::calculateSmoothnessLimitation(EligbleCorner const& corner, T
         
         std::vector<Vector3D> parallel({edge->vertex2->vertex - edge->vertex1->vertex});
 
-        double const distance_to_nearest_noncosmooth = edges_boundary_tree.distanceToNearestNonCosmoothPoint(corner->vertex, parallel, crease_index, sharpTheta, initial_min_dist);
-
-        dist_nearest_non_cosmooth_edge = std::min(distance_to_nearest_noncosmooth, dist_nearest_non_cosmooth_edge);
+        min_dist = edges_boundary_tree.distanceToNearestNonCosmoothPoint(corner->vertex, parallel, crease_index, sharpTheta, min_dist);
     }
 
-    initial_min_dist = std::min(initial_min_dist, dist_nearest_non_cosmooth_edge);
+    min_dist = edges_boundary_tree.distanceToNearestNeighborExcludingFeatures(corner->vertex, creases_exclude, min_dist);
 
-    double const distance_different_crease = edges_boundary_tree.distanceToNearestNeighborExcludingFeatures(corner->vertex, creases_exclude, initial_min_dist);
-
-    dist_nearest_non_cosmooth_edge = std::min(distance_different_crease, dist_nearest_non_cosmooth_edge);
-    
-    initial_min_dist = std::min(initial_min_dist, dist_nearest_non_cosmooth_edge);
-    
     //find neareset non cosmooth point on the face
     std::vector<std::size_t> patches_to_exclude;
     for(auto const& patch_faces : corner->divided_faces){
@@ -114,16 +104,10 @@ double CornersRMPS::calculateSmoothnessLimitation(EligbleCorner const& corner, T
             normals.push_back(face->calcNormal());
         }
 
-        double const distance_nearest_noncosmooth = faces_boundary_tree.distanceToNearestNonCosmoothPoint(corner->vertex, normals, patch_index, sharpTheta, initial_min_dist);
-        
-        dist_nearest_non_cosmooth_face = std::min(distance_nearest_noncosmooth, dist_nearest_non_cosmooth_face);
+        min_dist = faces_boundary_tree.distanceToNearestNonCosmoothPoint(corner->vertex, normals, patch_index, sharpTheta, min_dist);
     }
     
-    initial_min_dist = std::min(initial_min_dist, dist_nearest_non_cosmooth_face);
+    min_dist = faces_boundary_tree.distanceToNearestNeighborExcludingFeatures(corner->vertex, patches_to_exclude, min_dist);
 
-    double const distance_different_patch = faces_boundary_tree.distanceToNearestNeighborExcludingFeatures(corner->vertex, patches_to_exclude, initial_min_dist);
-
-    dist_nearest_non_cosmooth_face = std::min(distance_different_patch, dist_nearest_non_cosmooth_face);
-
-    return std::min({dist_nearest_corner, dist_nearest_non_cosmooth_edge, dist_nearest_non_cosmooth_face});
+    return min_dist;
 }
