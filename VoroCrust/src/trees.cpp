@@ -123,10 +123,8 @@ std::tuple<std::vector<Vector3D>, std::vector<Vector3D>, std::vector<std::size_t
 
         Face const& face = faces[face_index];
         
-
-        //! TODO: add option for sampling for a face with more than 3 edges.
         if(face->vertices.size() != 3){
-            std::cout << "ERROR: Algorith supports only triangular meshes for now" << std::endl;
+            std::cout << "ERROR: Algorithm supports only triangular meshes for now" << std::endl;
             exit(1);
         }
 
