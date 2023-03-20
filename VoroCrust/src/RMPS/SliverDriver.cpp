@@ -17,27 +17,17 @@ std::vector<BallInfo> SliverDriver::groupOverlappingBalls(BallInfo const& ball_i
     //! EPSILONTICA:
     double const r_corner_and_edge = (ball_info.dim == Dim::FACE) ? (max_radius_corner_edge+2.0*radius)*(1.+ 1e-14) : r_max;
 
-    VoroCrust_KD_Tree_Ball const& corners_ball_tree = trees.ball_kd_vertices;
-    std::vector<std::size_t> const& overlapping_corner_balls_indices = corners_ball_tree.getOverlappingBalls(p, radius, r_corner_and_edge);
+    // this  lambda get the overlapping balls indices and push them into overlapping balls vector
+    auto getAndPushOverlapping = [&overlapping_balls](VoroCrust_KD_Tree_Ball const& ball_tree, Vector3D const& p, double const radius, double const r_max, Dim const dim){
+        std::vector<std::size_t> const& overlapping_balls_indices = ball_tree.getOverlappingBalls(p, radius, r_max);
+        for(std::size_t const ball_index : overlapping_balls_indices){
+            overlapping_balls.push_back(BallInfo(ball_index, dim));
+        }
+    };
 
-    VoroCrust_KD_Tree_Ball const& edges_ball_tree = trees.ball_kd_edges;
-    std::vector<std::size_t> const& overlapping_edge_balls_indices = edges_ball_tree.getOverlappingBalls(p, radius, r_corner_and_edge);
-
-    VoroCrust_KD_Tree_Ball const& faces_ball_tree = trees.ball_kd_faces;
-    std::vector<std::size_t> const& overlapping_face_balls_indices = faces_ball_tree.getOverlappingBalls(p, radius, r_max);
-
-
-    for(std::size_t const ball_index : overlapping_corner_balls_indices){
-        overlapping_balls.push_back(BallInfo(ball_index, Dim::CORNER));
-    }
-
-    for(std::size_t const ball_index : overlapping_edge_balls_indices){
-        overlapping_balls.push_back(BallInfo(ball_index, Dim::EDGE));
-    }
-
-    for(std::size_t const ball_index : overlapping_face_balls_indices){
-        overlapping_balls.push_back(BallInfo(ball_index, Dim::FACE));
-    }
+    getAndPushOverlapping(trees.ball_kd_vertices, p, radius, r_corner_and_edge, Dim::CORNER);
+    getAndPushOverlapping(trees.ball_kd_edges, p, radius, r_corner_and_edge, Dim::EDGE);
+    getAndPushOverlapping(trees.ball_kd_faces, p, radius, r_max, Dim::FACE);
 
     auto const& it = std::find(overlapping_balls.begin(), overlapping_balls.end(), ball_info);
 
@@ -244,7 +234,7 @@ std::tuple<bool, Vector3D, Vector3D> SliverDriver::calculateIntersectionSeeds(Ba
     
     // if there is no intersection or the centers are linear or perpenicular (all of which should not preduce seeds)
     if(disc < 0 || std::isnan(disc)){
-        return std::tuple<bool, Vector3D, Vector3D>(false, Vector3D(0.0, 0.0, 0.0), Vector3D(0.0, 0.0, 0.0));
+        return std::tuple(false, Vector3D(0.0, 0.0, 0.0), Vector3D(0.0, 0.0, 0.0));
     }
 
     double const z_plus = (-B + sqrt(disc))/(2.0*A);
@@ -259,7 +249,7 @@ std::tuple<bool, Vector3D, Vector3D> SliverDriver::calculateIntersectionSeeds(Ba
 
     Vector3D const seed_minus(x_minus, y_minus, z_minus);
 
-    return std::tuple<bool, Vector3D, Vector3D>(true, seed_plus, seed_minus);
+    return std::tuple(true, seed_plus, seed_minus);
 }
 
 std::tuple<double const, double const, double const, double const> getLineCoeff(double const x1, double const y1, double const z1, double const r1, double const x2, double const y2, double const z2, double const r2) {
@@ -268,18 +258,18 @@ std::tuple<double const, double const, double const, double const> getLineCoeff(
     double const c = 2.0*(z2-z1);
     double const k = r1*r1 - r2*r2 + x2*x2 - x1*x1 + y2*y2 - y1*y1 + z2*z2 - z1*z1;
 
-    return std::tuple<double const, double const, double const, double const>(a, b, c, k);
+    return std::tuple(a, b, c, k);
 }
 
 std::pair<double const, double const> getZDependency(double const a1, double const b1, double const c1, double const k1, double const a3, double const b3, double const c3, double const k3) {
     
     //! WARNING: EPSILONTICA
     if(std::abs(a1) < 1e-14){
-        return std::pair<double const, double const>(-c1/b1, k1/b1);
+        return std::pair(-c1/b1, k1/b1);
     }
     
     if(std::abs(a3) < 1e-14){
-        return std::pair<double const, double const>(-c3/b3, k3/b3);
+        return std::pair(-c3/b3, k3/b3);
     }
 
     double const a31 = a3 / a1;
@@ -288,7 +278,7 @@ std::pair<double const, double const> getZDependency(double const a1, double con
     double const e = (c3 - c1*a31) / denom;
     double const f = (k1*a31 - k3) / denom;
 
-    return std::pair<double const, double const>(e, f);
+    return std::pair(e, f);
 }
 
 bool SliverDriver::eliminateSlivers(Trees &trees){

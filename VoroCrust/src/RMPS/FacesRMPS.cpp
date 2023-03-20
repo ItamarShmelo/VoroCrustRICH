@@ -44,7 +44,7 @@ std::pair<double const, std::vector<double> const> FacesRMPS::calculateTotalArea
         total_area += face.area;
     }
 
-    return std::pair<double const, std::vector<double> const>(total_area, start_area);
+    return std::pair(total_area, start_area);
 }
 
 void FacesRMPS::divideEligbleFaces() {
@@ -160,7 +160,7 @@ std::tuple<bool, std::size_t const, Vector3D const> FacesRMPS::sampleEligbleFace
 
     // sample to close to boundary return success=false
     if(sqrt_r1 < 1e-14 || r2 < 1e-14) {
-        return std::tuple<bool, std::size_t const, Vector3D const>(false, 0, Vector3D(0.0, 0.0, 0.0));
+        return std::tuple(false, 0, Vector3D(0.0, 0.0, 0.0));
     }
 
     EligbleFace const& face = eligble_faces[face_index];
@@ -171,7 +171,7 @@ std::tuple<bool, std::size_t const, Vector3D const> FacesRMPS::sampleEligbleFace
     // sample point formula is taken from https://math.stackexchange.com/questions/18686/uniform-random-point-in-triangle-in-3d
     Vector3D const& point = (1.0-sqrt_r1)*A + (sqrt_r1*(1.0-r2))*B + (r2*sqrt_r1)*C;
     
-    return std::tuple<bool, std::size_t const, Vector3D const>(true, face_index, point);
+    return std::tuple(true, face_index, point);
 }
 
 void FacesRMPS::discardEligbleFacesContainedInCornerBalls(Trees const& trees) {

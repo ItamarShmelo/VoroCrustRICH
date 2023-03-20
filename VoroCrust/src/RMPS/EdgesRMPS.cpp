@@ -90,7 +90,7 @@ std::tuple<bool, std::size_t const, Vector3D const> EdgesRMPS::sampleEligbleEdge
     
     // if sample is too close to a vertex succes = false
     if(std::abs(start_len[edge_index] - sample) < 1e-14){
-        return std::tuple<bool, std::size_t const, Vector3D const>(false, 0, Vector3D(0.0, 0.0, 0.0));
+        return std::tuple(false, 0, Vector3D(0.0, 0.0, 0.0));
     }
     
     // find exact point

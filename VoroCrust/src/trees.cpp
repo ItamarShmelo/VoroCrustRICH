@@ -32,7 +32,7 @@ std::tuple<std::vector<Vector3D>, std::vector<std::size_t>> Trees::pointsFromVer
         plc_index[i] = vertices[i]->index;
     }
     
-    return std::tuple<std::vector<Vector3D>, std::vector<std::size_t>>(points, plc_index);
+    return std::tuple(points, plc_index);
 }
 
 std::tuple<std::vector<Vector3D>, std::vector<Vector3D>, std::vector<std::size_t>, std::vector<std::size_t>> Trees::superSampleEdges(std::vector<Edge> const& edges, std::size_t const Nsample){
@@ -86,7 +86,7 @@ std::tuple<std::vector<Vector3D>, std::vector<Vector3D>, std::vector<std::size_t
         plc_index[i] = edge->index;
     }
 
-    return std::tuple<std::vector<Vector3D>, std::vector<Vector3D>, std::vector<std::size_t>, std::vector<std::size_t>>(points, parallel, feature_index, plc_index);
+    return std::tuple(points, parallel, feature_index, plc_index);
 }
 
 std::tuple<std::vector<Vector3D>, std::vector<Vector3D>, std::vector<std::size_t>, std::vector<std::size_t>> Trees::superSampleFaces(std::vector<Face> const& faces, std::size_t const Nsample){
@@ -153,5 +153,5 @@ std::tuple<std::vector<Vector3D>, std::vector<Vector3D>, std::vector<std::size_t
         plc_index[i] = face->index;
     }
 
-    return std::tuple<std::vector<Vector3D>, std::vector<Vector3D>, std::vector<std::size_t>, std::vector<std::size_t>>(points, normals, feature_index, plc_index);
+    return std::tuple(points, normals, feature_index, plc_index);
 }

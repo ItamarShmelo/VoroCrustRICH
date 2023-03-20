@@ -82,7 +82,7 @@ std::pair<bool, Vector3D> VoroCrustFace::pointXYaxisRayIntersectsAt(Vector3D con
     double const coeff_z = Mat33<double>(p1.x, p1.y, 1.0, p2.x, p2.y, 1.0, p3.x, p3.y, 1.0).determinant();
     // face is parallel to ray return success = false
     if(std::abs(coeff_z) < 1e-14) {
-        return std::pair<bool, Vector3D>(false, Vector3D(0.0, 0.0, 0.0));
+        return std::pair(false, Vector3D(0.0, 0.0, 0.0));
     }
 
     double const coeff_x = Mat33<double>(p1.y, p1.z, 1.0, p2.y, p2.z, 1.0, p3.y, p3.z, 1.0).determinant();
@@ -92,7 +92,7 @@ std::pair<bool, Vector3D> VoroCrustFace::pointXYaxisRayIntersectsAt(Vector3D con
 
     double const z_intersect_plane = -(coeff_x*point.x + coeff_y*point.y + value)/coeff_z;
 
-    return std::pair<bool, Vector3D>(true, Vector3D(point.x, point.y, z_intersect_plane));
+    return std::pair(true, Vector3D(point.x, point.y, z_intersect_plane));
 }
 
 bool sameSide(Vector3D const& p1, Vector3D const& p2, Vector3D const& a, Vector3D const& b){
