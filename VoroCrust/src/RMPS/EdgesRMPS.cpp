@@ -198,16 +198,14 @@ bool EdgesRMPS::discardEligbleEdges(Trees const& trees){
 
         auto const& balls_to_check_edges = trees.ball_kd_edges.radiusSearch(edge.edge[0], r_max);
         
-        bool discard = false;
         for(auto const ball_index : balls_to_check_edges){
             //! MIGHTBEUNECESSARY: all relevent balls should already be in the same crease
             if(edge.crease_index == trees.ball_kd_edges.feature_index[ball_index]){
-                discard = discard || isEligbleEdgeDeeplyCoveredInEdgeBall(edge, trees, ball_index);
+                if(isEligbleEdgeDeeplyCoveredInEdgeBall(edge, trees, ball_index)){
+                    isDeleted[i] = true;
+                    break;
+                }
             }                             
-        }
-
-        if(discard){
-            isDeleted[i] = true;
         }
     }
 

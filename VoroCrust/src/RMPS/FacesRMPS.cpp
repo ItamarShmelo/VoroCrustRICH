@@ -291,12 +291,10 @@ bool FacesRMPS::discardEligbleFaces(Trees const& trees) {
 
         auto const& balls_to_check_faces = faces_ball_tree.radiusSearch(face.face[0], r_max);
         for(auto const ball_index : balls_to_check_faces) {
-            //! MIGHTBEUNECESSARY: all relevent balls should already be in the same patch
-            discard = discard || isEligbleFaceDeeplyCoveredInFaceBall(face, trees, ball_index);
-        }
-
-        if(discard){
-            isDeleted[i] = true;
+            if(isEligbleFaceDeeplyCoveredInFaceBall(face, trees, ball_index)){
+                isDeleted[i] = true;
+                break;
+            }
         }
     }
 
