@@ -185,6 +185,7 @@ void FacesRMPS::discardEligbleFacesContainedInCornerBalls(Trees const& trees) {
         SurfacePatch const& patch = plc->patches[face.patch_index];
 
         for(std::size_t const corner_index : patch.patch_corners) {
+            //! WARNING: notice that the corner index is of the vertices vector and not the corner vector
             Vertex const& corner = plc->vertices[corner_index];
 
             auto const& [center, r] = corners_ball_tree.getBallNearestNeighbor(corner->vertex);

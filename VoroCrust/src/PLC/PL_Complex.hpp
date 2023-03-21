@@ -124,9 +124,14 @@ class PL_Complex
             //! \brief Orders the crease s.t. crease[0]->vertex1 is the start and crease[end]->vertex2 is the end and crease[i]->vertex2 == crease[i+1]->vertex1
             void orderCrease(Crease &crease);
 
+            /*! \brief divides the Faces vector of the vertices and edges to surface patches */
             void divideFacesOfVerticesAndEdgesToPatches();
 };
 
+/*! \brief a utility function which takes a vector of faces divides it to surface patches
+    \param faces vector of faces
+    \return vector<vector<Face>> each face in vector<Face> is on the same surface patch
+*/
 std::vector<std::vector<Face>> divideFacesToPatches(std::vector<Face> const& faces);
 
 #endif /* PL_Complex_HPP */

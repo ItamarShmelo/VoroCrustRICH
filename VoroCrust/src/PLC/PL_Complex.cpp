@@ -123,6 +123,7 @@ void PL_Complex::detectFeatures(double const sharpTheta, double const flatTheta)
     /* Detect Sharp Edges */
     for (auto &edge : edges)
     {
+        //! RELEVENT:FOR:THREE:FACES:PER:EDGE:
         // if Edge is incident to only one face it is sharp.
         if (edge->faces.size() == 1)
         {
@@ -141,6 +142,7 @@ void PL_Complex::detectFeatures(double const sharpTheta, double const flatTheta)
             continue;
         }
 
+        // if dihedral angle is between PI-sharpTheta and PI-flatTheta then we have a problem
         if (dihedralAngle < (M_PI - flatTheta))
         {
             std::cout << "ERROR: dihedral angle of edge" << edge->index << " is not sharp nor flat!!!!!" << std::endl;
@@ -152,10 +154,11 @@ void PL_Complex::detectFeatures(double const sharpTheta, double const flatTheta)
 
     std::cout << "Sharp Edges:\n";
 
-    for (auto &edge : sharp_edges)
+    for (auto const& edge : sharp_edges)
     {
         std::cout << "Edge: " << edge->index << "\n";
     }
+
     std::cout << std::endl;
 
     /* Detect Sharp Corners */
@@ -175,7 +178,8 @@ void PL_Complex::detectFeatures(double const sharpTheta, double const flatTheta)
         }
 
         // if a Vertex is shared by more than 2 sharp Edges or by one sharp edge then it is a sharp corner.
-        if (vertex_sharp_edges.size() > 2 || vertex_sharp_edges.size() == 1)
+        // vertex can't be shared by 0 edges since then it won't be on a face, a thing which is checked before
+        if (vertex_sharp_edges.size() != 2 )
         {
             sharp_corners.push_back(vertex);
             vertex->isSharp = true;
@@ -187,8 +191,8 @@ void PL_Complex::detectFeatures(double const sharpTheta, double const flatTheta)
         if (vertex_sharp_edges.size() == 2)
         {
             
-            auto &edge1 = vertex_sharp_edges[0];
-            auto &edge2 = vertex_sharp_edges[1];
+            auto const& edge1 = vertex_sharp_edges[0];
+            auto const& edge2 = vertex_sharp_edges[1];
 
             Vector3D v1, v2;
 
@@ -211,6 +215,7 @@ void PL_Complex::detectFeatures(double const sharpTheta, double const flatTheta)
 
             std::cout << "vertex " << vertex->index << ", angle between edge " << edge1->index << " and edge " << edge2->index << " = " << angle / M_PI << "*pi" << std::endl;
 
+            // if angle between edges is sharp then vertex is a sharp corner
             if (angle < (M_PI - sharpTheta))
             {
                 sharp_corners.push_back(vertex);
@@ -224,12 +229,17 @@ void PL_Complex::detectFeatures(double const sharpTheta, double const flatTheta)
     }
 
     std::cout << "\n\nSummary Sharp Features";
+    
     std::cout << "\nSharp Edges:";
-    for (auto &edge : sharp_edges)
+    for (auto const& edge : sharp_edges){
         std::cout << "\n edge " << edge->index;
+    }
+
     std::cout << "\n\nSharp Corners:";
-    for (auto &corner : sharp_corners)
+    for (auto const& corner : sharp_corners){
         std::cout << "\n vertex " << corner->index;
+    }
+
     std::cout << std::endl;
 
     buildCreases();
@@ -244,8 +254,7 @@ void PL_Complex::buildCreases()
     
     for (auto &edge : sharp_edges)
     {
-        if (edge->isCreased)
-            continue;
+        if (edge->isCreased) continue;
 
         Crease const &new_crease = createCrease(edge);
         creases.push_back(new_crease);
@@ -266,6 +275,7 @@ void PL_Complex::buildCreases()
 void PL_Complex::orderCrease(Crease &crease){
     Edge start;
     bool foundStart;
+    
     // look for the start of the crease (if crease is a circle it will take the last element as the start)
     for(std::size_t i=0; i<crease.size(); ++i){
         start = crease[i];
@@ -284,7 +294,7 @@ void PL_Complex::orderCrease(Crease &crease){
 
     orderedCrease.push_back(start);
 
-    // build an ordered crease i.e v2[i-1] = v1[i]
+    // build an ordered crease (ordered means v2[i-1] = v1[i])
     for(std::size_t i=0; i<crease.size()-1; ++i){
         bool found = false;
         for(std::size_t j=0; j<crease.size(); ++j){
@@ -294,6 +304,7 @@ void PL_Complex::orderCrease(Crease &crease){
                 break;
             }
         }
+
         if(not found){
             std::cout << "ERROR IN ORDERING THE CREASES" << std::endl;
             exit(1);
@@ -322,9 +333,9 @@ Crease PL_Complex::createCrease(Edge const &edge)
             crease.push_back(curr_edge);
             curr_edge->isCreased = true;
 
+            // if vertex1 is not sharp flood through its common edge
             if (not curr_edge->vertex1->isSharp)
             {
-
                 for (Edge const &vertex_edge : curr_edge->vertex1->edges)
                 {
                     if (vertex_edge->isSharp && not vertex_edge->isCreased)
@@ -335,7 +346,8 @@ Crease PL_Complex::createCrease(Edge const &edge)
                     }
                 }
             }
-
+            
+            // if vertex2 is not sharp flood through its common edge
             if (not curr_edge->vertex2->isSharp)
             {
                 for (Edge const &vertex_edge : curr_edge->vertex2->edges)
@@ -373,7 +385,8 @@ void PL_Complex::buildSurfacePatches()
         for(Face const& patch_face : new_patch){
             patch_face->patch_index = patches.size()-1;
             std::cout << patch_face->index << ", ";
-        } 
+        }
+
         std::cout << std::endl;        
     }
 }
@@ -383,6 +396,8 @@ void SurfacePatch::findCreasesAndCorners(){
         for(Edge const& edge : face->edges){
             if(not edge->isSharp) continue;
 
+            // if edge->crease_index was not added to patch_creases add it
+            //! MIGHT:BE:BETTER:TO:USE:STD:SET:
             if(std::find(patch_creases.begin(), patch_creases.end(), edge->crease_index) == patch_creases.end()){
                 patch_creases.push_back(edge->crease_index);
             }
@@ -391,6 +406,7 @@ void SurfacePatch::findCreasesAndCorners(){
         for(Vertex const& vertex : face->vertices){
             if(not vertex->isSharp) continue;
 
+            // if vertex->index was not added to patch_corners add it
             if(std::find(patch_corners.begin(), patch_corners.end(), vertex->index) == patch_corners.end()){
                 patch_corners.push_back(vertex->index);
             }
@@ -457,6 +473,7 @@ PL_Complex::Location PL_Complex::determineLocation(Vector3D const& p) const {
     // determine if a point is in or out using the ray casting algorithm
     std::size_t count = 0;
     for(Face const& face : faces) {
+        // simple check if the point is even relevent
         if(face->isPointCompletelyOffFace(p)) continue;
 
         auto const& [success, p_inter] = face->pointXYaxisRayIntersectsAt(p);
@@ -466,6 +483,7 @@ PL_Complex::Location PL_Complex::determineLocation(Vector3D const& p) const {
         //! EPSILONTICA:
         if(distance(p_inter, p) < 1e-8) return Location::OUT;
 
+        // using the positive ray
         if(p_inter.z > p.z && face->pointIsInsideFace(p_inter)){
             count++;
         }
@@ -493,6 +511,7 @@ std::vector<std::vector<Face>> divideFacesToPatches(std::vector<Face> const& fac
     
     std::set<std::size_t> surface_patch_indices;
 
+    // surface_patch_indices is a set so it deals with to faces on the same patch
     for(Face const& face : faces){
         surface_patch_indices.insert(face->patch_index);
     }
