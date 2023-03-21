@@ -50,10 +50,10 @@ class VoroCrustFace
         //! \brief calculates the Centeroid of the face
         Vector3D calculateCenteroid() const;
 
-        //! \brief finds the intersection of the ray coming out of point in the positive z direction
-        //! with the plane defined by face
-        //! \return a pair <success, point> where `success` is a flag indicating if there exists such an intersection point, and `point` is the intersection point with the plane (assuming success) 
-        std::pair<bool, Vector3D> pointXYaxisRayIntersectsAt(Vector3D const& point) const;
+        /*! \brief finds the intersection of the ray coming out of `point` in the positive z direction with the plane defined by the face.
+            \return a pair <success, point> where `success` is a flag indicating if there exists such an intersection point, and `point` is the intersection point with the plane (assuming success) 
+        */
+        std::pair<bool, Vector3D> pointZparallelRayIntersectsAt(Vector3D const& point) const;
 
         //! \brief returns `true` if point is inside face
         bool pointIsInsideFace(Vector3D const& point) const;

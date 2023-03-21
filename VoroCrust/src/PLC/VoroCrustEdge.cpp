@@ -15,16 +15,19 @@ VoroCrustEdge::VoroCrustEdge(Vertex const& v1,
                                                          crease_index(-1) {}
 
 bool VoroCrustEdge::checkIfEqual(Vertex const& v1, Vertex const& v2){
-    if (v1->index == vertex1->index && v2->index == vertex2->index)
+    if (v1->index == vertex1->index && v2->index == vertex2->index){
         return true;
+    }
 
-    if (v2->index == vertex1->index && v1->index == vertex2->index)
+    if (v2->index == vertex1->index && v1->index == vertex2->index){
         return true;
+    }
 
     return false;
 }
 
 void VoroCrustEdge::addFace(Face const& new_face){
+    //! THREE:FACES:ON:THE:SAME:EDGE:
     if(faces.size() == 2){
         std::cout << "ERROR : can't have more than 2 faces sharing an edge" << std::endl;
         exit(1);
@@ -47,7 +50,7 @@ double VoroCrustEdge::calcDihedralAngle(){
     Vector3D b1, b2;
     
     // finds the edge on the first face starting at vertex1 (and is different the `this Edge`)
-    for(auto& edge : faces[0]->edges){
+    for(auto const& edge : faces[0]->edges){
         if(edge->index == index) continue;
 
         if(edge->vertex1->index == vertex1->index){
@@ -62,7 +65,7 @@ double VoroCrustEdge::calcDihedralAngle(){
     }
 
     // finds the edge on the second face starting at vertex1 (and is different the `this Edge`)
-    for(auto& edge : faces[1]->edges){
+    for(auto const& edge : faces[1]->edges){
         if(edge->index == index) continue;
 
         if(edge->vertex1->index == vertex1->index){
@@ -79,23 +82,17 @@ double VoroCrustEdge::calcDihedralAngle(){
     // Formula for the dihedral angle between two half planes https://en.wikipedia.org/wiki/Dihedral_angle
     Vector3D const& b0_X_b1 = CrossProduct(b0, b1);
     Vector3D const& b0_X_b2 = CrossProduct(b0, b2);
-    double const cos_phi = ScalarProd(b0_X_b1, b0_X_b2) / (abs(b0_X_b1) * abs(b0_X_b2));
 
-    return std::acos(cos_phi);
-}
-
-void VoroCrustEdge::flipOrientation() {
-    //! THOUGHT: This is just swap perhaps I can just shared_ptr swap if it has one
-    Vertex const temp = vertex1;
-    vertex1 = vertex2;
-    vertex2 = temp;
+    return CalcAngle(b0_X_b1, b0_X_b2);
 }
 
 void VoroCrustEdge::orientWithRespectTo(Edge const& edge){
     //! WARNING: this assumes that one of the vertices are shared by the edge
     if(edge->vertex2->index == vertex2->index || edge->vertex1->index == vertex1->index){
         std::cout << "flips orientation of edge " << index << ", because of " << edge->index <<"\n";
-        flipOrientation();
+
+        // flip orientation of edge
+        std::swap(vertex1, vertex2);
     }
 }
 

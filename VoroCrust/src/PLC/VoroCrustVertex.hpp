@@ -16,9 +16,13 @@ class VoroCrustVertex
     public:
         //! \brief Vector3D representing the Vertex in 3D space
         Vector3D vertex; 
+        
         //! \brief Faces incident to the Vertex.
         std::vector<Face> faces;
+
+        //! \brief group faces to surface patches
         std::vector<std::vector<Face>> divided_faces;
+        
         //! \brief Edges incident to the Vertex.
         std::vector<Edge> edges;
 
@@ -30,8 +34,6 @@ class VoroCrustVertex
 
         VoroCrustVertex(Vector3D const& vertex_, std::size_t const index_);
 
-        ~VoroCrustVertex() = default;
-        
         //! \brief adds a Face to Vertex's `faces` vector.
         void addFace(Face const& new_face);
         

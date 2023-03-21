@@ -56,6 +56,7 @@ void VoroCrustFace::orientWithRespectTo(Face const& face){
     Vector3D const& n1 = this->calcNormal();
     Vector3D const& n2 = face->calcNormal();
     
+    // if normals are opposite flip orientation
     if(ScalarProd(n1, n2) < 0){
         std::cout << "flips orientation of Face " << index << ", because of Face " << face->index << "\n";
         flipOrientation();
@@ -72,22 +73,23 @@ Vector3D VoroCrustFace::calculateCenteroid() const {
     return res / 3.0;
 }
 
-std::pair<bool, Vector3D> VoroCrustFace::pointXYaxisRayIntersectsAt(Vector3D const& point) const {
+std::pair<bool, Vector3D> VoroCrustFace::pointZparallelRayIntersectsAt(Vector3D const& point) const {
     //https://math.stackexchange.com/questions/2686606/equation-of-a-plane-passing-through-3-points
     Vector3D const& p1 = vertices[0]->vertex;
     Vector3D const& p2 = vertices[1]->vertex;
     Vector3D const& p3 = vertices[2]->vertex;
 
     double const coeff_z = Mat33<double>(p1.x, p1.y, 1.0, p2.x, p2.y, 1.0, p3.x, p3.y, 1.0).determinant();
-    // face is parallel to ray return success = false
+    
+    // face is parallel to ray return success := false
     if(std::abs(coeff_z) < 1e-14) {
         return std::pair(false, Vector3D(0.0, 0.0, 0.0));
     }
 
-    double const coeff_x = Mat33<double>(p1.y, p1.z, 1.0, p2.y, p2.z, 1.0, p3.y, p3.z, 1.0).determinant();
-    double const coeff_y = -Mat33<double>(p1.x, p1.z, 1.0, p2.x, p2.z, 1.0, p3.x, p3.z, 1.0).determinant();
+    double const coeff_x = Mat33(p1.y, p1.z, 1.0, p2.y, p2.z, 1.0, p3.y, p3.z, 1.0).determinant();
+    double const coeff_y = -Mat33(p1.x, p1.z, 1.0, p2.x, p2.z, 1.0, p3.x, p3.z, 1.0).determinant();
     
-    double const value = -Mat33<double>(p1.x, p1.y, p1.z, p2.x, p2.y, p2.z, p3.x, p3.y, p3.z).determinant();
+    double const value = -Mat33(p1.x, p1.y, p1.z, p2.x, p2.y, p2.z, p3.x, p3.y, p3.z).determinant();
 
     double const z_intersect_plane = -(coeff_x*point.x + coeff_y*point.y + value)/coeff_z;
 
@@ -96,17 +98,10 @@ std::pair<bool, Vector3D> VoroCrustFace::pointXYaxisRayIntersectsAt(Vector3D con
 
 bool sameSide(Vector3D const& p1, Vector3D const& p2, Vector3D const& a, Vector3D const& b){
     // https://blackpawn.com/texts/pointinpoly/
-
     return ScalarProd(CrossProduct(b-a, p1-a), CrossProduct(b-a, p2-a)) >= 0;
 }
 
 bool VoroCrustFace::pointIsInsideFace(Vector3D const& point) const {
-    //! SHOULDJUSTCHECKITONCE: should just check it once
-    if(vertices.size() != 3){
-        std::cout << "ERROR: face is not a triangle!" << std::endl;
-        exit(1);
-    }
-
     Vector3D const& a = vertices[0]->vertex;
     Vector3D const& b = vertices[1]->vertex;
     Vector3D const& c = vertices[2]->vertex;
@@ -115,7 +110,6 @@ bool VoroCrustFace::pointIsInsideFace(Vector3D const& point) const {
 }
 
 bool VoroCrustFace::isPointCompletelyOffFace(Vector3D const& p) const {
-    //! ASSUMPTION: face is a triangle
     auto const& v1 = vertices[0]->vertex;
     auto const& v2 = vertices[1]->vertex;
     auto const& v3 = vertices[2]->vertex;
@@ -147,7 +141,7 @@ std::string VoroCrustFace::repr() const
 {
     std::ostringstream s;
     s << "\tEdges: ";
-    for (auto &edge : edges)
+    for (auto const& edge : edges)
     {
         s << "\n\t\tedge " << edge->index << ": " << edge->repr() << ", ";
     }

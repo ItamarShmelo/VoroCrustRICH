@@ -476,7 +476,7 @@ PL_Complex::Location PL_Complex::determineLocation(Vector3D const& p) const {
         // simple check if the point is even relevent
         if(face->isPointCompletelyOffFace(p)) continue;
 
-        auto const& [success, p_inter] = face->pointXYaxisRayIntersectsAt(p);
+        auto const& [success, p_inter] = face->pointZparallelRayIntersectsAt(p);
 
         if(not success) continue;
         
