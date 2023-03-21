@@ -88,11 +88,13 @@ void PL_Complex::addFace(std::vector<std::size_t> const &indices)
 
 bool PL_Complex::checkAllVerticesAreUnique() {
     std::vector<Vector3D> vec_vertices;
+    
     vec_vertices.reserve(vertices.size());
 
-    for(auto const& vertex : vertices)
+    for(auto const& vertex : vertices){
         vec_vertices.push_back(vertex->vertex);
-    
+    }
+
     auto const& new_vec_vertices = unsorted_unique<Vector3D>(vec_vertices);
 
     if(new_vec_vertices.size() != vec_vertices.size()){
@@ -113,41 +115,6 @@ bool PL_Complex::checkAllVerticesAreOnFace()
             return false;
         }
 
-    return true;
-}
-
-bool PL_Complex::checkIfALLFacesAreFlat()
-{
-    for (auto &face : faces)
-    {
-        // if Face is a triangle hence flat by definition cycle
-        if (face->vertices.size() == 3)
-            continue;
-
-        // span{v1, v2} define the plane the face is assumed to be on. v2 is orthogonal to v1.
-        Vector3D const &v1 = face->vertices[1]->vertex - face->vertices[0]->vertex;
-        Vector3D const &v_temp = face->vertices[2]->vertex - face->vertices[1]->vertex;
-        Vector3D const &v2 = v_temp - (ScalarProd(v1, v_temp) / ScalarProd(v1, v1)) * v1; // make v2 orthogonal using Grahm-Shmidt
-
-        std::cout << "ScalarProduct(v1, v2) = " << ScalarProd(v2, v1) << std::endl;
-
-        // Calculate the magnitute of ||v_perp||=||v - projection(v)|| and check that it is less then some eps.
-        // projection(v) is the projection on span{v1, v2}
-        for (std::size_t i = 2; i < face->vertices.size(); ++i)
-        {
-            Vector3D const &v = face->vertices[(i + 1) % face->vertices.size()]->vertex - face->vertices[i]->vertex;
-            Vector3D const &v_perp = v - ((ScalarProd(v, v1) / ScalarProd(v1, v1)) * v1 + (ScalarProd(v, v2) / ScalarProd(v2, v2)) * v2);
-
-            std::cout << "Edge: " << i + 1 << " size of perp : " << abs(v_perp) << std::endl;
-
-            if (abs(v_perp) > 1e-14)
-            {
-                std::cout << "ERROR: face is not flat! Make sure all the vertices of face " << face->index << " are on the same plane!!" << std::endl;
-                std::cout << "Edge: " << i + 1 << " size of perp : " << abs(v_perp) << std::endl;
-                return false;
-            }
-        }
-    }
     return true;
 }
 
