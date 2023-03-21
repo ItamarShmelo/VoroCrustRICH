@@ -14,8 +14,6 @@ class VoroCrustFace
         std::vector<Vertex> vertices;
         //! \brief Edges on the boundary of the Face
         std::vector<Edge> edges;
-        //! \brief Neighboring Faces
-        std::vector<Face> neighbors;
         
         //! \brief index in the PLC Faces vector
         std::size_t index;
@@ -25,13 +23,12 @@ class VoroCrustFace
 
         //! \brief true if Face was already assigned to a Patch
         bool isPatched;
-
+        
+        //! \brief patch index in the PL_Complex `patches` vector
         std::size_t patch_index;
 
         VoroCrustFace(std::vector<Vertex> const& vertices_, std::size_t const index_);
         
-        ~VoroCrustFace() = default;
-
         //! \brief adds an Edge to the Face's Edges vector.
         void addEdge(Edge const& edge);
 

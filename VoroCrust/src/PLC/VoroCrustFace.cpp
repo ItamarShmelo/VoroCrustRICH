@@ -7,7 +7,6 @@
 VoroCrustFace::VoroCrustFace(std::vector<Vertex> const &vertices_,
                              std::size_t const index_) : vertices(vertices_),
                                                          edges(),
-                                                         neighbors(),
                                                          index(index_),
                                                          current_normal(),
                                                          isPatched(false) {}

@@ -111,8 +111,14 @@ class PL_Complex
         */
         SurfacePatch createSurfacePatch(Face const& face);
 
+        /*! \brief returns the bounding box of the PL_Complex
+            \return array of 6 {ll_x, ll_y , ll_z, ur_x, ur_y, ur_z} where ll := 'lower left', ur := 'upper right'
+        */
         std::array<double, 6> getBoundingBox() const;
 
+        /*! \brief determine if a point p is inside or outside the PL_Complex 
+            \return if point is inside return PL_Complex::Location::IN else return PL_Complex::Location::OUT 
+        */
         Location determineLocation(Vector3D const& p) const; 
         
         std::string repr() const;

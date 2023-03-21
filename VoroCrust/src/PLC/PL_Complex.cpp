@@ -55,16 +55,17 @@ void PL_Complex::addFace(std::vector<std::size_t> const &indices)
         exit(1);
     }
 
-    if (indices.size() < 3)
+    if (indices.size() != 3)
     {
-        std::cout << "ERROR: Face has to have at least three vertices!" << std::endl;
+        std::cout << "ERROR in PL_Complex::addFace : Face has to be a traingle!" << std::endl;
         exit(1);
     }
 
     std::vector<Vertex> face_vertices;
 
-    for (auto const index : indices)
+    for (auto const index : indices){
         face_vertices.push_back(vertices[index]);
+    }
 
     Face new_face_ptr = std::make_shared<VoroCrustFace>(face_vertices, faces.size());
 
@@ -74,21 +75,12 @@ void PL_Complex::addFace(std::vector<std::size_t> const &indices)
         vertex_ptr->addFace(new_face_ptr);
     }
 
-    // create new edges and add the to edges of new face
+    // create new edges 
     for (std::size_t i = 0; i < new_face_ptr->vertices.size(); ++i)
     {
         auto new_edge_ptr = this->addEdge(new_face_ptr->vertices[i], new_face_ptr->vertices[(i + 1) % (new_face_ptr->vertices.size())]);
-        new_edge_ptr->addFace(new_face_ptr);
-        new_face_ptr->addEdge(new_edge_ptr);
-
-        // if edge was already created update the neighbors array of the faces on the sides of the edge
-        if (new_edge_ptr->faces.size() == 2)
-        {
-            new_face_ptr->neighbors.push_back(new_edge_ptr->faces[0]);
-            new_edge_ptr->faces[0]->neighbors.push_back(new_edge_ptr->faces[1]);
-
-            // std::cout << "Neigbors :: faces " << new_face_ptr->index << " and face " << new_edge_ptr->faces[0]->index << std::endl;
-        }
+        new_edge_ptr->addFace(new_face_ptr); // add new face to corresponding edge
+        new_face_ptr->addEdge(new_edge_ptr); // add edge to new face
     }
 
     faces.push_back(new_face_ptr);
@@ -475,6 +467,7 @@ SurfacePatch PL_Complex::createSurfacePatch(Face const &face)
 std::array<double, 6> PL_Complex::getBoundingBox() const {
     double ll_x, ll_y, ll_z; // lower left
     double ur_x, ur_y, ur_z; // upper right
+
     ll_x = ll_y = ll_z = std::numeric_limits<double>::max();
     ur_x = ur_y = ur_z = -std::numeric_limits<double>::max();
 
