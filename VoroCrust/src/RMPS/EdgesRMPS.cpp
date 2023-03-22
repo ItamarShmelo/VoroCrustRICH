@@ -1,6 +1,18 @@
 #include "EdgesRMPS.hpp"
 
-EdgesRMPS::EdgesRMPS(double const maxRadius_, double const L_Lipschitz_, double const alpha_, double const sharpTheta_, std::shared_ptr<PL_Complex> const& plc_) : maxRadius(maxRadius_), L_Lipschitz(L_Lipschitz_), alpha(alpha_), sharpTheta(sharpTheta_), uni01_gen(boost::mt19937(std::time(nullptr)), boost::random::uniform_01<>()), plc(plc_), eligble_edges(), isDeleted() {}
+EdgesRMPS::EdgesRMPS(double const maxRadius_, 
+                     double const L_Lipschitz_, 
+                     double const alpha_, 
+                     double const sharpTheta_, 
+                     std::shared_ptr<PL_Complex> const& plc_) : 
+                     maxRadius(maxRadius_), 
+                     L_Lipschitz(L_Lipschitz_), 
+                     alpha(alpha_), 
+                     sharpTheta(sharpTheta_), 
+                     uni01_gen(boost::mt19937(std::time(nullptr)), boost::random::uniform_01<>()), 
+                     plc(plc_), 
+                     eligble_edges(), 
+                     isDeleted() {}
 
 void EdgesRMPS::loadEdges(std::vector<Edge> const& sharp_edges){
     if(not eligble_edges.empty()){
@@ -8,8 +20,9 @@ void EdgesRMPS::loadEdges(std::vector<Edge> const& sharp_edges){
         exit(1);
     }
 
-    for(Edge const& edge : sharp_edges)
+    for(Edge const& edge : sharp_edges){
         eligble_edges.push_back(EligbleEdge(edge->vertex1->vertex, edge->vertex2->vertex, edge->crease_index, edge->index));
+    }
 
     isDeleted = std::vector<bool>(eligble_edges.size(), false);
 }
@@ -66,6 +79,7 @@ bool EdgesRMPS::checkIfPointIsDeeplyCovered(Vector3D const& p, Trees const& tree
         
         auto const& suspects = edges_ball_tree.radiusSearch(p, r_max);
         
+        // go through all suspects to deeply cover `p` and check if they do  
         for(auto const i : suspects){
             auto const& [center, r] = edges_ball_tree.getBall(i);
 
@@ -76,6 +90,7 @@ bool EdgesRMPS::checkIfPointIsDeeplyCovered(Vector3D const& p, Trees const& tree
         }
     }
     
+    // check if nearest corner ball deeply cover `p`
     auto const& [center, radius] = corners_ball_tree.getBallNearestNeighbor(p);
 
     return distance(p, center) <= radius*(1.0-alpha);
@@ -93,7 +108,7 @@ std::tuple<bool, std::size_t const, Vector3D const> EdgesRMPS::sampleEligbleEdge
         return std::tuple(false, 0, Vector3D(0.0, 0.0, 0.0));
     }
     
-    // find exact point
+    // find exact point sampled on edge
     EligbleEdge const& edge = eligble_edges[edge_index];
     Vector3D const& edge_vec = (edge[1] - edge[0]);
     double const factor = (sample - start_len[edge_index]) / abs(edge_vec);
@@ -111,6 +126,7 @@ void EdgesRMPS::discardEligbleEdgesContainedInCornerBalls(Trees const& trees){
 
         Crease const& edge_crease = plc->creases[edge.crease_index];
         
+        // check if the corner at the start of the crease deeply cover the eligle edge
         if(edge_crease.front()->vertex1->isSharp){        
             auto const& [center, r] = corners_ball_tree.getBallNearestNeighbor(edge_crease.front()->vertex1->vertex);
 
@@ -122,6 +138,7 @@ void EdgesRMPS::discardEligbleEdgesContainedInCornerBalls(Trees const& trees){
             }
         }
         
+        // check if the corner at the edge of the crease deeply cover the eligle edge
         if(edge_crease.back()->vertex2->isSharp){        
             auto const& [center, r] = corners_ball_tree.getBallNearestNeighbor(edge_crease.back()->vertex2->vertex);
 
@@ -158,7 +175,7 @@ double EdgesRMPS::calculateSmoothnessLimitation(Vector3D const& p, EligbleEdge c
         normals.reserve(patch_faces.size());
         
         for(Face const& face : patch_faces){
-            normals.push_back(face->calcNormal());
+            normals.push_back(face->calcNormal()); // calc all normals in advance
         }
 
         min_dist = faces_boundary_tree.distanceToNearestNonCosmoothPoint(p, normals, patch_index, sharpTheta, min_dist);
@@ -190,8 +207,6 @@ bool EdgesRMPS::discardEligbleEdges(Trees const& trees){
         EligbleEdge const& edge = eligble_edges[i];
         
         
-        //! MIGHTBEUNECESSARY: this might be unecessary because I can take the nearest neighbor to one of the vertices
-        // of the edge and use the r_max test (see FacesRMPS)
         auto const& [nn_edge_ball_center, nn_edge_ball_radius] = trees.ball_kd_edges.getBallNearestNeighbor(edge.edge[0]);
 
         double const r_max = (nn_edge_ball_radius + L_Lipschitz*distance(edge.edge[0], nn_edge_ball_center)) / (1.0 - L_Lipschitz); 

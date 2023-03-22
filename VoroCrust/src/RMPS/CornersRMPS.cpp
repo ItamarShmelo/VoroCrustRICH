@@ -31,15 +31,17 @@ EligbleCorner CornersRMPS::newSample(){
     // create a random number generator to sample from 0 - (eligble_corners.size()-1)
     boost::mt19937 rng(std::time(nullptr));
     boost::random::uniform_int_distribution<> int_distribution(0, eligble_corners.size() - 1);
-    boost::variate_generator<boost::mt19937, boost::random::uniform_int_distribution<>> rand_gen(rng, int_distribution);
+    boost::variate_generator rand_gen(rng, int_distribution);
 
     // sample a random index;
     std::size_t const index = rand_gen();
     
     auto it = eligble_corners.cbegin();
     
+    // advance iterator to that point
     for(std::size_t i=0; i < index; ++it, ++i);
     
+    // erased sampled corner
     EligbleCorner sample = *it;
     eligble_corners.erase(it);
 
@@ -62,7 +64,7 @@ double CornersRMPS::calculateInitialRadius(EligbleCorner const& corner, Trees co
     
     double const dist_q_prime = calculateSmoothnessLimitation(corner, trees);
 
-    return std::min<double>({maxRadius, 0.49*dist_q_prime, r_q + L_Lipschitz*dist_q});
+    return std::min({maxRadius, 0.49*dist_q_prime, r_q + L_Lipschitz*dist_q});
 }
 
 double CornersRMPS::calculateSmoothnessLimitation(EligbleCorner const& corner, Trees const& trees) const {
@@ -70,7 +72,7 @@ double CornersRMPS::calculateSmoothnessLimitation(EligbleCorner const& corner, T
     VoroCrust_KD_Tree_Boundary const& edges_boundary_tree = trees.VC_kd_sharp_edges;
     VoroCrust_KD_Tree_Boundary const& faces_boundary_tree = trees.VC_kd_faces;
 
-    // find nearest sharp corner
+    // find nearest sharp corner, taking [1] beacause corner is a point in the tree so obviously it is the closest to itself
     auto const nearestSharpCorner_index = corner_boundary_tree.kNearestNeighbors(corner->vertex, 2)[1];
     Vector3D const& nearestSharpCorner = corner_boundary_tree.points[nearestSharpCorner_index];
 
@@ -78,10 +80,11 @@ double CornersRMPS::calculateSmoothnessLimitation(EligbleCorner const& corner, T
 
     double min_dist = std::min(dist_nearest_corner, maxRadius/0.49); // maxRadius is divided because r_smooth is multiplied by 0.49
 
-    // find neareset non cosmooth point on the edges
+    // find neareset non cosmooth point on the creases current corner is part of 
     std::vector<std::size_t> creases_exclude;
     for(Edge const& edge : corner->edges){
         if(not edge->isSharp) continue;
+
         std::size_t const crease_index = edge->crease_index;
         creases_exclude.push_back(crease_index);
         
@@ -90,9 +93,10 @@ double CornersRMPS::calculateSmoothnessLimitation(EligbleCorner const& corner, T
         min_dist = edges_boundary_tree.distanceToNearestNonCosmoothPoint(corner->vertex, parallel, crease_index, sharpTheta, min_dist);
     }
 
+    // find the nearest point on the boundary tree that is on a crease current corner is not part of and limit min_dist
     min_dist = edges_boundary_tree.distanceToNearestNeighborExcludingFeatures(corner->vertex, creases_exclude, min_dist);
 
-    //find neareset non cosmooth point on the face
+    // find the nearest non cosmooth point on the patches current corner is part of and limit min_dist 
     std::vector<std::size_t> patches_to_exclude;
     for(auto const& patch_faces : corner->divided_faces){
         std::size_t const patch_index = patch_faces[0]->patch_index;
@@ -104,9 +108,11 @@ double CornersRMPS::calculateSmoothnessLimitation(EligbleCorner const& corner, T
             normals.push_back(face->calcNormal());
         }
 
+        // find the nearest point on the patch not cosmooth to current corner and limit min_dist
         min_dist = faces_boundary_tree.distanceToNearestNonCosmoothPoint(corner->vertex, normals, patch_index, sharpTheta, min_dist);
     }
     
+    // find the nearest point on a surface patch current corner is not part of and limit min_dist
     min_dist = faces_boundary_tree.distanceToNearestNeighborExcludingFeatures(corner->vertex, patches_to_exclude, min_dist);
 
     return min_dist;

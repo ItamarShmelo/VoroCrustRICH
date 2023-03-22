@@ -288,8 +288,6 @@ bool FacesRMPS::discardEligbleFaces(Trees const& trees) {
 
         double const r_max = (nn_face_ball_radius + L_Lipschitz*distance(face.face[0], nn_face_ball_center)) / (1.0 - L_Lipschitz); 
 
-        bool discard = false;
-
         auto const& balls_to_check_faces = faces_ball_tree.radiusSearch(face.face[0], r_max);
         for(auto const ball_index : balls_to_check_faces) {
             if(isEligbleFaceDeeplyCoveredInFaceBall(face, trees, ball_index)){

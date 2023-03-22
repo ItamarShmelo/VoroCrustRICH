@@ -11,12 +11,6 @@ using EligbleCorner = Vertex;
 
 class CornersRMPS {
     public:
-        double const maxRadius;
-        double const L_Lipschitz;
-        double const sharpTheta;
-        std::shared_ptr<PL_Complex const> plc;
-        std::list<EligbleCorner> eligble_corners; // should be private
-
         CornersRMPS(double const maxRadius_, double const L_Lipschitz_, double const sharpTheta, std::shared_ptr<PL_Complex> const& plc_);
         ~CornersRMPS() = default;
 
@@ -27,7 +21,13 @@ class CornersRMPS {
         //! run the corner ball sampling
         void doSampling(VoroCrust_KD_Tree_Ball &corner_ball_tree, Trees const& trees);
 
-    private:
+    private:        
+        double const maxRadius;
+        double const L_Lipschitz;
+        double const sharpTheta;
+        std::shared_ptr<PL_Complex const> plc;
+        std::list<EligbleCorner> eligble_corners; 
+
         //! \brief get a new sample 
         EligbleCorner newSample();
 
