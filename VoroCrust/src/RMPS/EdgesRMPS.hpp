@@ -28,6 +28,15 @@ struct EligbleEdge {
 
 class EdgesRMPS {
     public:
+        EdgesRMPS(double const maxRadius_, double const L_Lipschitz_, double const alpha_, double const sharpTheta_, std::shared_ptr<PL_Complex> const& plc_);
+
+        //! \brief loads the sharp edges vector to the eligble edge vector
+        void loadEdges(std::vector<Edge> const& sharp_edges);
+
+        //! \brief do the RMPS sampling stage until there are no more eligble edges 
+        bool doSampling(VoroCrust_KD_Tree_Ball &edges_ball_tree, Trees const& tree);
+
+    private:
         double const maxRadius;
         double const L_Lipschitz;
         double const alpha;
@@ -39,18 +48,7 @@ class EdgesRMPS {
         std::shared_ptr<PL_Complex const> plc;
         std::vector<EligbleEdge> eligble_edges;
         std::vector<bool> isDeleted;
-
-        EdgesRMPS(double const maxRadius_, double const L_Lipschitz_, double const alpha_, double const sharpTheta_, std::shared_ptr<PL_Complex> const& plc_);
-        ~EdgesRMPS() = default;
-
-        //! \brief loads the sharp edges vector to the eligble edge vector
-        void loadEdges(std::vector<Edge> const& sharp_edges);
-
-        //! \brief do the RMPS sampling stage until there are no more eligble edges 
-        bool doSampling(VoroCrust_KD_Tree_Ball &edges_ball_tree, Trees const& tree);
-
-    private:
-
+        
         /*! \brief calculates the current total length of the eligble edges and the start len for each edge
             \return returns a pair <total_length, start_length> where start_length is a vector with the same size as the eligble edges
         */
