@@ -115,29 +115,53 @@ class VoroCrust_KD_Tree_Boundary : public VoroCrust_KD_Tree {
 
         VoroCrust_KD_Tree_Boundary(std::vector<Vector3D> const& points) : VoroCrust_KD_Tree(points) {}
 
-        VoroCrust_KD_Tree_Boundary(std::vector<Vector3D> const& points, std::vector<Vector3D> const& vecs, std::vector<std::size_t> const& feature_index_, std::vector<std::size_t> const& plc_index_);
+        VoroCrust_KD_Tree_Boundary(std::vector<Vector3D> const& points, 
+                                   std::vector<Vector3D> const& vecs, 
+                                   std::vector<std::size_t> const& feature_index_, 
+                                   std::vector<std::size_t> const& plc_index_);
 
         virtual ~VoroCrust_KD_Tree_Boundary() = default;
 
         void insert(Vector3D const& point, Vector3D const& vec, std::size_t f_index, std::size_t plc_index_);
 
         //! \brief finds the nearest point in the tree wthat is not cosmooth with `query`
-        long nearestNonCosmoothPoint(Vector3D const& query, std::vector<Vector3D> const& vecs, std::size_t const f_index, double const angle, double const initial_min_dist) const;
+        long nearestNonCosmoothPoint(Vector3D const& query, 
+                                     std::vector<Vector3D> const& vecs, 
+                                     std::size_t const f_index, 
+                                     double const angle, 
+                                     double const initial_min_dist) const;
 
-        double distanceToNearestNonCosmoothPoint(Vector3D const& query, std::vector<Vector3D> const& vecs, std::size_t const f_index, double const angle, double const initial_min_dist) const;
+        double distanceToNearestNonCosmoothPoint(Vector3D const& query, 
+                                                 std::vector<Vector3D> const& vecs, 
+                                                 std::size_t const f_index, 
+                                                 double const angle, 
+                                                 double const initial_min_dist) const;
 
-        long nearestNeighborExcludingFeatures(Vector3D const& query, std::vector<std::size_t> const& to_exclude, double const initial_min_dist) const;
+        //! \brief find the nearest neighbor excluding some given features
+        long nearestNeighborExcludingFeatures(Vector3D const& query, 
+                                              std::vector<std::size_t> const& to_exclude, 
+                                              double const initial_min_dist) const;
 
-        double distanceToNearestNeighborExcludingFeatures(Vector3D const& query, std::vector<std::size_t> const& to_exclude, double const initial_min_dist) const;
+        double distanceToNearestNeighborExcludingFeatures(Vector3D const& query,                                        
+                                                          std::vector<std::size_t> const& to_exclude, 
+                                                          double const initial_min_dist) const;
 
-        //!
     private:
 
         //! \brief finds the nearest non cosmooth point to `query` recursively 
-        void nearestNonCosmoothPointRecursive(Vector3D const& query, std::vector<Vector3D> const& vecs, std::size_t const f_index, double const angle, NodePtr const& node, long &guess, double &minDist) const;
+        void nearestNonCosmoothPointRecursive(Vector3D const& query, 
+                                              std::vector<Vector3D> const& vecs, 
+                                              std::size_t const f_index, 
+                                              double const angle, 
+                                              NodePtr const& node, 
+                                              long &guess, 
+                                              double &minDist) const;
 
-        void nearestNeighborExcludingFeaturesRecursive(Vector3D const& query, std::vector<std::size_t> const& to_exclude, NodePtr const& node, long &guess, double &minDist) const;
-
+        void nearestNeighborExcludingFeaturesRecursive(Vector3D const& query, 
+                                                       std::vector<std::size_t> const& to_exclude, 
+                                                       NodePtr const& node, 
+                                                       long &guess, 
+                                                       double &minDist) const;
 };
 
 class VoroCrust_KD_Tree_Ball : public VoroCrust_KD_Tree_Boundary {
@@ -146,14 +170,20 @@ class VoroCrust_KD_Tree_Ball : public VoroCrust_KD_Tree_Boundary {
 
         VoroCrust_KD_Tree_Ball();
 
-        VoroCrust_KD_Tree_Ball(std::vector<Vector3D> const& points, std::vector<Vector3D> const& vecs, std::vector<double> const& radii, std::vector<std::size_t> const& feature_index_, std::vector<std::size_t> const& plc_index_);
+        VoroCrust_KD_Tree_Ball(std::vector<Vector3D> const& points, 
+                               std::vector<Vector3D> const& vecs, 
+                               std::vector<double> const& radii, 
+                               std::vector<std::size_t> const& feature_index_, 
+                               std::vector<std::size_t> const& plc_index_);
 
         virtual ~VoroCrust_KD_Tree_Ball() = default;
 
         void insert(Vector3D const& point, Vector3D const& vec, double radius, std::size_t const f_index, std::size_t const& plc_index_);
 
         //! \brief returns the overlapping balls of ball defined by `center` `radius`, only overlapping balls with centers up to `r_max`
-        std::vector<std::size_t> getOverlappingBalls(Vector3D const& center, double const radius, double const r_max) const;
+        std::vector<std::size_t> getOverlappingBalls(Vector3D const& center, 
+                                                     double const radius, 
+                                                     double const r_max) const;
 
         //! \brief returns the ball at `index`
         std::pair<Vector3D, double> getBall(std::size_t const index) const { return std::pair(points[index], ball_radii[index]); }

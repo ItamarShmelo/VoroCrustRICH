@@ -17,6 +17,7 @@ struct Seed {
     Seed() : p(0.0, 0.0, 0.0), radius(-1.0) {}
     Seed(Vector3D const& p_, double radius_) : p(p_), radius(radius_) {}
 };
+
 struct BallInfo {
     std::size_t index;
     Dim dim;
@@ -33,19 +34,31 @@ using Triplet = std::pair<std::size_t, std::size_t>; // Triplet is p, Triplet.fi
 using InfoQuartet = std::array<BallInfo const, 4>;
 using BallQuartet = std::array<Ball const, 4>;
 
-inline std::tuple<double const, double const, double const, double const> getLineCoeff(double const x1, double const y1, double const z1, double const r1, double const x2, double const y2, double const z2, double const r2);
+// part of calculating the intersection seed algorithm
+std::tuple<double const, double const, double const, double const> 
+getLineCoeff(double const x1, 
+             double const y1, 
+             double const z1, 
+             double const r1, 
+             double const x2, 
+             double const y2, 
+             double const z2, 
+             double const r2);
 
-inline std::pair<double const, double const> getZDependency(double const a1, double const b1, double const c1, double const k1, double const a3, double const b3, double const c3, double const k3);
+// part of calculating the intersection seed algorithm
+std::pair<double const, double const> 
+getZDependency(double const a1, 
+               double const b1, 
+               double const c1, 
+               double const k1, 
+               double const a3, 
+               double const b3, 
+               double const c3, 
+               double const k3);
+
 
 class SliverDriver {
     public:
-        double const L_Lipschitz;
-        std::vector<double> r_new_corner_balls;
-        std::vector<double> r_new_edge_balls;
-        std::vector<double> r_new_face_balls;
-
-        std::size_t number_of_slivers_eliminated;
-        
         SliverDriver(double const L_Lipschitz_);
 
         bool eliminateSlivers(Trees &trees);
@@ -53,8 +66,16 @@ class SliverDriver {
         std::vector<Seed> getSeeds(Trees const& trees) const;
 
     private:
-        mutable double max_radius_corner_edge;
+        double const L_Lipschitz;
+        std::vector<double> r_new_corner_balls;
+        std::vector<double> r_new_edge_balls;
+        std::vector<double> r_new_face_balls;
 
+        std::size_t number_of_slivers_eliminated;
+        mutable double max_radius_corner_edge;
+        
+        /*! \brief eliminate Slivers created from a specific ball tree. in practice we only use this function on the faces ball tree
+        */
         void eliminateSliversForBallsInBallTree(Dim const dim, Trees const& trees);
 
         void dealWithBall(BallInfo const& ball_info, Trees const& trees);

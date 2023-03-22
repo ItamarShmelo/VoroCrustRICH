@@ -3,11 +3,14 @@
 
 std::vector<Seed> unsorted_unique(std::vector<Seed> const& vec, double const tol);
 
-SliverDriver::SliverDriver(double const L_Lipschitz_) : L_Lipschitz(L_Lipschitz_), r_new_corner_balls(), r_new_edge_balls(), r_new_face_balls(), number_of_slivers_eliminated(0), max_radius_corner_edge(0) {}
+SliverDriver::SliverDriver(double const L_Lipschitz_) : L_Lipschitz(L_Lipschitz_), 
+                                                        r_new_corner_balls(), 
+                                                        r_new_edge_balls(), 
+                                                        r_new_face_balls(), 
+                                                        number_of_slivers_eliminated(0), 
+                                                        max_radius_corner_edge(0) {}
 
 std::vector<BallInfo> SliverDriver::groupOverlappingBalls(BallInfo const& ball_info, Trees const& trees) const {
-    //! MAYBE: I need to change r_max when looking for lower dimensional balls;
-    //! MAYBE: to only look at face balls (I think there are special cases where this is invlid though)
     auto const& [p, radius] = getBall(ball_info, trees);
 
     std::vector<BallInfo> overlapping_balls;
@@ -17,7 +20,7 @@ std::vector<BallInfo> SliverDriver::groupOverlappingBalls(BallInfo const& ball_i
     //! EPSILONTICA:
     double const r_corner_and_edge = (ball_info.dim == Dim::FACE) ? (max_radius_corner_edge+2.0*radius)*(1.+ 1e-14) : r_max;
 
-    // this  lambda get the overlapping balls indices and push them into overlapping balls vector
+    // this lambda get the overlapping balls indices and push them into overlapping balls vector
     auto getAndPushOverlapping = [&overlapping_balls](VoroCrust_KD_Tree_Ball const& ball_tree, Vector3D const& p, double const radius, double const r_max, Dim const dim){
         std::vector<std::size_t> const& overlapping_balls_indices = ball_tree.getOverlappingBalls(p, radius, r_max);
         for(std::size_t const ball_index : overlapping_balls_indices){
@@ -171,7 +174,7 @@ void SliverDriver::dealWithHalfCoveredSeeds(InfoQuartet const& balls_info, BallQ
                 bool const is_seed_p_covered = distance(seed_p, p4) < r4; // check if seed_p is covered by ball_4
                 bool const is_seed_m_covered = distance(seed_m, p4) < r4; // check if seed_m is covered by ball_4
 
-                double r_temp = std::numeric_limits<double>::max();
+                double r_temp = r_new;
 
                 // check if seeds are half covered
                 if(is_seed_p_covered && !is_seed_m_covered){
@@ -188,6 +191,7 @@ void SliverDriver::dealWithHalfCoveredSeeds(InfoQuartet const& balls_info, BallQ
         }
     }
 
+    // shrink ball needing the least amount to uncover the seeds 
     if(least_shrinkage>=0) setRadiusOfBall(r_new, balls_info[least_shrinkage]);
 }
 
@@ -252,7 +256,16 @@ std::tuple<bool, Vector3D, Vector3D> SliverDriver::calculateIntersectionSeeds(Ba
     return std::tuple(true, seed_plus, seed_minus);
 }
 
-std::tuple<double const, double const, double const, double const> getLineCoeff(double const x1, double const y1, double const z1, double const r1, double const x2, double const y2, double const z2, double const r2) {
+std::tuple<double const, double const, double const, double const> 
+getLineCoeff(double const x1, 
+             double const y1, 
+             double const z1, 
+             double const r1, 
+             double const x2, 
+             double const y2, 
+             double const z2, 
+             double const r2) {
+    
     double const a = 2.0*(x2-x1);
     double const b = 2.0*(y2-y1);
     double const c = 2.0*(z2-z1);
@@ -261,7 +274,15 @@ std::tuple<double const, double const, double const, double const> getLineCoeff(
     return std::tuple(a, b, c, k);
 }
 
-std::pair<double const, double const> getZDependency(double const a1, double const b1, double const c1, double const k1, double const a3, double const b3, double const c3, double const k3) {
+std::pair<double const, double const> 
+getZDependency(double const a1, 
+               double const b1, 
+               double const c1, 
+               double const k1, 
+               double const a3, 
+               double const b3, 
+               double const c3, 
+               double const k3) {
     
     //! WARNING: EPSILONTICA
     if(std::abs(a1) < 1e-14){
@@ -289,13 +310,11 @@ bool SliverDriver::eliminateSlivers(Trees &trees){
     
     double const max_radius_corner = *std::max_element(r_new_corner_balls.begin(), r_new_corner_balls.end());
     double const max_radius_edge = *std::max_element(r_new_edge_balls.begin(), r_new_edge_balls.end());
+    
     max_radius_corner_edge = std::max(max_radius_corner, max_radius_edge);
 
     number_of_slivers_eliminated = 0;
     
-    //! PERHAPS: I'm not sure I need this elimination of slivers from CORNER OR EDGE Since a Face ball has to be part of the quartet since no corner balls and edge balls can create a triplet...
-    // eliminateSliversForBallsInBallTree(Dim::CORNER, trees);
-    // eliminateSliversForBallsInBallTree(Dim::EDGE, trees);
     eliminateSliversForBallsInBallTree(Dim::FACE, trees);
 
     // update ball radii
@@ -379,15 +398,15 @@ std::vector<Seed> unsorted_unique(std::vector<Seed> const& vec, double const tol
 
 
 
-    std::vector<Seed> new_vec(vec_size - size_deleted, Seed());
+    std::vector<Seed> new_vec;
+    new_vec.reserve(vec_size - size_deleted + 1);
     //! FORDEBUG: remove
     std::cout << "original size:" << vec_size <<", new_size: " << new_vec.size() << std::endl;
 
-    for(std::size_t i=0, j=0; i<vec_size; ++i){
+    for(std::size_t i=0; i<vec_size; ++i){
         if(isDeleted[i]) continue;
 
-        new_vec[j] = vec[i];
-        ++j;
+        new_vec.push_back(vec[i]);
     }
 
     return new_vec;
