@@ -207,39 +207,38 @@ bool EdgesRMPS::discardEligbleEdges(Trees const& trees){
         if(isDeleted[i]) continue;
         EligbleEdge const& edge = eligble_edges[i];
         
-        
+        // find nearest ball to the start of the edge
         auto const& [nn_edge_ball_center, nn_edge_ball_radius] = trees.ball_kd_edges.getBallNearestNeighbor(edge.edge[0]);
 
         double const r_max = (nn_edge_ball_radius + L_Lipschitz*distance(edge.edge[0], nn_edge_ball_center)) / (1.0 - L_Lipschitz); 
 
+        // get all balls that might deeply cover the edge
         auto const& balls_to_check_edges = trees.ball_kd_edges.radiusSearch(edge.edge[0], r_max);
         
         for(auto const ball_index : balls_to_check_edges){
-            //! MIGHTBEUNECESSARY: all relevent balls should already be in the same crease
-            if(edge.crease_index == trees.ball_kd_edges.feature_index[ball_index]){
-                if(isEligbleEdgeDeeplyCoveredInEdgeBall(edge, trees, ball_index)){
-                    isDeleted[i] = true;
-                    break;
-                }
-            }                             
+            if(isEligbleEdgeDeeplyCoveredInEdgeBall(edge, trees, ball_index)){
+                isDeleted[i] = true;
+                break;
+            }
         }
     }
 
+    // delete the edges
     std::size_t not_deleted = 0;
     for(std::size_t i=0; i < isDeleted.size(); ++i){
         if(not isDeleted[i]) not_deleted++;
     }
 
-    std::vector<EligbleEdge> new_eligble_edges(not_deleted, eligble_edges[0]);
+    std::vector<EligbleEdge> new_eligble_edges;
+    new_eligble_edges.reserve(not_deleted);
 
-    for(std::size_t i=0, j=0; i < isDeleted.size(); ++i){
+    for(std::size_t i=0; i < isDeleted.size(); ++i){
         if(not isDeleted[i]){
-            new_eligble_edges[j] = eligble_edges[i];
-            ++j;
+            new_eligble_edges.push_back(eligble_edges[i]);
         }
     }
     
-    eligble_edges = new_eligble_edges;
+    eligble_edges = std::move(new_eligble_edges);
 
     return shrunkOtherStrataBalls;
 }
