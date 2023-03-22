@@ -302,6 +302,7 @@ bool EdgesRMPS::doSampling(VoroCrust_KD_Tree_Ball &edges_ball_tree, Trees const&
         
         double radius = calculateInitialRadius(p, edge_index, trees);
 
+        // if any ball centers are covered by the new sample, reject it with `rejection_probability` and shrink otherwise
         auto const& centers_in_new_ball_indices = edges_ball_tree.radiusSearch(p, radius);
         if(not centers_in_new_ball_indices.empty()){
             if(uni01_gen() < rejection_probability) continue;
