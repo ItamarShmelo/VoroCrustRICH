@@ -318,7 +318,7 @@ std::vector<Seed> SliverDriver::getSeeds(Trees const& trees) const {
     std::vector<Seed> seeds;
 
     VoroCrust_KD_Tree_Ball const& faces_ball_tree = trees.ball_kd_faces;
-    for (std::size_t i = 0; i < faces_ball_tree.points.size(); ++i)
+    for (std::size_t i = 0; i < faces_ball_tree.size(); ++i)
     {
         BallInfo ball_info(i, Dim::FACE);
         std::vector<BallInfo> const& overlapping_balls = groupOverlappingBalls(ball_info, trees);

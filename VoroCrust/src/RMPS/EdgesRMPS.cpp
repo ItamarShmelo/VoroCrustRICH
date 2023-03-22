@@ -320,12 +320,12 @@ bool EdgesRMPS::doSampling(VoroCrust_KD_Tree_Ball &edges_ball_tree, Trees const&
             exit(1); 
         }
 
-        std::cout << "edge sample " << edges_ball_tree.points.size() << ", r = " << radius << std::endl;
+        std::cout << "edge sample " << edges_ball_tree.size() << ", r = " << radius << std::endl;
 
         edges_ball_tree.insert(p, edge[1]-edge[0], radius, edge.crease_index, edge.plc_index);
         
         // remake tree so search is faster
-        if(edges_ball_tree.points.size() % 5000 == 0) edges_ball_tree.remakeTree();
+        if(edges_ball_tree.size() % 5000 == 0) edges_ball_tree.remakeTree();
         
         miss_counter = 0;
     }

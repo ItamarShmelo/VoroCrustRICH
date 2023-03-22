@@ -390,13 +390,13 @@ bool FacesRMPS::doSampling(VoroCrust_KD_Tree_Ball &faces_ball_tree, Trees const&
             exit(1);
         }
 
-        std::cout << "face sample " << faces_ball_tree.points.size() << ", r = " << radius << std::endl;
+        std::cout << "face sample " << faces_ball_tree.size() << ", r = " << radius << std::endl;
 
         Face const& plc_face = plc->faces[face.plc_index];
         faces_ball_tree.insert(p, plc_face->calcNormal(), radius, face.patch_index, face.plc_index);
         
         // remake tree so search is faster
-        if(faces_ball_tree.points.size() % 5000 == 0) faces_ball_tree.remakeTree();
+        if(faces_ball_tree.size() % 5000 == 0) faces_ball_tree.remakeTree();
         miss_counter = 0;
     }
 

@@ -76,6 +76,8 @@ class VoroCrust_KD_Tree {
 
         bool empty() const { return points.empty(); }
 
+        std::size_t size() const { return points.size(); }
+
     private:
         //! \brief builds the tree recursively
         NodePtr buildRecursive(std::size_t *indices, std::size_t npoints, std::size_t depth);

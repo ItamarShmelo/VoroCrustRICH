@@ -83,7 +83,7 @@ void VoroCrustAlgorithm::run() {
 }
 
 bool VoroCrustAlgorithm::enforceLipschitzness(VoroCrust_KD_Tree_Ball& ball_tree){
-    std::size_t const num_of_points = ball_tree.points.size();
+    std::size_t const num_of_points = ball_tree.size();
     
     std::size_t number_of_balls_shrunk = 0;
 
