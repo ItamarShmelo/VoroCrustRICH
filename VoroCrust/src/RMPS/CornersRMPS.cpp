@@ -105,7 +105,7 @@ double CornersRMPS::calculateSmoothnessLimitation(EligbleCorner const& corner, T
         std::vector<Vector3D> normals;
         normals.reserve(patch_faces.size());        
         for(Face const& face : patch_faces){
-            normals.push_back(face->calcNormal());
+            normals.push_back(face->getNormal());
         }
 
         // find the nearest point on the patch not cosmooth to current corner and limit min_dist

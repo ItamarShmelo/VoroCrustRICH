@@ -167,15 +167,16 @@ double EdgesRMPS::calculateSmoothnessLimitation(Vector3D const& p, EligbleEdge c
 
     // find nearest non cosmooth point on face
     std::vector<std::size_t> patches_to_exclude;
+    
+    std::vector<Vector3D> normals;
+    normals.reserve(plc->edges[edge_sampled.plc_index]->faces.size());
     for(auto const& patch_faces : plc->edges[edge_sampled.plc_index]->divided_faces){
         std::size_t const patch_index = patch_faces[0]->patch_index;
         patches_to_exclude.push_back(patch_index);
         
-        std::vector<Vector3D> normals;
-        normals.reserve(patch_faces.size());
-        
+        normals.resize(0);
         for(Face const& face : patch_faces){
-            normals.push_back(face->calcNormal()); // calc all normals in advance
+            normals.push_back(face->getNormal()); 
         }
 
         min_dist = faces_boundary_tree.distanceToNearestNonCosmoothPoint(p, normals, patch_index, sharpTheta, min_dist);
