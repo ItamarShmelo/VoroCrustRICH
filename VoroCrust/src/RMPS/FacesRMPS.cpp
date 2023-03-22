@@ -114,7 +114,7 @@ bool FacesRMPS::checkIfPointIsDeeplyCovered(Vector3D const& p, Trees const& tree
     
     auto const& [q, r_q] = edges_ball_tree.getBallNearestNeighbor(p);
     
-    // maximal radius for cetners which balls can deeply cover p
+    // maximal radius for centers which balls can deeply cover p
     double const r_max = (r_q + L_Lipschitz*distance(p, q)) / (1.0 - L_Lipschitz); 
     
     auto const& suspects = edges_ball_tree.radiusSearch(p, r_max);
@@ -192,7 +192,6 @@ void FacesRMPS::discardEligbleFacesContainedInCornerBalls(Trees const& trees) {
 }
 
 bool EligbleFace::isContainedInBall(Vector3D const& center, double const r) const {
-
     for(Vector3D const& vertex : face)
         if(distance(center, vertex) > r)
             return false;
@@ -271,7 +270,7 @@ bool FacesRMPS::discardEligbleFaces(Trees const& trees) {
     VoroCrust_KD_Tree_Ball const& faces_ball_tree = trees.ball_kd_faces;
     // erase in reverse so indices wont change
     // might be better to put the indices in a vector then discard all at once
-    for(long i=eligble_faces.size()-1; i>=0 ; --i){
+    for(std::size_t i=0; i<eligble_faces.size() ; ++i){
         if(isDeleted[i]) continue;
         EligbleFace const& face = eligble_faces[i];
 
@@ -293,16 +292,16 @@ bool FacesRMPS::discardEligbleFaces(Trees const& trees) {
         if(not isDeleted[i]) not_deleted++;
     }
 
-    std::vector<EligbleFace> new_eligble_faces(not_deleted, EligbleFace(std::vector<Vector3D>(3, Vector3D(0, 0, 0)), 0.0, 0.0, 0.0));
+    std::vector<EligbleFace> new_eligble_faces;
+    new_eligble_faces.reserve(not_deleted+1);
 
-    for(std::size_t i=0, j=0; i < isDeleted.size(); ++i){
+    for(std::size_t i=0; i < isDeleted.size(); ++i){
         if(not isDeleted[i]){
-            new_eligble_faces[j] = eligble_faces[i];
-            ++j;
+            new_eligble_faces.push_back(eligble_faces[i]);
         }
     }
 
-    eligble_faces = new_eligble_faces;
+    eligble_faces = std::move(new_eligble_faces);
 
     return shrunkOtherStataBalls;
 }
@@ -313,7 +312,7 @@ double FacesRMPS::calculateInitialRadius(Vector3D const& p, std::size_t const fa
 
     EligbleFace const& face = eligble_faces[face_index];
 
-    //limitation from cosmoothness
+    // limitation from cosmoothness
     double const r_smooth = calculateSmoothnessLimitation(p, face, trees);
 
     if(faces_ball_tree.empty()){
@@ -393,7 +392,7 @@ bool FacesRMPS::doSampling(VoroCrust_KD_Tree_Ball &faces_ball_tree, Trees const&
         std::cout << "face sample " << faces_ball_tree.size() << ", r = " << radius << std::endl;
 
         Face const& plc_face = plc->faces[face.plc_index];
-        faces_ball_tree.insert(p, plc_face->calcNormal(), radius, face.patch_index, face.plc_index);
+        faces_ball_tree.insert(p, plc_face->getNormal(), radius, face.patch_index, face.plc_index);
         
         // remake tree so search is faster
         if(faces_ball_tree.size() % 5000 == 0) faces_ball_tree.remakeTree();
