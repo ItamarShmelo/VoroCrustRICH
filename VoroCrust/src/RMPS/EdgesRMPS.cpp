@@ -46,24 +46,19 @@ std::pair<double const, std::vector<double> const> EdgesRMPS::calculateTotalLeng
 void EdgesRMPS::divideEligbleEdges(){
     std::size_t const num_of_eligble_edges = eligble_edges.size();
 
-    std::vector<EligbleEdge> new_eligble_edges(2*num_of_eligble_edges, EligbleEdge(Vector3D(0.0, 0.0, 0.0), Vector3D(0.0, 0.0, 0.0), 0, 0));
+    std::vector<EligbleEdge> new_eligble_edges;
+    new_eligble_edges.reserve(2*num_of_eligble_edges+100);
 
     for(std::size_t i=0; i<num_of_eligble_edges; ++i){
         EligbleEdge const& edge = eligble_edges[i];
         Vector3D const& midpoint = 0.5*(edge[1] + edge[0]);
 
-        new_eligble_edges[2*i][0] = edge[0];
-        new_eligble_edges[2*i][1] = midpoint;
-        new_eligble_edges[2*i].crease_index = edge.crease_index;
-        new_eligble_edges[2*i].plc_index = edge.plc_index;
+        new_eligble_edges.emplace_back(edge[0], midpoint, edge.crease_index, edge.plc_index);
 
-        new_eligble_edges[2*i+1][0] = midpoint;
-        new_eligble_edges[2*i+1][1] = edge[1];
-        new_eligble_edges[2*i+1].crease_index = edge.crease_index;
-        new_eligble_edges[2*i+1].plc_index = edge.plc_index;
+        new_eligble_edges.emplace_back(midpoint, edge[1], edge.crease_index, edge.plc_index);
     }
 
-    eligble_edges = new_eligble_edges;
+    eligble_edges = std::move(new_eligble_edges);
     isDeleted = std::vector<bool>(eligble_edges.size(), false);
 }
 
@@ -169,7 +164,7 @@ double EdgesRMPS::calculateSmoothnessLimitation(Vector3D const& p, EligbleEdge c
     std::vector<std::size_t> patches_to_exclude;
     
     std::vector<Vector3D> normals;
-    normals.reserve(plc->edges[edge_sampled.plc_index]->faces.size());
+    normals.reserve(plc->edges[edge_sampled.plc_index]->faces.size()+10);
     for(auto const& patch_faces : plc->edges[edge_sampled.plc_index]->divided_faces){
         std::size_t const patch_index = patch_faces[0]->patch_index;
         patches_to_exclude.push_back(patch_index);
@@ -230,7 +225,7 @@ bool EdgesRMPS::discardEligbleEdges(Trees const& trees){
     }
 
     std::vector<EligbleEdge> new_eligble_edges;
-    new_eligble_edges.reserve(not_deleted);
+    new_eligble_edges.reserve(not_deleted+1);
 
     for(std::size_t i=0; i < isDeleted.size(); ++i){
         if(not isDeleted[i]){
@@ -283,8 +278,6 @@ bool EdgesRMPS::doSampling(VoroCrust_KD_Tree_Ball &edges_ball_tree, Trees const&
         if(!success) continue;
 
         if(miss_counter >= 100){
-            // remake tree so seach is faster
-            edges_ball_tree.remakeTree();
 
             divideEligbleEdges();
             //! IMPORTANT: resample needs to be on the right of the ||!!!!
@@ -329,6 +322,9 @@ bool EdgesRMPS::doSampling(VoroCrust_KD_Tree_Ball &edges_ball_tree, Trees const&
         std::cout << "edge sample " << edges_ball_tree.points.size() << ", r = " << radius << std::endl;
 
         edges_ball_tree.insert(p, edge[1]-edge[0], radius, edge.crease_index, edge.plc_index);
+        
+        // remake tree so search is faster
+        if(edges_ball_tree.points.size() % 5000 == 0) edges_ball_tree.remakeTree();
         
         miss_counter = 0;
     }

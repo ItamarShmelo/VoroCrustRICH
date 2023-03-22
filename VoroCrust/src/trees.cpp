@@ -146,7 +146,7 @@ std::tuple<std::vector<Vector3D>, std::vector<Vector3D>, std::vector<std::size_t
         Vector3D const& point = (1.0-sqrt_r1)*A + (sqrt_r1*(1.0-r2))*B + (r2*sqrt_r1)*C;
 
         points[i] = point;
-        normals[i] = face->calcNormal();
+        normals[i] = face->getNormal();
         feature_index[i] = face->patch_index;
         plc_index[i] = face->index;
     }

@@ -89,7 +89,7 @@ void PL_Complex::addFace(std::vector<std::size_t> const &indices)
 bool PL_Complex::checkAllVerticesAreUnique() {
     std::vector<Vector3D> vec_vertices;
     
-    vec_vertices.reserve(vertices.size());
+    vec_vertices.reserve(vertices.size()+1);
 
     for(auto const& vertex : vertices){
         vec_vertices.push_back(vertex->vertex);

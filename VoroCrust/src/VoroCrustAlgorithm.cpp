@@ -149,8 +149,8 @@ VoroCrust_KD_Tree_Ball makeSeedBallTree(std::vector<Seed> const& seeds){
     std::vector<Vector3D> points;
     std::vector<double> radii;
 
-    points.reserve(seeds_size);
-    radii.reserve(seeds_size);
+    points.reserve(seeds_size+1);
+    radii.reserve(seeds_size+1);
 
     for(auto const& seed : seeds){
         points.push_back(seed.p);
@@ -177,8 +177,8 @@ std::pair<std::vector<Vector3D>, std::vector<Vector3D>> VoroCrustAlgorithm::calc
     auto const in_seeds_boundary_size = in_seeds_boundary.size();
     std::vector<Vector3D> in_seeds, out_seeds;
     
-    in_seeds.reserve(in_seeds_boundary_size + total_num_points + 100);
-    out_seeds.reserve(out_seeds_boundary.size()+100);
+    in_seeds.reserve(in_seeds_boundary_size + total_num_points + 1);
+    out_seeds.reserve(out_seeds_boundary.size()+1);
 
     auto const& in_seeds_tree = makeSeedBallTree(in_seeds_boundary);
     auto const& out_seeds_tree = makeSeedBallTree(out_seeds_boundary);
@@ -321,7 +321,7 @@ std::pair<std::vector<Vector3D>, std::vector<Vector3D>> VoroCrustAlgorithm::calc
     in_seeds.insert(in_seeds.end(), in_seeds_boundry_vec.begin(), in_seeds_boundry_vec.end());
 
     std::vector<Vector3D> out_seeds;
-    out_seeds.reserve(out_seeds_boundary.size()+100);
+    out_seeds.reserve(out_seeds_boundary.size()+1);
 
     for(auto const& out_seed : out_seeds_boundary) {
         out_seeds.push_back(out_seed.p);

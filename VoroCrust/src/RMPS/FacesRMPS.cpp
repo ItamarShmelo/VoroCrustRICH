@@ -26,7 +26,7 @@ void FacesRMPS::loadFaces(std::vector<Face> const& faces) {
             vertices.push_back(vertex->vertex);
         }
 
-        eligble_faces.push_back(EligbleFace(vertices, face->patch_index, face->index, face->calcArea()));
+        eligble_faces.emplace_back(vertices, face->patch_index, face->index, face->calcArea());
     }
 
     isDeleted = std::vector<bool>(eligble_faces.size(), false);
@@ -51,7 +51,9 @@ void FacesRMPS::divideEligbleFaces() {
     //! ASSUMPTION: This fundtion assumes that every face is a triangle!
     std::size_t const eligble_faces_size = eligble_faces.size();
 
-    std::vector<EligbleFace> new_eligble_faces(4*eligble_faces_size, EligbleFace(std::vector<Vector3D>(3, Vector3D(0, 0, 0)), 0.0, 0.0, 0.0));
+    std::vector<EligbleFace> new_eligble_faces;
+    new_eligble_faces.reserve(4*eligble_faces_size+1);
+    std::vector<Vector3D> face_vertices(3, Vector3D(0.0, 0.0, 0.0));
 
     for(std::size_t i=0; i < eligble_faces_size; ++i){
         EligbleFace const& face = eligble_faces[i];
@@ -61,40 +63,29 @@ void FacesRMPS::divideEligbleFaces() {
 
         double const sub_triangle_area = 0.25*face.area;
 
-        new_eligble_faces[4*i][0] = face[0];
-        new_eligble_faces[4*i][1] = midpoint_01;
-        new_eligble_faces[4*i][2] = midpoint_20;
+        face_vertices[0] = face[0];
+        face_vertices[1] = midpoint_01;
+        face_vertices[2] = midpoint_20;        
+        new_eligble_faces.emplace_back(face_vertices, face.patch_index, face.plc_index, sub_triangle_area);
 
-        new_eligble_faces[4*i+1][0] = face[1];
-        new_eligble_faces[4*i+1][1] = midpoint_12;
-        new_eligble_faces[4*i+1][2] = midpoint_01;
+        face_vertices[0] = face[1];                 
+        face_vertices[1] = midpoint_12;                 
+        face_vertices[2] = midpoint_01;         
+        new_eligble_faces.emplace_back(face_vertices, face.patch_index, face.plc_index, sub_triangle_area);
 
-        new_eligble_faces[4*i+2][0] = face[2];
-        new_eligble_faces[4*i+2][1] = midpoint_20;
-        new_eligble_faces[4*i+2][2] = midpoint_12;
+        face_vertices[0] = face[2];
+        face_vertices[1] = midpoint_20;
+        face_vertices[2] = midpoint_12;
+        new_eligble_faces.emplace_back(face_vertices, face.patch_index, face.plc_index, sub_triangle_area);
 
-        new_eligble_faces[4*i+3][0] = midpoint_01;
-        new_eligble_faces[4*i+3][1] = midpoint_12;
-        new_eligble_faces[4*i+3][2] = midpoint_20;
         
-        //! MAYBEINSERTTOLOOP:
-        new_eligble_faces[4*i].patch_index = face.patch_index;
-        new_eligble_faces[4*i+1].patch_index = face.patch_index;
-        new_eligble_faces[4*i+2].patch_index = face.patch_index;
-        new_eligble_faces[4*i+3].patch_index = face.patch_index;
-
-        new_eligble_faces[4*i]  .plc_index = face.plc_index;
-        new_eligble_faces[4*i+1].plc_index = face.plc_index;
-        new_eligble_faces[4*i+2].plc_index = face.plc_index;
-        new_eligble_faces[4*i+3].plc_index = face.plc_index;
-
-        new_eligble_faces[4*i].area = sub_triangle_area;
-        new_eligble_faces[4*i+1].area = sub_triangle_area;
-        new_eligble_faces[4*i+2].area = sub_triangle_area;
-        new_eligble_faces[4*i+3].area = sub_triangle_area;
+        face_vertices[0] = midpoint_01;
+        face_vertices[1] = midpoint_12;
+        face_vertices[2] = midpoint_20;
+        new_eligble_faces.emplace_back(face_vertices, face.patch_index, face.plc_index, sub_triangle_area);
     }
 
-    eligble_faces = new_eligble_faces;
+    eligble_faces = std::move(new_eligble_faces);
     isDeleted = std::vector<bool>(eligble_faces.size(), false);
 }
 
@@ -358,9 +349,6 @@ bool FacesRMPS::doSampling(VoroCrust_KD_Tree_Ball &faces_ball_tree, Trees const&
         if(!success) continue;
 
         if(miss_counter >= 100){
-            // remake tree so search is faster
-            faces_ball_tree.remakeTree();
-            
             divideEligbleFaces();
             //! IMPORTANT: resample needs to be on the right of the ||!!!!
             resample = discardEligbleFaces(trees) || resample; 
@@ -406,7 +394,9 @@ bool FacesRMPS::doSampling(VoroCrust_KD_Tree_Ball &faces_ball_tree, Trees const&
 
         Face const& plc_face = plc->faces[face.plc_index];
         faces_ball_tree.insert(p, plc_face->calcNormal(), radius, face.patch_index, face.plc_index);
-
+        
+        // remake tree so search is faster
+        if(faces_ball_tree.points.size() % 5000 == 0) faces_ball_tree.remakeTree();
         miss_counter = 0;
     }
 
