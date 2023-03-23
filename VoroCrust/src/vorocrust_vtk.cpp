@@ -630,7 +630,7 @@ void write_ballTree(std::filesystem::path const& filename,
     data_first->SetNumberOfComponents(1);
     sphere->Update();
 
-    std::size_t const num_of_cells = sphere->GetOutput()->GetNumberOfCells();
+    std::size_t num_of_cells = sphere->GetOutput()->GetNumberOfCells();
     for(std::size_t j = 0; j<num_of_cells; ++j)
         data_first->InsertNextValue(ball_radii[0]);
 
@@ -650,7 +650,8 @@ void write_ballTree(std::filesystem::path const& filename,
         vtkNew<vtkDoubleArray> data;
         data->SetName("radius");
         data->SetNumberOfComponents(1);
-        std::size_t const num_of_cells = sphere_input->GetOutput()->GetNumberOfCells();
+        
+        num_of_cells = sphere_input->GetOutput()->GetNumberOfCells();
         for(std::size_t j = 0; j<num_of_cells; ++j)
             data->InsertNextValue(ball_radii[i]);
     

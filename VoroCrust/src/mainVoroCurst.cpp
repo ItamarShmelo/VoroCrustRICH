@@ -10,6 +10,12 @@
 #include <array>
 #include <fenv.h>
 
+void box();
+void fox();
+void loadfox_and_split_seeds();
+void astroid();
+void loadastroid_and_split_seeds();
+
 std::vector<Seed> unsorted_unique(std::vector<Seed> const& vec, double const tol);
 std::vector<Vector3D> read_vertices(std::string filename);
 std::vector<std::vector<std::size_t>> read_faces(std::string filename);
@@ -22,10 +28,6 @@ void astroid(){
     auto vertices_from_file = read_vertices("data/astroid/vertices.txt");
 
     PL_Complex plc_from_file(vertices_from_file);
-
-    for(auto& vertex : plc_from_file.vertices){
-        // // std::cout << "vertex " << vertex->index << ": " << vertex->repr() << "\n";
-    }
 
     auto faces_from_file = read_faces("data/astroid/faces.txt");
 
@@ -115,10 +117,6 @@ void fox(){
 
     PL_Complex plc_from_file(vertices_from_file);
 
-    for(auto& vertex : plc_from_file.vertices){
-        // // std::cout << "vertex " << vertex->index << ": " << vertex->repr() << "\n";
-    }
-
     auto faces_from_file = read_faces("data/fox/faces.txt");
 
     int i = 0;
@@ -165,12 +163,12 @@ void fox(){
     
     write_seeds(dirname+"/fox_seeds", seeds);
 
-    auto turnToVector3D = [](auto&& seed_vec){
-        std::vector<Vector3D> vec;
-        vec.reserve(seed_vec.size()*2);
-        for(auto const& seed : seed_vec) vec.push_back(std::move(seed.p));
-        return vec;
-    };
+    // auto turnToVector3D = [](auto&& seed_vec){
+    //     std::vector<Vector3D> vec;
+    //     vec.reserve(seed_vec.size()*2);
+    //     for(auto const& seed : seed_vec) vec.push_back(std::move(seed.p));
+    //     return vec;
+    // };
 
     // auto const& [in_seeds, out_seeds] = alg_fox.determineIfSeedsAreInsideOrOutside(seeds);
     // write_points("fox/fox_in_seeds", turnToVector3D(in_seeds));
@@ -209,12 +207,12 @@ void loadfox_and_split_seeds(){
     auto const& seeds = load_seeds("fox/fox_seeds");
 
 
-    auto turnToVector3D = [](auto&& seed_vec){
-        std::vector<Vector3D> vec;
-        vec.reserve(seed_vec.size()*2);
-        for(auto const& seed : seed_vec) vec.push_back(std::move(seed.p));
-        return vec;
-    };
+    // auto turnToVector3D = [](auto&& seed_vec){
+    //     std::vector<Vector3D> vec;
+    //     vec.reserve(seed_vec.size()*2);
+    //     for(auto const& seed : seed_vec) vec.push_back(std::move(seed.p));
+    //     return vec;
+    // };
 
     // auto const& [in_seeds, out_seeds] = alg_fox.determineIfSeedsAreInsideOrOutside(seeds);
     // write_points("fox/fox_in_seeds", turnToVector3D(in_seeds));
@@ -311,7 +309,7 @@ void box(){
     // vorocrust_vtk::write_points(dirname+"/box_seeds_out.vtu", out_seeds);
 }
 
-int main(int argc, char *argv[]){
+int main(){
     std::cout << "RUNNING MAIN!!" << std::endl;
 	feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 
