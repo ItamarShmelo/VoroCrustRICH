@@ -330,12 +330,10 @@ double FacesRMPS::calculateInitialRadius(Vector3D const& p, std::size_t const fa
 bool FacesRMPS::doSampling(VoroCrust_KD_Tree_Ball &faces_ball_tree, Trees const& trees){
     bool resample = false;
 
-    double total_area;
-    std::vector<double> start_area;
-
-    auto const& res = calculateTotalAreaAndStartAreaOfEligbleFaces();
-    total_area = res.first;
-    start_area = res.second;
+    auto&& res = calculateTotalAreaAndStartAreaOfEligbleFaces();
+    
+    double total_area = res.first;
+    std::vector<double> start_area = res.second;
 
     std::cout << "total_area = " << total_area << ", num_of_eligble_faces = " << eligble_faces.size() << std::endl;
 
@@ -352,9 +350,9 @@ bool FacesRMPS::doSampling(VoroCrust_KD_Tree_Ball &faces_ball_tree, Trees const&
             //! IMPORTANT: resample needs to be on the right of the ||!!!!
             resample = discardEligbleFaces(trees) || resample; 
 
-            auto const& res = calculateTotalAreaAndStartAreaOfEligbleFaces();
-            total_area = res.first;
-            start_area = res.second;
+            auto const& area_pair = calculateTotalAreaAndStartAreaOfEligbleFaces();
+            total_area = area_pair.first;
+            start_area = area_pair.second;
             
             miss_counter = 0;
             std::cout << "total_area = " << total_area << ", num_of_eligble_faces = " << eligble_faces.size() << std::endl;

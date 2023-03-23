@@ -4,12 +4,15 @@
 #include <sstream>
 #include <algorithm>
 
+bool sameSide(Vector3D const& p1, Vector3D const& p2, Vector3D const& a, Vector3D const& b);
+
 VoroCrustFace::VoroCrustFace(std::vector<Vertex> const &vertices_,
                              std::size_t const index_) : vertices(vertices_),
                                                          edges(),
                                                          index(index_),
                                                          current_normal(),
-                                                         isPatched(false) {}
+                                                         isPatched(false), 
+                                                         patch_index(0) {}
 
 void VoroCrustFace::addEdge(Edge const& edge)
 {

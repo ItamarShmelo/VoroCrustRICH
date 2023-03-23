@@ -262,12 +262,11 @@ bool EdgesRMPS::doSampling(VoroCrust_KD_Tree_Ball &edges_ball_tree, Trees const&
 
     bool resample = false;
 
-    double total_len;
-    std::vector<double> start_len;
     auto const& res = calculateTotalLengthAndStartLengthOfEligbleEdges();
-    total_len = res.first;
-    start_len = res.second; 
     
+    double total_len = res.first;
+    std::vector<double> start_len = res.second;
+
     std::cout << "total_len = " << total_len << ", num_of_eligble_edges = " << eligble_edges.size() << std::endl;
 
     std::size_t miss_counter = 0;
@@ -283,9 +282,11 @@ bool EdgesRMPS::doSampling(VoroCrust_KD_Tree_Ball &edges_ball_tree, Trees const&
             //! IMPORTANT: resample needs to be on the right of the ||!!!!
             resample = discardEligbleEdges(trees) || resample;
     
-            auto const& res = calculateTotalLengthAndStartLengthOfEligbleEdges();
-            total_len = res.first;
-            start_len = res.second;             
+            auto const&  len_pair = calculateTotalLengthAndStartLengthOfEligbleEdges();
+            
+            total_len = len_pair.first;
+            start_len = len_pair.second;
+            
             miss_counter = 0;
 
             std::cout << "total_len = " << total_len << ", num_of_eligble_edges = " << eligble_edges.size() << std::endl;

@@ -2,7 +2,8 @@
 #include <sstream>
 
 VoroCrustVertex::VoroCrustVertex(Vector3D const& vertex_, 
-                                 std::size_t const index_) : vertex(vertex_), 
+                                 std::size_t const index_) : vertex(vertex_),
+                                                             edges(),
                                                              faces(),
                                                              divided_faces(), 
                                                              index(index_),

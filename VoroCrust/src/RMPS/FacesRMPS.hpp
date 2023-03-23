@@ -15,7 +15,7 @@ struct EligbleFace {
     std::size_t plc_index;
     double area;
 
-    EligbleFace() :  face(), patch_index(0), plc_index(0) {}
+    EligbleFace() :  face(), patch_index(0), plc_index(0), area(0.0) {}
     EligbleFace(std::vector<Vector3D> const& face_, 
                 std::size_t const patch_index_, 
                 std::size_t const plc_index_, 

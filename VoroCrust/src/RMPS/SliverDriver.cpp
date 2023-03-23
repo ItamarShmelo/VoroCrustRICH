@@ -21,8 +21,13 @@ std::vector<BallInfo> SliverDriver::groupOverlappingBalls(BallInfo const& ball_i
     double const r_corner_and_edge = (ball_info.dim == Dim::FACE) ? (max_radius_corner_edge+2.0*radius)*(1.+ 1e-14) : r_max;
 
     // this lambda get the overlapping balls indices and push them into overlapping balls vector
-    auto getAndPushOverlapping = [&overlapping_balls](VoroCrust_KD_Tree_Ball const& ball_tree, Vector3D const& p, double const radius, double const r_max, Dim const dim){
-        std::vector<std::size_t> const& overlapping_balls_indices = ball_tree.getOverlappingBalls(p, radius, r_max);
+    auto getAndPushOverlapping = [&overlapping_balls](VoroCrust_KD_Tree_Ball const& ball_tree, 
+                                                      Vector3D const& center, 
+                                                      double const b_radius, 
+                                                      double const r_max_overlap, 
+                                                      Dim const dim){
+                                                        
+        std::vector<std::size_t> const& overlapping_balls_indices = ball_tree.getOverlappingBalls(center, b_radius, r_max_overlap);
         for(std::size_t const ball_index : overlapping_balls_indices){
             overlapping_balls.push_back(BallInfo(ball_index, dim));
         }

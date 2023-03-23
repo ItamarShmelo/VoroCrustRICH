@@ -17,14 +17,14 @@ class VoroCrustVertex
         //! \brief Vector3D representing the Vertex in 3D space
         Vector3D vertex; 
         
+        //! \brief Edges incident to the Vertex.
+        std::vector<Edge> edges;
+
         //! \brief Faces incident to the Vertex.
         std::vector<Face> faces;
 
         //! \brief group faces to surface patches
         std::vector<std::vector<Face>> divided_faces;
-        
-        //! \brief Edges incident to the Vertex.
-        std::vector<Edge> edges;
 
         //! \brief index of Vertex in PLC vertices vector.
         std::size_t index;
