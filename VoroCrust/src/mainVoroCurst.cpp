@@ -131,7 +131,7 @@ void fox(){
 
     // std::cout << std::endl;
 
-    VoroCrustAlgorithm alg_fox(plc_from_file, M_PI*30./180., M_PI*30./180., 100., 0.3, 0.13);
+    VoroCrustAlgorithm alg_fox(plc_from_file, M_PI*10./180., M_PI*10./180., 100.0, 0.3, 0.13);
     
     // // std::cout << alg_fox.repr() << std::endl;
 
@@ -313,7 +313,7 @@ void box(){
 
 int main(int argc, char *argv[]){
     std::cout << "RUNNING MAIN!!" << std::endl;
-	// feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
+	feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 
     // triangle();
     // getchar();
