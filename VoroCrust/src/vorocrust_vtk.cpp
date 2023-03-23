@@ -608,6 +608,8 @@ void write_ballTree(std::filesystem::path const& filename,
         exit(1);
     }
 
+    if(b_tree.empty()) return;
+
     std::vector<Vector3D> const& centers = b_tree.points;
     std::vector<double> const& ball_radii = b_tree.ball_radii;
 

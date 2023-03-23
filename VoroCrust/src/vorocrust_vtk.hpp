@@ -59,6 +59,7 @@ void write_nearestNeighborToSegment(std::filesystem::path const& filename,
 void write_ballTree(std::filesystem::path const& filename, 
                     VoroCrust_KD_Tree_Ball const& b_tree);
 
+/*! \brief write arbitrary points to file*/
 void write_points(std::filesystem::path const& filename, std::vector<Vector3D> const& point_vectors);
 
 } // namespace vorocrust_vtk

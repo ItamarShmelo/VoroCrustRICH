@@ -22,7 +22,8 @@ void Trees::loadPLC(PL_Complex const& plc, std::size_t const Nsample_edges, std:
     
 }
 
-std::tuple<std::vector<Vector3D>, std::vector<std::size_t>> Trees::pointsFromVertices(std::vector<Vertex> const& vertices){
+std::tuple<std::vector<Vector3D>, std::vector<std::size_t>> 
+Trees::pointsFromVertices(std::vector<Vertex> const& vertices){
     std::size_t const Npoints = vertices.size();
     std::vector<Vector3D> points(Npoints, {0, 0, 0});
     std::vector<std::size_t> plc_index(Npoints, 0);
@@ -35,7 +36,8 @@ std::tuple<std::vector<Vector3D>, std::vector<std::size_t>> Trees::pointsFromVer
     return std::tuple(points, plc_index);
 }
 
-std::tuple<std::vector<Vector3D>, std::vector<Vector3D>, std::vector<std::size_t>, std::vector<std::size_t>> Trees::superSampleEdges(std::vector<Edge> const& edges, std::size_t const Nsample){
+std::tuple<std::vector<Vector3D>, std::vector<Vector3D>, std::vector<std::size_t>, std::vector<std::size_t>> 
+Trees::superSampleEdges(std::vector<Edge> const& edges, std::size_t const Nsample){
     // generate a random number generator
     boost::mt19937 rng(std::time(nullptr));
     boost::random::uniform_01<> zeroone;
@@ -89,7 +91,8 @@ std::tuple<std::vector<Vector3D>, std::vector<Vector3D>, std::vector<std::size_t
     return std::tuple(points, parallel, feature_index, plc_index);
 }
 
-std::tuple<std::vector<Vector3D>, std::vector<Vector3D>, std::vector<std::size_t>, std::vector<std::size_t>> Trees::superSampleFaces(std::vector<Face> const& faces, std::size_t const Nsample){
+std::tuple<std::vector<Vector3D>, std::vector<Vector3D>, std::vector<std::size_t>, std::vector<std::size_t>> 
+Trees::superSampleFaces(std::vector<Face> const& faces, std::size_t const Nsample){
     // generate a random number generator
     boost::mt19937 rng(std::time(nullptr));
     boost::random::uniform_01<> zeroone;

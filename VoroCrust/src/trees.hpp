@@ -23,7 +23,6 @@ class Trees {
         VoroCrust_KD_Tree_Ball ball_kd_faces;
 
         Trees();
-        ~Trees() = default;
 
         //! \brief initialize the trees from a given PL_Complex
         //! \param plc
@@ -33,17 +32,20 @@ class Trees {
 
         //! \brief create a point arrey from a given vector of vertices
         //! \param vertices vector of Vertex to be turned into a point array
-        std::tuple<std::vector<Vector3D>, std::vector<std::size_t>> pointsFromVertices(std::vector<Vertex> const& vertices);
+        std::tuple<std::vector<Vector3D>, std::vector<std::size_t>> 
+        pointsFromVertices(std::vector<Vertex> const& vertices);
 
         //! \brief creates a point array by super sampling edges in a given edges vector
         //! \param edges vector of Eace to be super sampled for points
         //! \param Nsample number of points to sample
-        std::tuple<std::vector<Vector3D>, std::vector<Vector3D>, std::vector<std::size_t>, std::vector<std::size_t>> superSampleEdges(std::vector<Edge> const& edges, std::size_t const Nsample);
+        std::tuple<std::vector<Vector3D>, std::vector<Vector3D>, std::vector<std::size_t>, std::vector<std::size_t>> 
+        superSampleEdges(std::vector<Edge> const& edges, std::size_t const Nsample);
         
         //! \brief creates a point array by super sampling faces
         //! \param faces vector of Face to be super sampled for points
         //! \param Nsample number of points to sample
-        std::tuple<std::vector<Vector3D>, std::vector<Vector3D>, std::vector<std::size_t>, std::vector<std::size_t>> superSampleFaces(std::vector<Face> const& faces, std::size_t const Nsample);
+        std::tuple<std::vector<Vector3D>, std::vector<Vector3D>, std::vector<std::size_t>, std::vector<std::size_t>> 
+        superSampleFaces(std::vector<Face> const& faces, std::size_t const Nsample);
 };
 
 #endif // TREES
