@@ -405,8 +405,6 @@ std::vector<Seed> unsorted_unique(std::vector<Seed> const& vec, double const tol
 
     std::vector<Seed> new_vec;
     new_vec.reserve(vec_size - size_deleted + 1);
-    //! FORDEBUG: remove
-    std::cout << "original size:" << vec_size <<", new_size: " << new_vec.size() << std::endl;
 
     for(std::size_t i=0; i<vec_size; ++i){
         if(isDeleted[i]) continue;

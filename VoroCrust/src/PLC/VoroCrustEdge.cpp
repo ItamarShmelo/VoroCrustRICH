@@ -27,12 +27,6 @@ bool VoroCrustEdge::checkIfEqual(Vertex const& v1, Vertex const& v2){
 }
 
 void VoroCrustEdge::addFace(Face const& new_face){
-    //! THREE:FACES:ON:THE:SAME:EDGE:
-    if(faces.size() == 2){
-        std::cout << "ERROR : can't have more than 2 faces sharing an edge" << std::endl;
-        exit(1);
-    }
-
     faces.push_back(new_face);
 }
 

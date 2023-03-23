@@ -123,9 +123,8 @@ void PL_Complex::detectFeatures(double const sharpTheta, double const flatTheta)
     /* Detect Sharp Edges */
     for (auto &edge : edges)
     {
-        //! RELEVENT:FOR:THREE:FACES:PER:EDGE:
-        // if Edge is incident to only one face it is sharp.
-        if (edge->faces.size() == 1)
+        // if Edge is incident to one face or more then two faces it is sharp.
+        if (edge->faces.size() != 2)
         {
             sharp_edges.push_back(edge);
             edge->isSharp = true;
@@ -167,10 +166,12 @@ void PL_Complex::detectFeatures(double const sharpTheta, double const flatTheta)
         std::vector<Edge> vertex_sharp_edges;
 
         // find sharp Edges incident to Vertex
-        for (auto &edge : vertex->edges)
-            if (edge->isSharp)
+        for (auto const& edge : vertex->edges){
+            if (edge->isSharp){
                 vertex_sharp_edges.push_back(edge);
-
+            }
+        }
+        
         // if Vertex is shared by 0 sharp Edges it is not a sharp corner.
         if(vertex_sharp_edges.empty()){
             vertex->isSharp = false;
@@ -211,7 +212,7 @@ void PL_Complex::detectFeatures(double const sharpTheta, double const flatTheta)
                 v2 = -1 * v2;
             }
 
-            double const angle = std::acos(ScalarProd(v1, v2) / (abs(v1) * abs(v2)));
+            double const angle = CalcAngle(v1, v2);
 
             std::cout << "vertex " << vertex->index << ", angle between edge " << edge1->index << " and edge " << edge2->index << " = " << angle / M_PI << "*pi" << std::endl;
 

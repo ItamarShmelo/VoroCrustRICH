@@ -16,26 +16,12 @@ class VoroCrustAlgorithm {
         std::shared_ptr<PL_Complex> plc;
         Trees trees;
 
-        double const sharpTheta;
-        double const flatTheta;
-        double const maxRadius;
-        double const L_Lipschitz;
-        double const alpha;
-        std::size_t const maximal_num_iter;
-
-        CornersRMPS cornersDriver;
-        EdgesRMPS edgesDriver;
-        FacesRMPS facesDriver;
-        SliverDriver sliverDriver;
-
         VoroCrustAlgorithm( PL_Complex const& plc_,
                             double const sharpTheta_,
                             double const flatTheta_,
                             double const maxRadius_,
                             double const L_Lipschitz_,
                             double const alpha_);
-
-        ~VoroCrustAlgorithm() = default;
 
         /*! \brief runs the VoroCrust Algorithm*/
         void run();
@@ -49,8 +35,22 @@ class VoroCrustAlgorithm {
         std::pair<std::vector<Vector3D>, std::vector<Vector3D>> calcVolumeSeedsUniform(std::vector<Seed> const& seeds, std::size_t const num_points_x, std::size_t const num_points_y, std::size_t const num_points_z) const;
 
         std::pair<std::vector<Vector3D>, std::vector<Vector3D>> calcVolumeSeedsNonUniform(std::vector<Seed> const& seeds, double const maxSize);
+
+        void dividePLCUsingRayAlgorithm(std::vector<std::vector<Vector3D>> const& zone_defining_points_vector);
     
     private:
+        double const sharpTheta;
+        double const flatTheta;
+        double const maxRadius;
+        double const L_Lipschitz;
+        double const alpha;
+        std::size_t const maximal_num_iter;
+
+        CornersRMPS cornersDriver;
+        EdgesRMPS edgesDriver;
+        FacesRMPS facesDriver;
+        SliverDriver sliverDriver;
+
         /*! \brief enforces the Lipschitzness for a strata ball_tree
             \return true if some ball shrunk
         */
