@@ -117,6 +117,11 @@ std::pair<bool, Vector3D> VoroCrustFace::calculateLinePlaneIntesection(Vector3D 
     Vector3D const& p0 = vertices[0]->vertex;
     double const d = ScalarProd(p0 - point, normal) / l_dot_n;
 
+    // intersection point opposite to the direction of the line
+    if(d < 0) {
+        return std::pair(false, Vector3D(0.0, 0.0, 0.0));
+    }
+
     return std::pair(true, point + d*l);
 }
 
