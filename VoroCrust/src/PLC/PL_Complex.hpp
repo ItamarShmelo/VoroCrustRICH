@@ -67,8 +67,6 @@ class PL_Complex
         */
         PL_Complex(std::vector<Vector3D> const& vertices);
         
-        ~PL_Complex() = default;
-
         /*! \brief adds an edge to the PLC starting at v1 and ending at v2.
             \param v1 first Vertex of Edge.
             \param v2 second Vertex of Edge.
