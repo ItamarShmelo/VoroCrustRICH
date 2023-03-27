@@ -21,6 +21,9 @@ class VoroCrustFace
         //! \brief the current calculated normal to the face.
         Vector3D current_normal;
 
+        //! \brief the centeroid
+        Vector3D centeroid;
+
         //! \brief true if Face was already assigned to a Patch
         bool isPatched;
         
@@ -38,6 +41,12 @@ class VoroCrustFace
         /*! \brief returns current normal as a const& */
         Vector3D const& getNormal() { return current_normal; }
 
+        //! \brief calculates the Centeroid of the face
+        Vector3D calcCenteroid();
+
+        /*! \brief returns the centeroid as a const& */
+        Vector3D const& getCenteroid() { return centeroid; }
+
         /*! \brief calculates the signed ared using the formula in the answer at https://math.stackexchange.com/questions/3207981/how-do-you-calculate-the-area-of-a-2d-polygon-in-3d */
         double calcSignedArea();
 
@@ -49,9 +58,6 @@ class VoroCrustFace
 
         //! \brief orient `this` with respect to `face` (normals scalar product is positive) 
         void orientWithRespectTo(Face const& face);
-
-        //! \brief calculates the Centeroid of the face
-        Vector3D calculateCenteroid() const;
 
         /*! \brief finds the intersection of the ray coming out of `point` in the positive z direction with the plane defined by the face.
             \return a pair <success, point> where `success` is a flag indicating if there exists such an intersection point, and `point` is the intersection point with the plane (assuming success) 

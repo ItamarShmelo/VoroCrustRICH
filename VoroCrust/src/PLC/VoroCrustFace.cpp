@@ -11,6 +11,7 @@ VoroCrustFace::VoroCrustFace(std::vector<Vertex> const &vertices_,
                                                          edges(),
                                                          index(index_),
                                                          current_normal(),
+                                                         centeroid(),
                                                          isPatched(false), 
                                                          patch_index(0) {}
 
@@ -66,14 +67,15 @@ void VoroCrustFace::orientWithRespectTo(Face const& face){
     }
 }
 
-Vector3D VoroCrustFace::calculateCenteroid() const {
+Vector3D VoroCrustFace::calcCenteroid() {
     // assumes face is a triangle!
-    Vector3D res(0.0, 0.0, 0.0);
-    for(Vertex const& vertex : vertices){
-        res += vertex->vertex;
-    }
+    centeroid = vertices[0]->vertex;
+    centeroid += vertices[1]->vertex;
+    centeroid += vertices[2]->vertex;
 
-    return res / 3.0;
+    centeroid = centeroid / 3.0;
+
+    return centeroid;
 }
 
 std::pair<bool, Vector3D> VoroCrustFace::pointZparallelRayIntersectsAt(Vector3D const& point) const {
