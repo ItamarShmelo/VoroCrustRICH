@@ -478,9 +478,8 @@ PL_Complex::Location PL_Complex::determineLocation(Vector3D const& p) const {
     for(Face const& face : faces) {
         // simple check if the point is even relevent
         if(face->isPointCompletelyOffFace(p)) continue;
-
-        auto const& [success, p_inter] = face->pointZparallelRayIntersectsAt(p);
-
+        auto const& [success, p_inter] = face->calculateLinePlaneIntesection(p, p + Vector3D(0.0, 0.0, 1.0));
+        
         if(not success) continue;
         
         //! EPSILONTICA:
