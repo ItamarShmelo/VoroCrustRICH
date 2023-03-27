@@ -99,6 +99,25 @@ std::pair<bool, Vector3D> VoroCrustFace::pointZparallelRayIntersectsAt(Vector3D 
     return std::pair(true, Vector3D(point.x, point.y, z_intersect_plane));
 }
 
+std::pair<bool, Vector3D> VoroCrustFace::calculateLinePlaneIntesection(Vector3D const& point, Vector3D const& line_point) const {
+    //https://en.wikipedia.org/wiki/Line%E2%80%93plane_intersection
+
+    Vector3D const& l = line_point - point;
+    Vector3D const& normal = current_normal;
+    
+    double const l_dot_n = ScalarProd(l, normal);
+    //! EPSILONTICA:
+    // line is parallel to face
+    if(std::abs(l_dot_n) < 1e-14){
+        return std::pair(false, Vector3D(0.0, 0.0, 0.0));
+    }
+
+    Vector3D const& p0 = vertices[0]->vertex;
+    double const d = ScalarProd(p0 - point, normal) / l_dot_n;
+
+    return std::pair(true, point + d*l);
+}
+
 bool sameSide(Vector3D const& p1, Vector3D const& p2, Vector3D const& a, Vector3D const& b){
     // https://blackpawn.com/texts/pointinpoly/
     return ScalarProd(CrossProduct(b-a, p1-a), CrossProduct(b-a, p2-a)) >= 0;

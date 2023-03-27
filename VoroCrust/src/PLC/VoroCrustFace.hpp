@@ -58,6 +58,8 @@ class VoroCrustFace
         */
         std::pair<bool, Vector3D> pointZparallelRayIntersectsAt(Vector3D const& point) const;
 
+        std::pair<bool, Vector3D> calculateLinePlaneIntesection(Vector3D const& point, Vector3D const& line_point) const;
+
         //! \brief returns `true` if point is inside face
         bool pointIsInsideFace(Vector3D const& point) const;
 
