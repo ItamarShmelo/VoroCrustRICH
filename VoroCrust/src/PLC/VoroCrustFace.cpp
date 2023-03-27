@@ -138,6 +138,14 @@ bool VoroCrustFace::pointIsInsideFace(Vector3D const& point) const {
     return sameSide(point, a, b, c) && sameSide(point, b, a, c) && sameSide(point, c, a, b);
 }
 
+std::pair<bool, Vector3D> VoroCrustFace::isIntersectionBetweenLineAndPlaneIsInsideFace(Vector3D const& p1, Vector3D const& p2) const {
+    auto const& [success, p_inter] = calculateLinePlaneIntesection(p1, p2);
+
+    if(not success) return std::pair(false, Vector3D(0.0, 0.0, 0.0));
+
+    return std::pair(pointIsInsideFace(p_inter), p_inter);
+}
+
 bool VoroCrustFace::isPointCompletelyOffFace(Vector3D const& p) const {
     auto const& v1 = vertices[0]->vertex;
     auto const& v2 = vertices[1]->vertex;
