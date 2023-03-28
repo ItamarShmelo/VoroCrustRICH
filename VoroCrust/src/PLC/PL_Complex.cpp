@@ -247,7 +247,7 @@ void PL_Complex::detectFeatures(double const sharpTheta, double const flatTheta)
 
     buildSurfacePatches();
 
-    calcNormalsOfAllFaces();
+    calcNormalsAndCenteroidsOfAllFaces();
 
     divideFacesOfVerticesAndEdgesToPatches();
 }
@@ -533,10 +533,13 @@ std::vector<std::vector<Face>> divideFacesToPatches(std::vector<Face> const& fac
     return faces_divided;
 }
 
-void PL_Complex::calcNormalsOfAllFaces() {
+void PL_Complex::calcNormalsAndCenteroidsOfAllFaces() {
     for(Face const& face : faces){
         face->calcNormal();
+        face->calcCenteroid();
     }
+}
+
 }
 
 std::string PL_Complex::repr() const

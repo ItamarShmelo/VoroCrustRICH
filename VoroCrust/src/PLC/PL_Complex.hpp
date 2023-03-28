@@ -126,7 +126,7 @@ class PL_Complex
             void divideFacesOfVerticesAndEdgesToPatches();
 
             /*! \brief calculate the normals of all the faces in the PLC*/
-            void calcNormalsOfAllFaces();
+            void calcNormalsAndCenteroidsOfAllFaces();
 };
 
 /*! \brief a utility function which takes a vector of faces divides it to surface patches
