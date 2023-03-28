@@ -475,18 +475,13 @@ std::array<double, 6> PL_Complex::getBoundingBox() const {
 PL_Complex::Location PL_Complex::determineLocation(Vector3D const& p) const {
     // determine if a point is in or out using the ray casting algorithm
     std::size_t count = 0;
+
+    auto const& z_vec = Vector3D(0.0, 0.0, 1.0);
     for(Face const& face : faces) {
         // simple check if the point is even relevent
         if(face->isPointCompletelyOffFace(p)) continue;
-        auto const& [success, p_inter] = face->calculateLinePlaneIntesection(p, p + Vector3D(0.0, 0.0, 1.0));
         
-        if(not success) continue;
-        
-        //! EPSILONTICA:
-        if(distance(p_inter, p) < 1e-8) return Location::OUT;
-
-        // using the positive ray
-        if(p_inter.z > p.z && face->pointIsInsideFace(p_inter)){
+        if(face->isIntersectionBetweenLineAndPlaneIsInsideFace(p, p + z_vec).first){
             count++;
         }
     }
@@ -540,7 +535,6 @@ void PL_Complex::calcNormalsAndCenteroidsOfAllFaces() {
     }
 }
 
-}
 
 std::string PL_Complex::repr() const
 {
