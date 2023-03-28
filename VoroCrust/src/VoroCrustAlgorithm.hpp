@@ -36,8 +36,6 @@ class VoroCrustAlgorithm {
 
         std::pair<std::vector<Vector3D>, std::vector<Vector3D>> calcVolumeSeedsNonUniform(std::vector<Seed> const& seeds, double const maxSize);
 
-        void dividePLCUsingRayAlgorithm(std::vector<std::vector<Vector3D>> const& zone_defining_points_vector);
-    
     private:
         double const sharpTheta;
         double const flatTheta;
