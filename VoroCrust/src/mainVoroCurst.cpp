@@ -129,7 +129,7 @@ void fox(){
 
     // std::cout << std::endl;
 
-    VoroCrustAlgorithm alg_fox(plc_from_file, M_PI*10./180., M_PI*10./180., 100.0, 0.3, 0.13);
+    VoroCrustAlgorithm alg_fox(plc_from_file, M_PI*30./180., M_PI*30./180., 100.0, 0.3, 0.13);
     
     // // std::cout << alg_fox.repr() << std::endl;
 
@@ -258,13 +258,17 @@ std::vector<Seed> load_seeds(std::string filename){
 void box(){
     std::vector<Vector3D> vertices{
         Vector3D(0, 0, 0), // 0
-        Vector3D(3, 0, 0), // 1
-        Vector3D(0, 3, 0), // 2
-        Vector3D(0, 0, 3), // 3
-        Vector3D(3, 3, 0), // 4
-        Vector3D(0, 3, 3), // 5
-        Vector3D(3, 0, 3), // 6
-        Vector3D(3, 3, 3), // 7
+        Vector3D(1, 0, 0), // 1
+        Vector3D(0, 1, 0), // 2
+        Vector3D(0, 0, 1), // 3
+        Vector3D(1, 1, 0), // 4
+        Vector3D(0, 1, 1), // 5
+        Vector3D(1, 0, 1), // 6
+        Vector3D(1, 1, 1), // 7
+        Vector3D(0, 0, 2), // 8
+        Vector3D(0, 1, 2), // 9
+        Vector3D(1, 0, 2), // 10
+        Vector3D(1, 1, 2)  // 11
     };
 
     PL_Complex plc_box = PL_Complex(vertices);
@@ -292,10 +296,29 @@ void box(){
     // square 6
     plc_box.addFace({3, 6, 7});
     plc_box.addFace({3, 5, 7});
-    
-    plc_box.detectFeatures(M_PI*0.1, M_PI*0.1);
 
-    std::vector<Vector3D> seeds{{1.5, 1.3, 1.}};
+    // square 7
+    plc_box.addFace({3, 8, 5});
+    plc_box.addFace({8, 9, 5});
+    
+    // square 8
+    plc_box.addFace({3, 8, 6});
+    plc_box.addFace({8, 10, 6});
+
+    // square 9
+    plc_box.addFace({7, 11, 5});
+    plc_box.addFace({11, 9, 5});
+
+    // square 10
+    plc_box.addFace({7, 11, 6});
+    plc_box.addFace({11, 10, 6});
+
+    // square 11
+    plc_box.addFace({8, 9, 10});
+    plc_box.addFace({9, 10, 11});
+
+    
+    
 
     std::string dirname = "./box";
     std::filesystem::create_directories(dirname);
@@ -304,6 +327,15 @@ void box(){
     // vorocrust_vtk::write_seeds(dirname+"/seeds.vtu", seeds);
 
     VoroCrustAlgorithm alg_box(plc_box, M_PI*0.1, M_PI*0.1, 0.3, 0.3, 0.13);
+    alg_box.run();
+    
+    vorocrust_vtk::write_ballTree(dirname+"/box_sharp_corners_sampling.vtp", alg_box.trees.ball_kd_vertices);
+    vorocrust_vtk::write_ballTree(dirname+"/box_sharp_edges_sampling.vtp", alg_box.trees.ball_kd_edges);
+    vorocrust_vtk::write_ballTree(dirname+"/box_sharp_faces_sampling.vtp", alg_box.trees.ball_kd_faces);
+    
+    auto const& seeds = alg_box.getSeeds();
+    auto const& [in_seeds, out_seeds] =  alg_box.calcVolumeSeedsNonUniform(seeds, 2);
+
     // auto const& [in_seeds, out_seeds] =  alg_box.determineIfSeedsAreInsideOrOutside(seeds);
     // vorocrust_vtk::write_points(dirname+"/box_seeds_in.vtu", in_seeds);
     // vorocrust_vtk::write_points(dirname+"/box_seeds_out.vtu", out_seeds);
@@ -311,7 +343,7 @@ void box(){
 
 int main(){
     std::cout << "RUNNING MAIN!!" << std::endl;
-	feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
+	// feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 
     // triangle();
     // getchar();
