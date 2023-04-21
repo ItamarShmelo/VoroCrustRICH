@@ -137,7 +137,18 @@ void Diffusion::BuildMatrix(Tessellation3D const& tess, mat& A, size_t_mat& A_in
                     Vector3D const cm_ij = CM - tess.GetCellCM(neighbor_j);
                     Vector3D const grad_E = cm_ij * (1.0 / (length_scale_ * ScalarProd(cm_ij, cm_ij)));
                     
-                    double mid_D = 0.5 * (D[neighbor_j] + Dcell);
+                    
+                    double const T1 = cells_cgs[i].temperature;
+                    double const T2 = cells_cgs[neighbor_j].temperature;
+                    double const maxT = std::max(T1, T2);
+                    cells_cgs[i].temperature = maxT;
+                    double const D1 =  D_coefficient_calcualtor.CalcDiffusionCoefficient(cells_cgs[i]);
+                    cells_cgs[i].temperature = T1;
+                    double const D2 =  D_coefficient_calcualtor.CalcDiffusionCoefficient(cells_cgs[neighbor_j]);
+                    cells_cgs[neighbor_j].temperature = T2;
+                    double mid_D = 2 * D1 * D2 / (D1 + D2);
+
+                    // double mid_D = 0.5 * (D[neighbor_j] + Dcell);
                     double const flux_limiter = flux_limiter_ ? CalcSingleFluxLimiter(grad_E * (Er - Er_j), mid_D, 0.5 * (Er + Er_j)) : 1;
                     mid_D *= flux_limiter;
                     double const flux = ((self_zero || set_to_zero) ? tess.GetArea(faces[j]) * dt * CG::speed_of_light * 0.5 : ScalarProd(grad_E, r_ij) * tess.GetArea(faces[j]) * dt * mid_D) * length_scale_ * length_scale_ * time_scale_; 
