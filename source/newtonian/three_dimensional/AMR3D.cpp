@@ -5,6 +5,7 @@
 #include <iostream>
 #include "../../3D/r3d/Intersection3D.hpp"
 #include <boost/scoped_ptr.hpp>
+#include <limits>
 
 //#define debug_amr 1
 
@@ -548,9 +549,12 @@ namespace
 						try
 						{
 #endif
-						extensives[duplicate_index[i][j][k] - index_remove] += eu.ConvertPrimitveToExtensive3D(
-							cells[nghost_index[i][j]], eos, dv.second[0], interp.GetSlopes()[nghost_index[i][j]],oldtess.GetCellCM(nghost_index[i][j]),
-							Vector3D(dv.second[1], dv.second[2], dv.second[3]));
+						if(dv.first)
+						{
+							extensives[duplicate_index[i][j][k] - index_remove] += eu.ConvertPrimitveToExtensive3D(
+								cells[nghost_index[i][j]], eos, dv.second[0], interp.GetSlopes()[nghost_index[i][j]],oldtess.GetCellCM(nghost_index[i][j]),
+								Vector3D(dv.second[1], dv.second[2], dv.second[3]));
+						}
 #ifdef RICH_DEBUG
 					}
 					catch (UniversalError &eo)
@@ -592,8 +596,10 @@ namespace
 		for (size_t i = 0; i < Nrefine; ++i)
 		{
 			checked.clear();
+			double total_dv = 0;
 			// Get new cell poly
-			if (GetPoly(tess, Norg + i, poly, temp, temp2, i_temp))
+			bool const good_poly = GetPoly(tess, Norg + i, poly, temp, temp2, i_temp);
+			if (good_poly)
 			{
 				// Get neigh to check
 				oldtess.GetNeighbors(ToRefine[i], neigh);
@@ -626,6 +632,7 @@ namespace
 					std::pair<bool, std::array<double, 4> > dv = PolyhedraIntersection(oldtess, cur_check, poly2);
 					if (dv.first)
 					{
+						total_dv += dv.second[0];
 						// Remove extensive from neigh cell and add to new cell
 #ifdef RICH_DEBUG
 						try
@@ -659,9 +666,9 @@ namespace
 					}
 				}
 			}
-			else
+			if(not good_poly || total_dv < std::numeric_limits<double>::min() * 100)
 			{
-				extensives[Norg2 + i] = eu.ConvertPrimitveToExtensive3D(cells[ToRefine[i]], eos, tess.GetVolume(Norg + i), interp.GetSlopes()[0], 
+				extensives[Norg2 + i] = eu.ConvertPrimitveToExtensive3D(cells[ToRefine[i]], eos, tess.GetVolume(Norg + i), Slope3D(), 
 					Vector3D(), Vector3D());
 				extensives[ToRefine[i]] -= extensives[Norg2 + i];
 				std::cout << "Warning no good poly localrefine" << std::endl;
@@ -884,6 +891,8 @@ ComputationalCell3D SimpleAMRCellUpdater3D::ConvertExtensiveToPrimitve3D(const C
 	res.ID  = old_cell.ID;
 	try
 	{
+		if(!(extensive.internal_energy > 0))
+			throw UniversalError("Negative internal energy in ConvertExtensiveToPrimitve3D");
 		res.pressure = eos.de2p(res.density, extensive.internal_energy / extensive.mass);
 	}
 	catch (UniversalError &eo)
@@ -1058,9 +1067,7 @@ void AMR3D::operator() (HDSim3D &sim)
 	}
 
 	// Get index for ID
-#ifdef RICH_MPI
 	size_t Nrefine = ToRefine.first.size();
-#endif // RICH_MPI
 	size_t Nstart = sim.GetMaxID() + 1;
 #ifdef RICH_MPI
 	int ws = 0, rank = 0;
@@ -1103,19 +1110,17 @@ void AMR3D::operator() (HDSim3D &sim)
 			extensives[i].tracers[entropy_index] = cells[i].tracers[entropy_index] * extensives[i].mass;
 		}
 	}
-
+	size_t & MaxID = sim.GetMaxID();
 #ifdef RICH_MPI
 	// Update cells
 	ComputationalCell3D cdummy;
 	MPI_exchange_data(tess, cells, true,&cdummy);
 	//#endif
 	// Update Max ID
-	//	size_t & MaxID = sim.GetMaxID();
-	//#ifdef RICH_MPI
-	//	for (size_t i = 0; i < static_cast<size_t>(ws); ++i)
-	//	MaxID += nrecv[i];
+	for (size_t i = 0; i < static_cast<size_t>(ws); ++i)
+		MaxID += nrecv[i];
 #else
-	//MaxID += Nrefine;
+	MaxID += Nrefine;
 #endif
 }
 
