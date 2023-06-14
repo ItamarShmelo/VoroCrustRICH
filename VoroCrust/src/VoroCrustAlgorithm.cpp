@@ -8,14 +8,19 @@ VoroCrustAlgorithm::VoroCrustAlgorithm( PL_Complex const& plc_,
                                         double const flatTheta_, 
                                         double const maxRadius_,
                                         double const L_Lipschitz_,
-                                        double const alpha_): plc(std::make_shared<PL_Complex>(plc_)), 
+                                        double const alpha_,
+                                        std::size_t const maximal_num_iter_,
+                                        std::size_t const num_of_samples_edges_,
+                                        std::size_t const num_of_samples_faces_): plc(std::make_shared<PL_Complex>(plc_)), 
                                                               trees(),
                                                               sharpTheta(sharpTheta_),
                                                               flatTheta(flatTheta_),
                                                               maxRadius(maxRadius_),
                                                               L_Lipschitz(L_Lipschitz_),
                                                               alpha(alpha_),
-                                                              maximal_num_iter(15),
+                                                              maximal_num_iter(maximal_num_iter_),
+                                                              num_of_samples_edges(num_of_samples_edges_),
+                                                              num_of_samples_faces(num_of_samples_faces_),
                                                               cornersDriver(maxRadius_, L_Lipschitz_, sharpTheta_, plc),
                                                               edgesDriver(maxRadius_, L_Lipschitz_, alpha_, sharpTheta_, plc),
                                                               facesDriver(maxRadius_, L_Lipschitz_, alpha_, sharpTheta_, plc),
@@ -36,20 +41,18 @@ VoroCrustAlgorithm::VoroCrustAlgorithm( PL_Complex const& plc_,
         exit(1);
     }
 
-}
-
-void VoroCrustAlgorithm::run() {
-    
     //! TODO: Maybe all this need to be in the plc under detect features?
     if(not plc->checkAllVerticesAreUnique()) exit(1);
 
     if(not plc->checkAllVerticesAreOnFace()) exit(1);
 
     plc->detectFeatures(sharpTheta, flatTheta);
+}
 
+void VoroCrustAlgorithm::run() {
     //! TODO: make sampling size a user input!
     //! IMPORTANT: sampling size can effect the convergence of the algorithm because the radius is determined using proximity to the sampled points on different features. Make sure that the sampling size is compatible to the size of the smallest polygon in the data. One wants the sampling to be "dense" in the edges and faces.
-    trees.loadPLC(*plc, 1e5, 1e6);    
+    trees.loadPLC(*plc, num_of_samples_edges, num_of_samples_faces);    
 
     //! TODO: init eligable edges vertices and faces
     cornersDriver.loadCorners(plc->sharp_corners);
@@ -73,8 +76,12 @@ void VoroCrustAlgorithm::run() {
             facesDriver.loadFaces(plc->faces);
             facesDriver.doSampling(trees.ball_kd_faces, trees);
             trees.ball_kd_faces.remakeTree();
+
         } while(enforceLipschitzness(trees.ball_kd_faces));
-        
+
+        // We can't eliminate slivers and enforce Lipchitzness since that would uncover parts of the PLC
+        if(iteration+1 >= maximal_num_iter) break;
+
         if(not sliverDriver.eliminateSlivers(trees)) break;
 
         enforceLipschitzness(trees.ball_kd_edges);
@@ -113,35 +120,6 @@ std::vector<Seed> VoroCrustAlgorithm::getSeeds() const {
     return sliverDriver.getSeeds(trees);
 }
 
-std::pair<std::vector<Seed>, std::vector<Seed>> VoroCrustAlgorithm::determineIfSeedsAreInsideOrOutside(std::vector<Seed> const& seeds) const {
-
-    // if(seeds.size() % 2 != 0){
-    //     std::cout << "ERROR: seeds is not even" << std::endl;
-    //     exit(1);
-    // }
-
-    if(seeds.empty()){
-        std::cout << "ERROR: seeds is empty" << std::endl;
-        exit(1);
-    }
-
-    std::vector<Seed> in_seeds, out_seeds;
-    in_seeds.reserve(seeds.size());
-    out_seeds.reserve(seeds.size());
-
-    for(auto const& seed : seeds) {
-        auto const location = plc->determineLocation(seed.p);
-
-        if(location == PL_Complex::Location::OUT){
-            out_seeds.push_back(seed);
-        } else {
-            in_seeds.push_back(seed);
-        }
-    }
-
-    return std::make_pair(in_seeds, out_seeds);
-}
-
 VoroCrust_KD_Tree_Ball makeSeedBallTree(std::vector<Seed> const& seeds){
     
     std::size_t const seeds_size = seeds.size();
@@ -157,86 +135,11 @@ VoroCrust_KD_Tree_Ball makeSeedBallTree(std::vector<Seed> const& seeds){
         radii.push_back(seed.radius);
     }
 
-    return VoroCrust_KD_Tree_Ball(points, std::vector<Vector3D>(seeds_size, Vector3D(0.0, 0.0, 0.0)), radii, std::vector<std::size_t>(seeds_size, 0), std::vector<std::size_t>(seeds_size, 0));
-}
-
-std::pair<std::vector<Vector3D>, std::vector<Vector3D>> VoroCrustAlgorithm::calcVolumeSeedsUniform(std::vector<Seed> const& seeds, std::size_t const num_points_x, std::size_t const num_points_y, std::size_t const num_points_z) const {
-    auto const [ll_x, ll_y, ll_z, ur_x, ur_y, ur_z] = plc->getBoundingBox();
-
-    auto const len_x = ur_x - ll_x;
-    auto const len_y = ur_y - ll_y;
-    auto const len_z = ur_z - ll_z;
-
-    auto const step_x = len_x / num_points_x;
-    auto const step_y = len_y / num_points_y;
-    auto const step_z = len_z / num_points_z;
-
-    auto const total_num_points = num_points_x * num_points_y * num_points_z;
-    auto [in_seeds_boundary, out_seeds_boundary] = determineIfSeedsAreInsideOrOutside(seeds);
-
-    auto const in_seeds_boundary_size = in_seeds_boundary.size();
-    std::vector<Vector3D> in_seeds, out_seeds;
-    
-    in_seeds.reserve(in_seeds_boundary_size + total_num_points + 1);
-    out_seeds.reserve(out_seeds_boundary.size()+1);
-
-    auto const& in_seeds_tree = makeSeedBallTree(in_seeds_boundary);
-    auto const& out_seeds_tree = makeSeedBallTree(out_seeds_boundary);
-    
-    //! EPSILONTICA:
-    Vector3D const nudge(1e-5, 1e-5, 1e-5);
-
-    for(std::size_t i=1; i < num_points_x; ++i){
-        for(std::size_t j=1; j < num_points_y; ++j){
-            for(std::size_t k=1; k < num_points_z; ++k){
-                Vector3D const seed(ll_x + step_x*i, ll_y + step_y*j, ll_z + step_z*k);
-
-                if(plc->determineLocation(seed+nudge) == PL_Complex::Location::IN && plc->determineLocation(seed-nudge) == PL_Complex::Location::IN){
-                    // if seed is inside check that it is not contained in a boundary seed
-                    auto add_point = true;
-                    {
-                        auto const& suspects = in_seeds_tree.kNearestNeighbors(seed, 8);
-
-                        for(auto const index : suspects){
-                            auto const& p_in_seed = in_seeds_tree.points[index];
-                            auto const r_in_seed = in_seeds_tree.ball_radii[index];
-
-                            if(distance(p_in_seed, seed) < r_in_seed){
-                                add_point = false;
-                                break;
-                            }
-                        }
-                    }
-                    //! CODEDUPLICATION:
-                    if(add_point){
-                        auto const& suspects = out_seeds_tree.kNearestNeighbors(seed, 8);
-
-                        for(auto const index : suspects){
-                            auto const& p_out_seed = out_seeds_tree.points[index];
-                            auto const r_out_seed = out_seeds_tree.ball_radii[index];
-
-                            if(distance(p_out_seed, seed) < r_out_seed){
-                                add_point = false;
-                                break;
-                            }
-                        }
-                    }
-
-                    if(add_point) in_seeds.push_back(seed);
-                } 
-            }
-        }
-    }
-
-    for(auto const& out_seed : out_seeds_boundary) {
-        out_seeds.push_back(out_seed.p);
-    }
-
-    for(auto const& in_seed : in_seeds_boundary){
-        in_seeds.push_back(in_seed.p);
-    }
-
-    return std::make_pair(in_seeds, out_seeds);
+    return VoroCrust_KD_Tree_Ball(points, 
+                                  std::vector<Vector3D>(seeds_size, Vector3D(0.0, 0.0, 0.0)), 
+                                  std::vector<std::size_t>(seeds_size, 0), 
+                                  std::vector<std::size_t>(seeds_size, 0),
+                                  radii);
 }
 
 std::string VoroCrustAlgorithm::repr() const {
@@ -248,84 +151,220 @@ std::string VoroCrustAlgorithm::repr() const {
     return s.str();
 }
 
-std::pair<std::vector<Vector3D>, std::vector<Vector3D>> VoroCrustAlgorithm::calcVolumeSeedsNonUniform(std::vector<Seed> const& seeds, double const maxSize) {
+std::vector<std::vector<Seed>> determineZoneOfSeeds(std::vector<Seed> const& seeds, std::vector<PL_Complex> const& zone_plcs) {
+    if(seeds.empty()){
+        std::cout << "ERROR: seeds is empty" << std::endl;
+        exit(1);
+    }
+
+    // the last index is for the outside seeds
+    std::vector<std::vector<Seed>> zone_seeds(zone_plcs.size() + 1, std::vector<Seed>());
+
+    for(auto& zone_seed_vec : zone_seeds){
+        zone_seed_vec.reserve(seeds.size());
+    }
+
+    std::size_t seed_num = 0;
+    for(auto const& seed : seeds){
+        if(seed_num % 100000 == 0) std::cout << ++seed_num << std::endl;
+        std::size_t i = 0;
+        for(i=0; i < zone_plcs.size(); ++i){
+            auto const& zone_plc = zone_plcs[i];
+
+            if(zone_plc.determineLocation(seed.p) == PL_Complex::Location::IN) {
+                zone_seeds[i].push_back(seed);
+                break;
+            }
+        }
+
+        if(i == zone_plcs.size()){
+            zone_seeds[zone_plcs.size()].push_back(seed);
+        }
+    }
+    return zone_seeds;
+}
+
+void VoroCrustAlgorithm::dump(std::filesystem::path const& dirname) const {
+    //
+    //
+    //
+    //
+
+    std::filesystem::create_directories(dirname);
+
+    trees.dump(dirname);
+}
+
+void VoroCrustAlgorithm::load_dump(std::filesystem::path const& dirname) {
+    if(not std::filesystem::is_directory(dirname)){
+        std::cout << "ERROR: dump directory does not exist" << std::endl;
+        exit(1);
+    }
+
+    trees.load_dump(dirname);
+}
+
+std::vector<std::vector<Seed>> VoroCrustAlgorithm::randomSampleSeeds(std::vector<PL_Complex> const& zones_plcs, std::vector<std::vector<Seed>> const& zones_boundary_seeds, double const maxSize) {
+    std::size_t const num_of_zones = zones_plcs.size();
+
     Vector3D const empty_vec(0.0, 0.0, 0.0);
+    if(num_of_zones != zones_boundary_seeds.size()){
+        std::cout << "ERROR: zones_plcs and zones_boundary_seeds size differ!" << std::endl;
+        exit(1);
+    }
 
-    auto const [ll_x, ll_y, ll_z, ur_x, ur_y, ur_z] = plc->getBoundingBox();
-    auto const len_x = ur_x - ll_x;
-    auto const len_y = ur_y - ll_y;
-    auto const len_z = ur_z - ll_z;
+    std::vector<std::vector<Seed>> zone_seeds;
 
-    auto const& [in_seeds_boundary, out_seeds_boundary] = determineIfSeedsAreInsideOrOutside(seeds);
-    auto const& in_seeds_tree = makeSeedBallTree(in_seeds_boundary);
-    auto const& out_seeds_tree = makeSeedBallTree(out_seeds_boundary);
-    
-    VoroCrust_KD_Tree_Ball volume_seeds_tree;
+    for(std::size_t zone_num=0; zone_num<num_of_zones; ++zone_num){
+        PL_Complex const& plc = zones_plcs[zone_num];
 
-    // lightweight dart-throwing
-    boost::random::variate_generator uni01_gen(boost::mt19937(std::time(nullptr)), boost::random::uniform_01<>());
-    std::size_t num_of_samples = 0;
-    constexpr double eps = 10*std::numeric_limits<double>::epsilon();
-    do {
-        std::size_t miss_counter = 0;
-        while(miss_counter < 1000){
-            Vector3D const p(ll_x + eps + (len_x - 2*eps)*uni01_gen(), 
-                             ll_y + eps + (len_y - 2*eps)*uni01_gen(), 
-                             ll_z + eps + (len_z - 2*eps)*uni01_gen());
-            
-            if(plc->determineLocation(p) == PL_Complex::Location::OUT){
-                miss_counter++;
-                continue;
-            }
+        auto const& seeds = zones_boundary_seeds[zone_num];
 
-            //! CODEDUPLICATION:
-            bool in_boundary_ball = in_seeds_tree.isContainedInNearestBall(p)           || 
-                                    out_seeds_tree.isContainedInNearestBall(p)          || 
-                                    trees.ball_kd_vertices.isContainedInNearestBall(p)  || 
-                                    trees.ball_kd_edges.isContainedInNearestBall(p)     || 
-                                    trees.ball_kd_faces.isContainedInNearestBall(p);
+        if(seeds.empty()){
+            zone_seeds.push_back(seeds);
 
-            if(in_boundary_ball){
-                miss_counter++;
-                continue;
-            }
-            
-            auto const& [p_s, r_s] = in_seeds_tree.getBallNearestNeighbor(p);
-            
-            double r_volume = std::numeric_limits<double>::max();
-            if(not volume_seeds_tree.empty()){
-                if(volume_seeds_tree.isContainedInNearestBall(p)){
-                    miss_counter++;
+            continue;
+        }
+
+        auto const [ll_x, ll_y, ll_z, ur_x, ur_y, ur_z] = plc.getBoundingBox();
+        auto const len_x = ur_x - ll_x;
+        auto const len_y = ur_y - ll_y;
+        auto const len_z = ur_z - ll_z;
+
+        auto const& zone_seeds_tree = makeSeedBallTree(seeds);
+
+        VoroCrust_KD_Tree_Ball volume_seeds_tree;
+
+        // lightweight dart-throwing
+        boost::random::variate_generator uni01_gen(boost::mt19937(std::time(nullptr)), boost::random::uniform_01<>());
+
+        std::size_t num_of_samples = 0;
+        do {
+            std::size_t miss_counter = 0;
+            while(miss_counter < 1000){
+                Vector3D const p(ll_x + len_x*uni01_gen(),
+                                 ll_y + len_y*uni01_gen(),
+                                 ll_z + len_z*uni01_gen());
+                
+                if(plc.determineLocation(p) == PL_Complex::Location::OUT){
+                    ++miss_counter;
                     continue;
                 }
 
-                auto const& [p_nearest, r_nearest] = volume_seeds_tree.getBallNearestNeighbor(p);
-                r_volume = r_nearest + L_Lipschitz*distance(p, p_nearest);
+                bool in_boundary_ball = zone_seeds_tree.isContainedInBall(p) || trees.ball_kd_faces.isContainedInBall(p);
+
+                if(not trees.ball_kd_vertices.empty()) in_boundary_ball = in_boundary_ball || trees.ball_kd_vertices.isContainedInBall(p);
+                if(not trees.ball_kd_edges.empty()) in_boundary_ball = in_boundary_ball || trees.ball_kd_edges.isContainedInBall(p);
+
+                if(in_boundary_ball){
+                    ++miss_counter;
+                    continue;
+                }
+
+                auto const& [p_s, r_s] = zone_seeds_tree.getBallNearestNeighbor(p);
+
+                double r_volume = std::numeric_limits<double>::max();
+                if(not volume_seeds_tree.empty()){
+                    if(volume_seeds_tree.isContainedInBall(p)){
+                        ++miss_counter;
+                        continue;
+                    }
+
+                    auto const& [p_nearest, r_nearest] = volume_seeds_tree.getBallNearestNeighbor(p);
+
+                    r_volume = r_nearest + L_Lipschitz*distance(p, p_nearest);
+                }
+
+                double const r = std::min({maxSize, r_s + L_Lipschitz*distance(p, p_s), r_volume});
+
+                volume_seeds_tree.insert(p, empty_vec, r, 0, 0);
+                num_of_samples++;
+                
+                if(num_of_samples % 10000 == 0){
+                    std::cout << "sample: " << num_of_samples << ", miss_counter: " << miss_counter << std::endl;
+                    volume_seeds_tree.remakeTree();
+                }
+
+                miss_counter = 0;
             }
-            
-            double const r = std::min({maxSize, r_s + L_Lipschitz*distance(p, p_s), r_volume});
-            volume_seeds_tree.insert(p, empty_vec, r, 0, 0);
-            std::cout << "sample : "  << num_of_samples << ", miss counter : " << miss_counter << "\n";
+            volume_seeds_tree.remakeTree();
+        } while(enforceLipschitzness(volume_seeds_tree));
 
-            miss_counter=0;
-            num_of_samples++;
-            if(num_of_samples % 10000 == 0) volume_seeds_tree.remakeTree();
-        }
+        std::vector<Seed> total_zone_seeds = zones_boundary_seeds[zone_num];
+        std::vector<Seed> volume_temp_seeds = getSeedsFromBallTree(volume_seeds_tree);
 
-        volume_seeds_tree.remakeTree();
-    } while(enforceLipschitzness(volume_seeds_tree));
-    
-    auto in_seeds = std::move(volume_seeds_tree.points);
-    auto in_seeds_boundry_vec = std::move(in_seeds_tree.points);
-
-    in_seeds.insert(in_seeds.end(), in_seeds_boundry_vec.begin(), in_seeds_boundry_vec.end());
-
-    std::vector<Vector3D> out_seeds;
-    out_seeds.reserve(out_seeds_boundary.size()+1);
-
-    for(auto const& out_seed : out_seeds_boundary) {
-        out_seeds.push_back(out_seed.p);
+        total_zone_seeds.insert(total_zone_seeds.end(), volume_temp_seeds.begin(), volume_temp_seeds.end());
+        
+        zone_seeds.push_back(total_zone_seeds);
     }
 
-    return std::pair(in_seeds, out_seeds);
+    return zone_seeds;
 }
+
+std::vector<Seed> getSeedsFromBallTree(VoroCrust_KD_Tree_Ball const& ball_tree){
+    auto const tree_size = ball_tree.size();
+
+    std::vector<Seed> seeds;
+    seeds.reserve(tree_size + 1);
+
+    for(std::size_t i=0; i<tree_size; ++i){
+        seeds.emplace_back(ball_tree.getBall(i));
+    }
+
+    return seeds;
+}
+
+void dumpSeeds(std::filesystem::path const& dirname, std::vector<Seed> const& seeds){
+    std::filesystem::create_directory(dirname);
+
+    auto const num_of_seeds = seeds.size();
+
+    std::vector<double> x, y, z, r;
+
+    x.reserve(num_of_seeds+1);
+    y.reserve(num_of_seeds+1);
+    z.reserve(num_of_seeds+1);
+    r.reserve(num_of_seeds+1);
+
+    for(auto const& seed : seeds){
+        auto const& p = seed.p;
+        x.push_back(p.x);
+        y.push_back(p.y);
+        z.push_back(p.z);
+        r.push_back(seed.radius);
+    }
+
+    dump_vector(dirname / "x.txt", x);
+    dump_vector(dirname / "y.txt", y);
+    dump_vector(dirname / "z.txt", z);
+    dump_vector(dirname / "r.txt", r);
+}
+
+std::vector<Seed> load_dumpSeeds(std::filesystem::path const& dirname){
+    if(not std::filesystem::is_directory(dirname)){
+        std::cout << "ERROR: Seeds dump directory does not exist" << std::endl;
+        exit(1); 
+    }
+
+    auto const x = load_dump_vector<double>(dirname / "x.txt");
+    auto const y = load_dump_vector<double>(dirname / "y.txt");
+    auto const z = load_dump_vector<double>(dirname / "z.txt");
+    auto const r = load_dump_vector<double>(dirname / "r.txt");
+
+    auto const num_of_seeds = x.size();
+
+    if(y.size() != num_of_seeds || z.size() != num_of_seeds || r.size() != num_of_seeds){
+        std::cout << "ERROR: x,y,z,r sizes do not match!" << std::endl;
+        exit(1);
+    }
+
+    std::vector<Seed> seeds;
+    seeds.reserve(num_of_seeds+1);
+
+    for(std::size_t i=0; i<num_of_seeds; ++i){
+        seeds.emplace_back(Vector3D(x[i], y[i], z[i]), r[i]);
+    }
+
+    return seeds;
+}
+

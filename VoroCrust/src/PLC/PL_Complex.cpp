@@ -9,7 +9,10 @@
 
 PL_Complex::PL_Complex(std::vector<Vector3D> const &vertices_) : vertices(),
                                                                  edges(),
+                                                                 edges_tree_vertex1(),
+                                                                 edges_tree_vertex2(),
                                                                  faces(),
+                                                                 centeroids_z(),
                                                                  sharp_edges(),
                                                                  sharp_corners(),
                                                                  creases(),
@@ -26,20 +29,38 @@ PL_Complex::PL_Complex(std::vector<Vector3D> const &vertices_) : vertices(),
 Edge PL_Complex::addEdge(Vertex const &v1, Vertex const &v2)
 {
     // first check if edge was already created by a different face.
-    for (auto const& edge : edges)
-    {
-        if (edge->checkIfEqual(v1, v2))
-        {
-            return edge;
+    constexpr double TOL = 1e-5;
+    if(not edges_tree_vertex1.empty()){
+        auto const& suspects = edges_tree_vertex1.radiusSearch(v1->vertex, TOL);
+        for(auto const index : suspects){
+            Edge const& edge = edges[edges_tree_vertex1.plc_index[index]];
+
+            if(edge->checkIfEqual(v1, v2)){
+                return edge;
+            }
         }
     }
 
+    if(not edges_tree_vertex2.empty()){
+        auto const& suspects = edges_tree_vertex2.radiusSearch(v1->vertex, TOL);
+        for(auto const index : suspects){
+            Edge const& edge = edges[edges_tree_vertex2.plc_index[index]];
+
+            if(edge->checkIfEqual(v1, v2)){
+                return edge;
+            }
+        }
+    }
+    
     // create new edge starting at v1 and ending at v1
     auto new_edge_ptr = std::make_shared<VoroCrustEdge>(v1, v2, edges.size());
 
     // add the edge to the vertices constructing it
     new_edge_ptr->vertex1->addEdge(new_edge_ptr);
     new_edge_ptr->vertex2->addEdge(new_edge_ptr);
+
+    edges_tree_vertex1.insert(v1->vertex, Vector3D(), 0, edges.size());
+    edges_tree_vertex2.insert(v2->vertex, Vector3D(), 0, edges.size());
 
     // update edges vector
     edges.push_back(new_edge_ptr);
@@ -70,7 +91,7 @@ void PL_Complex::addFace(std::vector<std::size_t> const &indices)
     Face new_face_ptr = std::make_shared<VoroCrustFace>(face_vertices, faces.size());
 
     // add new face to the vertices constucting it
-    for (Vertex vertex_ptr : face_vertices)
+    for (Vertex& vertex_ptr : face_vertices)
     {
         vertex_ptr->addFace(new_face_ptr);
     }
@@ -83,7 +104,23 @@ void PL_Complex::addFace(std::vector<std::size_t> const &indices)
         new_face_ptr->addEdge(new_edge_ptr); // add edge to new face
     }
 
+    Vector3D const& centeroid = new_face_ptr->calcCenteroid();
+    double const face_rad = std::max({distance(centeroid, new_face_ptr->vertices[0]->vertex), distance(centeroid, new_face_ptr->vertices[1]->vertex), distance(centeroid, new_face_ptr->vertices[2]->vertex)});
+
+    centeroids_z.insert(Vector3D(centeroid.x, centeroid.y, 0.0), Vector3D(), face_rad, 0, faces.size());
+
     faces.push_back(new_face_ptr);
+
+    if(edges.size() % 5000 == 0){
+        edges_tree_vertex1.remakeTree();
+        edges_tree_vertex2.remakeTree();
+    }
+
+    if (faces.size() % 5000 == 0){
+        centeroids_z.remakeTree();
+    }
+
+    if (faces.size() % 10000 == 0) std::cout << "Added Face: " << faces.size() << std::endl;
 }
 
 bool PL_Complex::checkAllVerticesAreUnique() {
@@ -151,15 +188,6 @@ void PL_Complex::detectFeatures(double const sharpTheta, double const flatTheta)
         edge->isSharp = false;
     }
 
-    std::cout << "Sharp Edges:\n";
-
-    for (auto const& edge : sharp_edges)
-    {
-        std::cout << "Edge: " << edge->index << "\n";
-    }
-
-    std::cout << std::endl;
-
     /* Detect Sharp Corners */
     for (auto &vertex : vertices)
     {
@@ -214,8 +242,6 @@ void PL_Complex::detectFeatures(double const sharpTheta, double const flatTheta)
 
             double const angle = CalcAngle(v1, v2);
 
-            std::cout << "vertex " << vertex->index << ", angle between edge " << edge1->index << " and edge " << edge2->index << " = " << angle / M_PI << "*pi" << std::endl;
-
             // if angle between edges is sharp then vertex is a sharp corner
             if (angle < (M_PI - sharpTheta))
             {
@@ -228,20 +254,6 @@ void PL_Complex::detectFeatures(double const sharpTheta, double const flatTheta)
             continue;
         } 
     }
-
-    std::cout << "\n\nSummary Sharp Features";
-    
-    std::cout << "\nSharp Edges:";
-    for (auto const& edge : sharp_edges){
-        std::cout << "\n edge " << edge->index;
-    }
-
-    std::cout << "\n\nSharp Corners:";
-    for (auto const& corner : sharp_corners){
-        std::cout << "\n vertex " << corner->index;
-    }
-
-    std::cout << std::endl;
 
     buildCreases();
 
@@ -262,16 +274,10 @@ void PL_Complex::buildCreases()
         Crease const &new_crease = createCrease(edge);
         creases.push_back(new_crease);
 
-        std::cout << "\nCrease number : " << creases.size() << "\n";
-        std::cout << "Edges: ";
-
         for (Edge const &crease_edge : new_crease)
         {
             crease_edge->crease_index = creases.size() - 1;
-            std::cout << crease_edge->index << " -> ";
         }
-
-        std::cout << new_crease[0]->index << std::endl;
     }
 }
 
@@ -382,15 +388,9 @@ void PL_Complex::buildSurfacePatches()
 
         patches.push_back(new_patch);
 
-        std::cout << "\n SurfacePatch number : " << patches.size() << "\n"; 
-        std::cout << "Faces : ";
-
         for(Face const& patch_face : new_patch){
             patch_face->patch_index = patches.size()-1;
-            std::cout << patch_face->index << ", ";
         }
-
-        std::cout << std::endl;        
     }
 }
 
@@ -473,11 +473,18 @@ std::array<double, 6> PL_Complex::getBoundingBox() const {
 }
 
 PL_Complex::Location PL_Complex::determineLocation(Vector3D const& p) const {
+    if(centeroids_z.empty()){
+        std::cout << "ERROR: before calling determine location call detectFeatures!!" << std::endl;
+        exit(1);
+    }
     // determine if a point is in or out using the ray casting algorithm
     std::size_t count = 0;
 
     auto const& z_vec = Vector3D(0.0, 0.0, 1.0);
-    for(Face const& face : faces) {
+    auto const& suspects = centeroids_z.radiusSearch(Vector3D(p.x, p.y, 0.0), centeroids_z.getMaxRadius());
+
+    for(auto const index : suspects) {
+        Face const& face = faces[centeroids_z.plc_index[index]];
         // simple check if the point is even relevent
         if(face->isPointCompletelyOffFace(p)) continue;
         

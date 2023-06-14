@@ -83,8 +83,6 @@ double VoroCrustEdge::calcDihedralAngle(){
 void VoroCrustEdge::orientWithRespectTo(Edge const& edge){
     //! WARNING: this assumes that one of the vertices are shared by the edge
     if(edge->vertex2->index == vertex2->index || edge->vertex1->index == vertex1->index){
-        std::cout << "flips orientation of edge " << index << ", because of " << edge->index <<"\n";
-
         // flip orientation of edge
         std::swap(vertex1, vertex2);
     }

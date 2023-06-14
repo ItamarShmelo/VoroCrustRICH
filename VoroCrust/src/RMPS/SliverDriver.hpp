@@ -10,12 +10,16 @@ enum class Dim {
     FACE
 };
 
+using Ball = std::pair<Vector3D, double const>; // center, radius
+inline double getR(Ball const& b) { return b.second; }
+
 struct Seed {
     Vector3D p;
     double radius;
 
     Seed() : p(0.0, 0.0, 0.0), radius(-1.0) {}
     Seed(Vector3D const& p_, double radius_) : p(p_), radius(radius_) {}
+    Seed(Ball const& ball) : p(ball.first), radius(ball.second) {}
 };
 
 struct BallInfo {
@@ -26,9 +30,6 @@ struct BallInfo {
 
     friend bool operator==(BallInfo const& lhs, BallInfo const& rhs) { return (lhs.index == rhs.index) && (lhs.dim == rhs.dim); }
 };
-
-using Ball = std::pair<Vector3D, double const>; // center, radius
-inline double getR(Ball const& b) { return b.second; }
 
 using Triplet = std::pair<std::size_t, std::size_t>; // Triplet is p, Triplet.first, Triplet.second
 using InfoQuartet = std::array<BallInfo const, 4>;
@@ -72,7 +73,8 @@ class SliverDriver {
         std::vector<double> r_new_face_balls;
 
         std::size_t number_of_slivers_eliminated;
-        mutable double max_radius_corner_edge;
+        mutable double max_radius_corner;
+        mutable double max_radius_edge;
         
         /*! \brief eliminate Slivers created from a specific ball tree. in practice we only use this function on the faces ball tree
         */

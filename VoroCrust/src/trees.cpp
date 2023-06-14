@@ -2,6 +2,9 @@
 #include "trees.hpp"
 #include <boost/random.hpp>
 #include <algorithm>
+#include <fstream>
+#include <sstream>
+#include <iostream>
 
 Trees::Trees(): VC_kd_sharp_corners(),
                 VC_kd_sharp_edges(),
@@ -20,6 +23,8 @@ void Trees::loadPLC(PL_Complex const& plc, std::size_t const Nsample_edges, std:
     VC_kd_sharp_edges = VoroCrust_KD_Tree_Boundary(p_edges, v_edges, i_feature_edges, i_plc_edges);
     VC_kd_faces = VoroCrust_KD_Tree_Boundary(p_faces, v_faces, i_feature_faces, i_plc_faces);
     
+    std::cout << "built edges tree with: " << Nsample_edges << " points" << std::endl;
+    std::cout << "built faces tree with: " << Nsample_faces << " points" << std::endl;
 }
 
 std::tuple<std::vector<Vector3D>, std::vector<std::size_t>> 
@@ -38,6 +43,11 @@ Trees::pointsFromVertices(std::vector<Vertex> const& vertices){
 
 std::tuple<std::vector<Vector3D>, std::vector<Vector3D>, std::vector<std::size_t>, std::vector<std::size_t>> 
 Trees::superSampleEdges(std::vector<Edge> const& edges, std::size_t const Nsample){
+    // if there are no sharp edges
+    if(edges.empty()){
+        return std::tuple(std::vector<Vector3D>(), std::vector<Vector3D>(), std::vector<std::size_t>(), std::vector<std::size_t>());
+    }
+
     // generate a random number generator
     boost::mt19937 rng(std::time(nullptr));
     boost::random::uniform_01<> zeroone;
@@ -155,4 +165,154 @@ Trees::superSampleFaces(std::vector<Face> const& faces, std::size_t const Nsampl
     }
 
     return std::tuple(points, normals, feature_index, plc_index);
+}
+
+void Trees::dump(std::filesystem::path const& dirname) const {
+    dump_boundary_tree(dirname / "boundary_tree_vertices", VC_kd_sharp_corners);
+    dump_boundary_tree(dirname / "boundary_tree_edges", VC_kd_sharp_edges);
+    dump_boundary_tree(dirname / "boundary_tree_faces", VC_kd_faces);
+
+    dump_ball_tree(dirname / "ball_tree_vertices", ball_kd_vertices);
+    dump_ball_tree(dirname / "ball_tree_edges", ball_kd_edges);
+    dump_ball_tree(dirname / "ball_tree_faces", ball_kd_faces);
+}
+
+void dump_points(std::filesystem::path const& dirname, std::vector<Vector3D> const& points){
+    std::filesystem::create_directory(dirname);
+    
+    std::ofstream p_x(dirname / "x.txt");
+    std::ofstream p_y(dirname / "y.txt");
+    std::ofstream p_z(dirname / "z.txt");
+
+    p_x << std::setprecision(15);
+    p_y << std::setprecision(15);
+    p_z << std::setprecision(15);
+
+    for(Vector3D const& p : points){
+        p_x << p.x << "\n";
+        p_y << p.y << "\n";
+        p_z << p.z << "\n";
+    }
+}
+
+void dump_vector(std::filesystem::path const& filename, std::vector<double> const& vec){
+    std::ofstream output_file(filename);
+
+    output_file << std::setprecision(15);
+
+    for(auto const val : vec){
+        output_file << val << "\n";
+    }
+}
+
+void dump_vector_size_t(std::filesystem::path const& filename, std::vector<std::size_t> const& vec){
+    std::ofstream output_file(filename);
+
+    for(auto const val : vec){
+        output_file << val << "\n";
+    }
+}
+
+void dump_boundary_tree(std::filesystem::path const& dirname, VoroCrust_KD_Tree_Boundary const& boundary_tree){
+    std::filesystem::create_directory(dirname);
+    
+    auto const dir_points = dirname / "points";
+    dump_points(dir_points, boundary_tree.points);
+
+    auto const dir_vectors = dirname / "vectors";
+    dump_points(dir_vectors, boundary_tree.vectors);
+
+    dump_vector_size_t(dirname / "feature_index.txt", boundary_tree.feature_index);
+    dump_vector_size_t(dirname / "plc_index.txt", boundary_tree.plc_index);
+}
+
+void dump_ball_tree(std::filesystem::path const& dirname, VoroCrust_KD_Tree_Ball const& ball_tree){
+    dump_boundary_tree(dirname, ball_tree);
+    dump_vector(dirname / "ball_radii.txt", ball_tree.ball_radii);
+}
+
+void Trees::load_dump(std::filesystem::path const& dirname){
+    auto const& dump_boundary_vertices = load_dump_boundary_tree(dirname / "boundary_tree_vertices");
+    auto const& dump_boundary_edges = load_dump_boundary_tree(dirname / "boundary_tree_edges");
+    auto const& dump_boundary_faces = load_dump_boundary_tree(dirname / "boundary_tree_faces");
+
+    auto const& dump_ball_vertices = load_dump_ball_tree(dirname / "ball_tree_vertices");
+    auto const& dump_ball_edges = load_dump_ball_tree(dirname / "ball_tree_edges");
+    auto const& dump_ball_faces = load_dump_ball_tree(dirname / "ball_tree_faces");
+
+    VC_kd_sharp_corners = VoroCrust_KD_Tree_Boundary(std::get<0>(dump_boundary_vertices));
+
+    VC_kd_sharp_edges = VoroCrust_KD_Tree_Boundary(std::get<0>(dump_boundary_edges),
+                                                   std::get<1>(dump_boundary_edges),
+                                                   std::get<2>(dump_boundary_edges),
+                                                   std::get<3>(dump_boundary_edges));
+    
+    VC_kd_faces = VoroCrust_KD_Tree_Boundary(std::get<0>(dump_boundary_faces),
+                                             std::get<1>(dump_boundary_faces),
+                                             std::get<2>(dump_boundary_faces),
+                                             std::get<3>(dump_boundary_faces));
+    
+    ball_kd_vertices = VoroCrust_KD_Tree_Ball(std::get<0>(dump_ball_vertices),
+                                              std::get<1>(dump_ball_vertices),
+                                              std::get<2>(dump_ball_vertices),
+                                              std::get<3>(dump_ball_vertices),
+                                              std::get<4>(dump_ball_vertices));
+
+    ball_kd_edges = VoroCrust_KD_Tree_Ball(std::get<0>(dump_ball_edges),
+                                           std::get<1>(dump_ball_edges),
+                                           std::get<2>(dump_ball_edges),
+                                           std::get<3>(dump_ball_edges),
+                                           std::get<4>(dump_ball_edges));
+    
+    ball_kd_faces = VoroCrust_KD_Tree_Ball(std::get<0>(dump_ball_faces),
+                                           std::get<1>(dump_ball_faces),
+                                           std::get<2>(dump_ball_faces),
+                                           std::get<3>(dump_ball_faces),
+                                           std::get<4>(dump_ball_faces));
+}
+
+std::vector<Vector3D> load_dump_points(std::filesystem::path const& dirname){
+    if(not std::filesystem::is_directory(dirname)){
+        std::cout << "ERROR: in load_dump_points no such directory: " << dirname.string() << std::endl;
+        exit(1);
+    }
+
+    std::vector<double> x = load_dump_vector<double>(dirname / "x.txt");
+    std::vector<double> y = load_dump_vector<double>(dirname / "y.txt");
+    std::vector<double> z = load_dump_vector<double>(dirname / "z.txt");
+
+    std::vector<Vector3D> points;
+
+    std::size_t num_points = x.size();
+
+    if(num_points != y.size() || num_points != z.size()){
+        std::cout << "ERROR: in load_dump_points x, y, z have different sizes" << std::endl;
+        exit(1);
+    }
+
+    points.reserve(x.size());
+    
+    for(std::size_t i = 0; i < num_points; ++i){
+        points.emplace_back(x[i], y[i], z[i]);
+    }
+
+    return points;
+}
+
+std::tuple<points, vecs, feature_index, plc_index>
+load_dump_boundary_tree(std::filesystem::path const& dirname){
+    points t_points = load_dump_points(dirname / "points");
+    vecs t_vecs = load_dump_points(dirname / "vectors");
+    feature_index t_feature_index = load_dump_vector<std::size_t>(dirname / "feature_index.txt");
+    plc_index t_plc_index = load_dump_vector<std::size_t>(dirname / "plc_index.txt");
+
+    return std::tuple(t_points, t_vecs, t_feature_index, t_plc_index);
+}
+
+std::tuple<points, vecs, feature_index, plc_index, ball_radii>
+load_dump_ball_tree(std::filesystem::path const& dirname){
+    auto const& [t_points, t_vecs, t_feature_index, t_plc_index] = load_dump_boundary_tree(dirname);
+    ball_radii t_ball_radii = load_dump_vector<double>(dirname / "ball_radii.txt");
+
+    return std::tuple(t_points, t_vecs, t_feature_index, t_plc_index, t_ball_radii);
 }

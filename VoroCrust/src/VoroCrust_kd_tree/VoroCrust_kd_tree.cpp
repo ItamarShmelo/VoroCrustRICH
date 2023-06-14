@@ -50,7 +50,7 @@ NodePtr VoroCrust_KD_Tree::buildRecursive(std::size_t * indices, std::size_t npo
         return points[lhs][axis] < points[rhs][axis];
     });
 
-    NodePtr node = newNode(indices[mid], axis);
+    NodePtr const& node = newNode(indices[mid], axis);
 
     node->left = buildRecursive(indices, mid, depth + 1); 
     node->right = buildRecursive(indices + mid + 1, npoints - mid - 1, depth+1);
@@ -167,7 +167,7 @@ void VoroCrust_KD_Tree::radiusSearchRecursive(Vector3D const& query, double cons
     if(dist < radius) indices.push_back(node->index);
 
     std::size_t const axis = node->axis;
-    NodePtr node_first = query[axis] < train[axis] ? node->left : node->right;
+    NodePtr const& node_first = query[axis] < train[axis] ? node->left : node->right;
 
     radiusSearchRecursive(query, radius, node_first, indices);
 
@@ -451,24 +451,37 @@ void VoroCrust_KD_Tree_Boundary::nearestNeighborExcludingFeaturesRecursive(Vecto
 }
 
 /* BALL KD TREE */
-VoroCrust_KD_Tree_Ball::VoroCrust_KD_Tree_Ball() : VoroCrust_KD_Tree_Boundary(), ball_radii() {}
+VoroCrust_KD_Tree_Ball::VoroCrust_KD_Tree_Ball() : VoroCrust_KD_Tree_Boundary(), ball_radii(), max_radius(0.0) {}
 
-VoroCrust_KD_Tree_Ball::VoroCrust_KD_Tree_Ball(std::vector<Vector3D> const& points, std::vector<Vector3D> const& vecs, std::vector<double> const& radii, std::vector<std::size_t> const& feature_index_,
-std::vector<std::size_t> const& plc_index_) : VoroCrust_KD_Tree_Boundary(points, vecs, feature_index_, plc_index_), ball_radii(radii) {
+VoroCrust_KD_Tree_Ball::VoroCrust_KD_Tree_Ball(std::vector<Vector3D> const& points, 
+                                               std::vector<Vector3D> const& vecs, 
+                                               std::vector<std::size_t> const& feature_index_,
+                                               std::vector<std::size_t> const& plc_index_, 
+                                               std::vector<double> const& radii) : VoroCrust_KD_Tree_Boundary(points, vecs, feature_index_, plc_index_), 
+                                                                                   ball_radii(radii), 
+                                                                                   max_radius(0.0) {
     if (points.size() != ball_radii.size()){
         std::cout << "ERROR : points.size() !=  ball_redii.size() in initialization of VoroCrust_KD_Tree_Ball" << std::endl;
         exit(1);
     }
+
+    max_radius = ball_radii.empty() ? 0.0 : *std::max_element(ball_radii.begin(), ball_radii.end());
 }
 
-void VoroCrust_KD_Tree_Ball::insert(Vector3D const& point, Vector3D const& vec, double radius, std::size_t const f_index, std::size_t const& plc_index_){
+void VoroCrust_KD_Tree_Ball::insert(Vector3D const& point, 
+                                    Vector3D const& vec, 
+                                    double const radius, 
+                                    std::size_t const f_index, 
+                                    std::size_t const plc_index_){
     this->VoroCrust_KD_Tree_Boundary::insert(point, vec, f_index, plc_index_);
     ball_radii.push_back(radius);
+
+    max_radius = std::max(radius, max_radius);
 }
 
 std::vector<std::size_t> VoroCrust_KD_Tree_Ball::getOverlappingBalls(Vector3D const& center, double const radius, double const r_max) const {
     
-    std::vector<std::size_t> suspects = radiusSearch(center, r_max);
+    std::vector<std::size_t> const& suspects = radiusSearch(center, r_max);
 
     std::vector<std::size_t> overlapping_balls_indices;
 

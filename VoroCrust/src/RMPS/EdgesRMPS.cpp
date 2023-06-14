@@ -86,9 +86,13 @@ bool EdgesRMPS::checkIfPointIsDeeplyCovered(Vector3D const& p, Trees const& tree
     }
     
     // check if nearest corner ball deeply cover `p`
-    auto const& [center, radius] = corners_ball_tree.getBallNearestNeighbor(p);
+    if(not corners_ball_tree.empty()){
+        auto const& [center, radius] = corners_ball_tree.getBallNearestNeighbor(p);
+    
+        return distance(p, center) <= radius*(1.0-alpha);
+    }
 
-    return distance(p, center) <= radius*(1.0-alpha);
+    return false;
 }
 
 std::tuple<bool, std::size_t const, Vector3D const> EdgesRMPS::sampleEligbleEdges(double const total_len, std::vector<double> const& start_len) {
@@ -122,25 +126,27 @@ void EdgesRMPS::discardEligbleEdgesContainedInCornerBalls(Trees const& trees){
         Crease const& edge_crease = plc->creases[edge.crease_index];
         
         // check if the corner at the start of the crease deeply cover the eligle edge
-        if(edge_crease.front()->vertex1->isSharp){        
-            auto const& [center, r] = corners_ball_tree.getBallNearestNeighbor(edge_crease.front()->vertex1->vertex);
+        if(not corners_ball_tree.empty()){
+            if(edge_crease.front()->vertex1->isSharp){        
+                auto const& [center, r] = corners_ball_tree.getBallNearestNeighbor(edge_crease.front()->vertex1->vertex);
 
-            double const r_deeply = r*(1. - alpha);
+                double const r_deeply = r*(1. - alpha);
 
-            if(distance(edge[0], center) <= r_deeply && distance(edge[1], center) <= r_deeply){
-                isDeleted[i] = true;
-                continue;
+                if(distance(edge[0], center) <= r_deeply && distance(edge[1], center) <= r_deeply){
+                    isDeleted[i] = true;
+                    continue;
+                }
             }
-        }
-        
-        // check if the corner at the edge of the crease deeply cover the eligle edge
-        if(edge_crease.back()->vertex2->isSharp){        
-            auto const& [center, r] = corners_ball_tree.getBallNearestNeighbor(edge_crease.back()->vertex2->vertex);
+            
+            // check if the corner at the edge of the crease deeply cover the eligle edge
+            if(edge_crease.back()->vertex2->isSharp){        
+                auto const& [center, r] = corners_ball_tree.getBallNearestNeighbor(edge_crease.back()->vertex2->vertex);
 
-            double const r_deeply = r*(1. - alpha);
+                double const r_deeply = r*(1. - alpha);
 
-            if(distance(edge[0], center) <= r_deeply && distance(edge[1], center) <= r_deeply){
-                isDeleted[i] = true;
+                if(distance(edge[0], center) <= r_deeply && distance(edge[1], center) <= r_deeply){
+                    isDeleted[i] = true;
+                }
             }
         }
     }
@@ -290,6 +296,7 @@ bool EdgesRMPS::doSampling(VoroCrust_KD_Tree_Ball &edges_ball_tree, Trees const&
             miss_counter = 0;
 
             std::cout << "total_len = " << total_len << ", num_of_eligble_edges = " << eligble_edges.size() << std::endl;
+            std::cout << "num of edge samples: " << edges_ball_tree.size() << std::endl;
             continue;
         }
 
@@ -320,8 +327,6 @@ bool EdgesRMPS::doSampling(VoroCrust_KD_Tree_Ball &edges_ball_tree, Trees const&
             std::cout << "radius = " << radius << std::endl;
             exit(1); 
         }
-
-        std::cout << "edge sample " << edges_ball_tree.size() << ", r = " << radius << std::endl;
 
         edges_ball_tree.insert(p, edge[1]-edge[0], radius, edge.crease_index, edge.plc_index);
         

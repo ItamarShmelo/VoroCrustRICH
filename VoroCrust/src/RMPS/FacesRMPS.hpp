@@ -57,7 +57,7 @@ class FacesRMPS {
 
         std::shared_ptr<PL_Complex const> plc;
         std::vector<EligbleFace> eligble_faces;
-        std::vector<bool> isDeleted;
+        std::vector<int> isDeleted;
 
         std::pair<double const, std::vector<double> const> calculateTotalAreaAndStartAreaOfEligbleFaces() const;
 

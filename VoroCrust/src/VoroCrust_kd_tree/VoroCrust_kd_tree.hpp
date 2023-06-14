@@ -172,13 +172,13 @@ class VoroCrust_KD_Tree_Ball : public VoroCrust_KD_Tree_Boundary {
 
         VoroCrust_KD_Tree_Ball(std::vector<Vector3D> const& points, 
                                std::vector<Vector3D> const& vecs, 
-                               std::vector<double> const& radii, 
                                std::vector<std::size_t> const& feature_index_, 
-                               std::vector<std::size_t> const& plc_index_);
+                               std::vector<std::size_t> const& plc_index_,
+                               std::vector<double> const& radii);
 
         virtual ~VoroCrust_KD_Tree_Ball() = default;
 
-        void insert(Vector3D const& point, Vector3D const& vec, double radius, std::size_t const f_index, std::size_t const& plc_index_);
+        void insert(Vector3D const& point, Vector3D const& vec, double const radius, std::size_t const f_index, std::size_t const plc_index_);
 
         //! \brief returns the overlapping balls of ball defined by `center` `radius`, only overlapping balls with centers up to `r_max`
         std::vector<std::size_t> getOverlappingBalls(Vector3D const& center, 
@@ -196,6 +196,25 @@ class VoroCrust_KD_Tree_Ball : public VoroCrust_KD_Tree_Boundary {
             auto const& [center, radius] = getBallNearestNeighbor(p);
             return distance(p, center) < radius;
         }        
+
+        bool isContainedInBall(Vector3D const& p) const {
+            auto const& suspects = radiusSearch(p, max_radius*1.1);
+
+            for(auto const index : suspects){
+                auto const& [center, radius] = getBall(index);
+
+                if(distance(p, center) < radius*1.1){
+                    return true;
+                }
+            }
+            
+            return false;
+        }
+
+        double getMaxRadius() const { return max_radius; }
+
+    private:
+        double max_radius;
 };
 
 

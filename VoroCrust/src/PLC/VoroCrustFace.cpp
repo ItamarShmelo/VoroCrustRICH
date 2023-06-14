@@ -62,14 +62,13 @@ void VoroCrustFace::orientWithRespectTo(Face const& face){
     
     // if normals are opposite flip orientation
     if(ScalarProd(n1, n2) < 0){
-        std::cout << "flips orientation of Face " << index << ", because of Face " << face->index << "\n";
         flipOrientation();
     }
 }
 
 Vector3D VoroCrustFace::calcCenteroid() {
     // assumes face is a triangle!
-    centeroid = vertices[0]->vertex;
+    centeroid  = vertices[0]->vertex;
     centeroid += vertices[1]->vertex;
     centeroid += vertices[2]->vertex;
 

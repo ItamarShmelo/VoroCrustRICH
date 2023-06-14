@@ -9,6 +9,7 @@
 #include "VoroCrustVertex.hpp"
 #include "VoroCrustEdge.hpp"
 #include "VoroCrustFace.hpp"
+#include "../VoroCrust_kd_tree/VoroCrust_kd_tree.hpp"
 
 //! \brief a Crease is a chain of sharp edges, ends in a sharp corner or forms a cycle. 
 using Crease = std::vector<Edge>;
@@ -49,8 +50,12 @@ class PL_Complex
         std::vector<Vertex> vertices;
         //! \brief the PLC mesh edges.
         std::vector<Edge> edges;
+        //! \brief holds the edges vertices in a kd-tree to speed up the search for already defined edges
+        VoroCrust_KD_Tree_Boundary edges_tree_vertex1, edges_tree_vertex2;
         //! \brief the PLC mesh faces.
         std::vector<Face> faces;
+        //! \brief holds the x, y va;ue of the centeroid of the face
+        VoroCrust_KD_Tree_Ball centeroids_z;
 
         //! \brief holds the sharp edges of the PLC.
         std::vector<Edge> sharp_edges;

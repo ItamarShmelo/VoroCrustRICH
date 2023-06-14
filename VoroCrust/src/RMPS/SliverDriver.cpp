@@ -1,14 +1,15 @@
 #include "SliverDriver.hpp"
 #include <iostream>
 
-std::vector<Seed> unsorted_unique(std::vector<Seed> const& vec, double const tol);
+std::vector<Seed> unsorted_unique(VoroCrust_KD_Tree_Ball const& seed_tree, double const tol);
 
 SliverDriver::SliverDriver(double const L_Lipschitz_) : L_Lipschitz(L_Lipschitz_), 
                                                         r_new_corner_balls(), 
                                                         r_new_edge_balls(), 
                                                         r_new_face_balls(), 
                                                         number_of_slivers_eliminated(0), 
-                                                        max_radius_corner_edge(0) {}
+                                                        max_radius_corner(0.0),
+                                                        max_radius_edge(0.0) {}
 
 std::vector<BallInfo> SliverDriver::groupOverlappingBalls(BallInfo const& ball_info, Trees const& trees) const {
     auto const& [p, radius] = getBall(ball_info, trees);
@@ -18,7 +19,8 @@ std::vector<BallInfo> SliverDriver::groupOverlappingBalls(BallInfo const& ball_i
     double const r_max = (2.0 / (1.0 - L_Lipschitz)) * radius;
 
     //! EPSILONTICA:
-    double const r_corner_and_edge = (ball_info.dim == Dim::FACE) ? (max_radius_corner_edge+2.0*radius)*(1.+ 1e-14) : r_max;
+    double const r_corner = (ball_info.dim == Dim::FACE) ? (max_radius_corner+2.0*radius)*(1.+ 1e-5) : r_max;
+    double const r_edge   = (ball_info.dim == Dim::FACE) ? (max_radius_edge+2.0*radius)*(1.+ 1e-5) : r_max;
 
     // this lambda get the overlapping balls indices and push them into overlapping balls vector
     auto getAndPushOverlapping = [&overlapping_balls](VoroCrust_KD_Tree_Ball const& ball_tree, 
@@ -33,8 +35,8 @@ std::vector<BallInfo> SliverDriver::groupOverlappingBalls(BallInfo const& ball_i
         }
     };
 
-    getAndPushOverlapping(trees.ball_kd_vertices, p, radius, r_corner_and_edge, Dim::CORNER);
-    getAndPushOverlapping(trees.ball_kd_edges, p, radius, r_corner_and_edge, Dim::EDGE);
+    getAndPushOverlapping(trees.ball_kd_vertices, p, radius, r_corner, Dim::CORNER);
+    getAndPushOverlapping(trees.ball_kd_edges, p, radius, r_edge, Dim::EDGE);
     getAndPushOverlapping(trees.ball_kd_faces, p, radius, r_max, Dim::FACE);
 
     auto const& it = std::find(overlapping_balls.begin(), overlapping_balls.end(), ball_info);
@@ -54,7 +56,7 @@ std::vector<BallInfo> SliverDriver::groupOverlappingBalls(BallInfo const& ball_i
 std::vector<Triplet> SliverDriver::formTripletsOfOverlappingBalls(std::vector<BallInfo> const& overlapping_balls, Trees const& trees) const {
     std::vector<std::pair<std::size_t, std::size_t>> triplets;
 
-    std::size_t overlapping_balls_size = overlapping_balls.size();
+    std::size_t const overlapping_balls_size = overlapping_balls.size();
 
     for(std::size_t i=0 ; i < overlapping_balls_size; ++i){
         auto const& [p_i, r_i] = getBall(overlapping_balls[i], trees);
@@ -229,36 +231,57 @@ std::tuple<bool, Vector3D, Vector3D> SliverDriver::calculateIntersectionSeeds(Ba
     auto const& [p2, r2] = ball_2;
     auto const& [p3, r3] = ball_3;
 
-    auto [a1, b1, c1, k1] = getLineCoeff(p1.x, p1.y, p1.z, r1, p2.x, p2.y, p2.z, r2);
-    auto [a3, b3, c3, k3] = getLineCoeff(p3.x, p3.y, p3.z, r3, p2.x, p2.y, p2.z, r2);
+    auto const [a1, b1, c1, k1] = getLineCoeff(p1.x, p1.y, p1.z, r1, p2.x, p2.y, p2.z, r2);
+    auto const [a3, b3, c3, k3] = getLineCoeff(p3.x, p3.y, p3.z, r3, p2.x, p2.y, p2.z, r2);
 
-    auto [e, f] = getZDependency(a1, b1, c1, k1, a3, b3, c3, k3);
-    auto [g, h] = getZDependency(b1, a1, c1, k1, b3, a3, c3, k3);
+    auto const [e, f] = getZDependency(a1, b1, c1, k1, a3, b3, c3, k3);
 
-    double const A = (1.0 + g*g + e*e);
-    double const B = -2.0*(g*(p1.x-h) + e*(p1.y-f) + p1.z);
-    double const C = ((p1.x-h)*(p1.x-h) + (p1.y-f) * (p1.y-f) + p1.z*p1.z - r1*r1);
-    
-    double const disc = B*B - 4*A*C;
-    
-    // if there is no intersection or the centers are linear or perpenicular (all of which should not preduce seeds)
-    if(disc < 0 || std::isnan(disc)){
-        return std::tuple(false, Vector3D(0.0, 0.0, 0.0), Vector3D(0.0, 0.0, 0.0));
+    if(std::abs(a1) < 1e-10 && std::abs(a3) < 1e-10){
+        double const z_both = (k3 - f*b3)/(b3*e + c3);
+        double const y_both = z_both*e + f;
+
+        double const val = r1*r1 - (y_both - p1.y)*(y_both - p1.y) - (z_both-p1.z)*(z_both-p1.z);
+
+        if(val < 0){
+            return std::tuple(false, Vector3D(0.0, 0.0, 0.0),  Vector3D(0.0, 0.0, 0.0));
+        }
+
+        double const val_sqrt = sqrt(val);
+        double const x_plus = p1.x + val_sqrt;
+        double const x_minus = p1.x - val_sqrt;
+
+        Vector3D const seed_plus(x_plus, y_both, z_both);
+        Vector3D const seed_minus(x_minus, y_both, z_both);
+
+        return std::tuple(true, seed_plus, seed_minus);
+    } else {
+        
+        auto const [g, h] = getZDependency(b1, a1, c1, k1, b3, a3, c3, k3);
+        double const A = (1.0 + g*g + e*e);
+        double const B = -2.0*(g*(p1.x-h) + e*(p1.y-f) + p1.z);
+        double const C = ((p1.x-h)*(p1.x-h) + (p1.y-f) * (p1.y-f) + p1.z*p1.z - r1*r1);
+        
+        double const disc = B*B - 4*A*C;
+        
+        // if there is no intersection or the centers are linear or perpenicular (all of which should not preduce seeds)
+        if(std::isnan(disc) || disc < 0){
+            return std::tuple(false, Vector3D(0.0, 0.0, 0.0), Vector3D(0.0, 0.0, 0.0));
+        }
+
+        double const z_plus = (-B + sqrt(disc))/(2.0*A);
+        double const x_plus = g*z_plus + h;
+        double const y_plus = e*z_plus + f;
+
+        Vector3D const seed_plus(x_plus, y_plus, z_plus);
+        
+        double const z_minus = (-B - sqrt(disc))/(2.0*A);
+        double const x_minus = g*z_minus + h;
+        double const y_minus = e*z_minus + f;
+
+        Vector3D const seed_minus(x_minus, y_minus, z_minus);
+
+        return std::tuple(true, seed_plus, seed_minus);
     }
-
-    double const z_plus = (-B + sqrt(disc))/(2.0*A);
-    double const x_plus = g*z_plus + h;
-    double const y_plus = e*z_plus + f;
-
-    Vector3D const seed_plus(x_plus, y_plus, z_plus);
-    
-    double const z_minus = (-B - sqrt(disc))/(2.0*A);
-    double const x_minus = g*z_minus + h;
-    double const y_minus = e*z_minus + f;
-
-    Vector3D const seed_minus(x_minus, y_minus, z_minus);
-
-    return std::tuple(true, seed_plus, seed_minus);
 }
 
 std::tuple<double const, double const, double const, double const> 
@@ -290,16 +313,20 @@ getZDependency(double const a1,
                double const k3) {
     
     //! WARNING: EPSILONTICA
-    if(std::abs(a1) < 1e-14){
+    if(std::abs(a1) < 1e-10){
         return std::pair(-c1/b1, k1/b1);
     }
     
-    if(std::abs(a3) < 1e-14){
+    if(std::abs(a3) < 1e-10){
         return std::pair(-c3/b3, k3/b3);
     }
 
     double const a31 = a3 / a1;
     double const denom = (b1*a31 - b3);
+
+    if(std::abs(denom) < 1e-10){
+        return std::pair(std::nan(""), std::nan(""));
+    }
 
     double const e = (c3 - c1*a31) / denom;
     double const f = (k1*a31 - k3) / denom;
@@ -313,11 +340,9 @@ bool SliverDriver::eliminateSlivers(Trees &trees){
     r_new_edge_balls = trees.ball_kd_edges.ball_radii;
     r_new_face_balls = trees.ball_kd_faces.ball_radii;
     
-    double const max_radius_corner = *std::max_element(r_new_corner_balls.begin(), r_new_corner_balls.end());
-    double const max_radius_edge = *std::max_element(r_new_edge_balls.begin(), r_new_edge_balls.end());
+    max_radius_corner = trees.ball_kd_vertices.empty() ? std::numeric_limits<double>::max()/1e100 : trees.ball_kd_vertices.getMaxRadius();
+    max_radius_edge = trees.ball_kd_edges.empty() ? std::numeric_limits<double>::max()/1e100 : trees.ball_kd_edges.getMaxRadius();
     
-    max_radius_corner_edge = std::max(max_radius_corner, max_radius_edge);
-
     number_of_slivers_eliminated = 0;
     
     eliminateSliversForBallsInBallTree(Dim::FACE, trees);
@@ -334,16 +359,16 @@ bool SliverDriver::eliminateSlivers(Trees &trees){
 
 std::vector<Seed> SliverDriver::getSeeds(Trees const& trees) const {
     //! CODEDUPLICATION:
-    double const max_radius_corner = *std::max_element(trees.ball_kd_vertices.ball_radii.begin(), trees.ball_kd_vertices.ball_radii.end());
-    double const max_radius_edge = *std::max_element(trees.ball_kd_edges.ball_radii.begin(), trees.ball_kd_edges.ball_radii.end());
+    max_radius_corner = trees.ball_kd_vertices.empty() ? std::numeric_limits<double>::max()/1e100 : trees.ball_kd_vertices.getMaxRadius();
+    max_radius_edge = trees.ball_kd_edges.empty() ? std::numeric_limits<double>::max()/1e100 : trees.ball_kd_edges.getMaxRadius();
 
-    max_radius_corner_edge = std::max(max_radius_corner, max_radius_edge);
-
-    std::vector<Seed> seeds;
+    VoroCrust_KD_Tree_Ball seed_tree;
+    Vector3D empty(0.0, 0.0, 0.0);
 
     VoroCrust_KD_Tree_Ball const& faces_ball_tree = trees.ball_kd_faces;
     for (std::size_t i = 0; i < faces_ball_tree.size(); ++i)
     {
+        if(i % 100000 == 0) std::cout << "ball num: " << i << std::endl;
         BallInfo ball_info(i, Dim::FACE);
         std::vector<BallInfo> const& overlapping_balls = groupOverlappingBalls(ball_info, trees);
         std::vector<Triplet>  const& triplets = formTripletsOfOverlappingBalls(overlapping_balls, trees);
@@ -374,43 +399,49 @@ std::vector<Seed> SliverDriver::getSeeds(Trees const& trees) const {
             
             double const seed_radius = 0.3333 * (getR(ball_1) + getR(ball_2) + getR(ball_3));
 
-            if(not is_seed_1_covered) seeds.push_back(Seed(seed_1, seed_radius));
-            if(not is_seed_2_covered) seeds.push_back(Seed(seed_2, seed_radius));
+            if(not is_seed_1_covered) seed_tree.insert(seed_1, empty, seed_radius, 0, 0);
+            if(not is_seed_2_covered) seed_tree.insert(seed_2, empty, seed_radius, 0, 0);
         }
     }
     
-    seeds = unsorted_unique(seeds, 1e-6);
+    seed_tree.remakeTree();
+    std::vector<Seed> const& seeds = unsorted_unique(seed_tree, 1e-5);
     
     return seeds;
 }
 
-std::vector<Seed> unsorted_unique(std::vector<Seed> const& vec, double const tol) {
-    std::size_t const vec_size = vec.size();
+std::vector<Seed> unsorted_unique(VoroCrust_KD_Tree_Ball const& seed_tree, double const tol) {
+    std::size_t const seed_tree_size = seed_tree.size();
 
-    std::vector<bool> isDeleted(vec_size, false);
+    std::vector<int> isDeleted(seed_tree_size, 0);
 
     std::size_t size_deleted = 0;
-    for(std::size_t i=0; i<vec_size; ++i){
-        for(std::size_t j=i+1; j<vec_size; ++j){
-            if(isDeleted[j]) continue;
+    for(std::size_t i=0; i<seed_tree_size; ++i){
+        if(i % 100000 == 0) std::cout << "unsorted_unique seed num: " << i << std::endl;
 
-            bool const res = (distance(vec[i].p, vec[j].p) < tol);
-            
-            isDeleted[j] = res;
-            if(res) ++size_deleted;
+        if(isDeleted[i]) continue;
+
+        Vector3D const& seed_p = seed_tree.points[i];
+        auto const& suspects = seed_tree.radiusSearch(seed_p, tol);
+        for(auto const j : suspects){
+            if(i==j) continue;
+
+            isDeleted[j] = 1;
+            ++size_deleted;
         }
     }
 
 
 
-    std::vector<Seed> new_vec;
-    new_vec.reserve(vec_size - size_deleted + 1);
+    std::vector<Seed> seed_vec;
+    seed_vec.reserve(seed_tree_size - size_deleted + 1);
+    std::cout << "size: " << seed_tree_size - size_deleted << std::endl;
 
-    for(std::size_t i=0; i<vec_size; ++i){
+    for(std::size_t i=0; i<seed_tree_size; ++i){
         if(isDeleted[i]) continue;
 
-        new_vec.push_back(vec[i]);
+        seed_vec.emplace_back(seed_tree.getBall(i));
     }
 
-    return new_vec;
+    return seed_vec;
 }

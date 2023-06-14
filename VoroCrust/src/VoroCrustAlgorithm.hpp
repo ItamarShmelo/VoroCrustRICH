@@ -8,6 +8,7 @@
 #include "RMPS/FacesRMPS.hpp"
 #include "RMPS/SliverDriver.hpp"
 #include <sstream>
+#include <filesystem>
 #include <memory>
 
 
@@ -21,7 +22,10 @@ class VoroCrustAlgorithm {
                             double const flatTheta_,
                             double const maxRadius_,
                             double const L_Lipschitz_,
-                            double const alpha_);
+                            double const alpha_,
+                            std::size_t const maximal_num_iter_,
+                            std::size_t const num_of_samples_edges_,
+                            std::size_t const num_of_samples_faces);
 
         /*! \brief runs the VoroCrust Algorithm*/
         void run();
@@ -30,11 +34,11 @@ class VoroCrustAlgorithm {
 
         std::string repr() const;
 
-        std::pair<std::vector<Seed>, std::vector<Seed>> determineIfSeedsAreInsideOrOutside(std::vector<Seed> const& seeds) const;
+        std::vector<std::vector<Seed>> randomSampleSeeds(std::vector<PL_Complex> const& zones_plcs, std::vector<std::vector<Seed>> const& zones_boundary_seeds, double const maxSize);
 
-        std::pair<std::vector<Vector3D>, std::vector<Vector3D>> calcVolumeSeedsUniform(std::vector<Seed> const& seeds, std::size_t const num_points_x, std::size_t const num_points_y, std::size_t const num_points_z) const;
+        void dump(std::filesystem::path const& dirname) const;
 
-        std::pair<std::vector<Vector3D>, std::vector<Vector3D>> calcVolumeSeedsNonUniform(std::vector<Seed> const& seeds, double const maxSize);
+        void load_dump(std::filesystem::path const& dirname);
 
     private:
         double const sharpTheta;
@@ -43,6 +47,8 @@ class VoroCrustAlgorithm {
         double const L_Lipschitz;
         double const alpha;
         std::size_t const maximal_num_iter;
+        std::size_t const num_of_samples_edges;
+        std::size_t const num_of_samples_faces;
 
         CornersRMPS cornersDriver;
         EdgesRMPS edgesDriver;
@@ -59,5 +65,12 @@ class VoroCrustAlgorithm {
 
 VoroCrust_KD_Tree_Ball makeSeedBallTree(std::vector<Seed> const& seeds);
 
+std::vector<std::vector<Seed>> determineZoneOfSeeds(std::vector<Seed> const& seeds, std::vector<PL_Complex> const& zone_plcs);
+
+std::vector<Seed> getSeedsFromBallTree(VoroCrust_KD_Tree_Ball const& ball_tree);
+
+void dumpSeeds(std::filesystem::path const& dirname, std::vector<Seed> const& seeds);
+
+std::vector<Seed> load_dumpSeeds(std::filesystem::path const& dirname);
 
 #endif /* VOROCRUST_ALGORITHM */

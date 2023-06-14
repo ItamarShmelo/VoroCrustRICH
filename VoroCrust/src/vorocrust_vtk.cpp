@@ -618,7 +618,7 @@ void write_ballTree(std::filesystem::path const& filename,
     
     vtkNew<vtkSphereSource> sphere;
     
-    int resolution = 14;
+    int resolution = 7;
 
     sphere->SetCenter(centers[0].x, centers[0].y, centers[0].z);
     sphere->SetRadius(ball_radii[0]);
