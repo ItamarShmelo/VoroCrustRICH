@@ -277,7 +277,7 @@ int main(){
     Path dirpath = "/home/itamarg/workspace/RICH/VoroCrust/data/astroid";
     Path dir_output = "/home/itamarg/workspace/RICH/VoroCrust/output/astroid";
     Path dirdump = dir_output / "dump";
-    double theta = M_PI * 15. / 180.;
+    double theta = M_PI * 45. / 180.;
     double maxRadius = 1.0;
     double L_lip = 0.3;
     double alpha = 0.13;
