@@ -10,10 +10,12 @@ message("Fortran Compiler: " ${CMAKE_Fortran_COMPILER})
 message("CXX Standard: " ${CMAKE_CXX_STANDARD})
 message("Build Type: " ${CMAKE_BUILD_TYPE})
 
+set(CMAKE_CXX_FLAGS "-fopenmp")
+
 message("CMAKE_CXX_FLAGS = " ${CMAKE_CXX_FLAGS})
 message("CMAKE_CXX_FLAGS_RELEASE = " ${CMAKE_CXX_FLAGS_RELEASE})
 
-set(CMAKE_CXX_FLAGS_DEBUG "-g -Wall -Wextra")
+set(CMAKE_CXX_FLAGS_DEBUG "-g -Wall -Wextra -Wpedantic -Wcast-align -Wunused -Wold-style-cast -Wpointer-arith -Wcast-qual -Wno-missing-braces -Wmissing-declarations -Wno-long-long -Wfatal-errors")
 message("CMAKE_CXX_FLAGS_DEBUG = " ${CMAKE_CXX_FLAGS_DEBUG})
 message("CMAKE_Fortran_FLAGS = " ${CMAKE_Fortran_FLAGS})
 message("CMAKE_Fortran_FLAGS_RELEASE = " ${CMAKE_Fortran_FLAGS_RELEASE})
@@ -24,7 +26,7 @@ set(proj_dir "${PROJECT_SOURCE_DIR}")
 
 file(GLOB_RECURSE SRC_CPP "src/*.cpp")
 file(GLOB R3D "../source/3D/GeometryCommon/Vector3D.cpp")
-file(GLOB MISC "../source/misc/utils.cpp" "../source/misc/serializable.cpp" "../source/misc/universal_error.cpp")
+file(GLOB MISC "../source/misc/utils.cpp" "../source/misc/serializable.cpp")
 
 find_package(VTK COMPONENTS
     CommonColor
@@ -55,16 +57,7 @@ set(EXE_NAME "VoroCrust.out")
 message("executable name ${EXE_NAME}")
 
 add_executable(${EXE_NAME} ${SRC_CPP} ${R3D} ${MISC})
-target_link_libraries(${EXE_NAME} PRIVATE ${VTK_LIBRARIES})
-
-if(${OMP})
-    message("Using OMP")
-
-    find_package(OpenMP)
-    if(OpenMP_CXX_FOUND)
-        target_link_libraries(${EXE_NAME} PUBLIC OpenMP::OpenMP_CXX)
-    endif()
-endif()
+target_link_libraries(${EXE_NAME} PRIVATE ${VTK_LIBRARIES} gomp pthread)
 
 vtk_module_autoinit(
   TARGETS ${EXE_NAME}
