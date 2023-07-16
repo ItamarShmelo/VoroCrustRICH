@@ -1,21 +1,25 @@
 #include "Voronoi3D.hpp"
+#define RICH_MPI 1 // todo remove...
 #ifdef RICH_MPI
 #include <mpi.h>
 #endif
 #include <algorithm>
 #include <cfloat>
 #include <stack>
-#include "Mat33.hpp"
-#include "Predicates3D.hpp"
-#include "../../misc/utils.hpp"
-#include "../../misc/io3D.hpp"
+#include "../../elementary/Mat33.hpp"
+#include "../utils/Predicates3D.hpp"
+#include "misc/utils.hpp"
+#include "misc/io3D.hpp"
 #include <fstream>
 #include <iostream>
 #include <boost/container/flat_map.hpp>
 #include <boost/container/flat_set.hpp>
-#include "HilbertOrder3D.hpp"
-#include "Intersections.hpp"
-#include "../../misc/int2str.hpp"
+#include "../../range/RangeAgent.h"
+#include "../../hilbert/HilbertOrder3D.hpp"
+#include "../../range/finders/BruteForce.hpp"
+// #include "../../range/finders/RangeTree.hpp"
+#include "3D/GeometryCommon/Intersections.hpp"
+#include "misc/int2str.hpp"
 #include <boost/multiprecision/cpp_dec_float.hpp>
 #include <boost/container/static_vector.hpp>
 #include <omp.h>
@@ -972,15 +976,57 @@ vector<vector<std::size_t>> const &Voronoi3D::GetGhostIndeces(void) const
 }
 
 #ifdef RICH_MPI
-void Voronoi3D::Build(vector<Vector3D> const &points, Tessellation3D const &tproc)
+
+/**
+ * returns the number of new <finish> messages to arrive.
+*/
+int getNewFinished()
+{
+  int newFinished = 0;
+  int receivedFinished = 0;
+
+  MPI_Iprobe(MPI_ANY_SOURCE, RICH_TESELLATION_FINISHED_TAG, MPI_COMM_WORLD, &receivedFinished, MPI_STATUS_IGNORE);
+  while(receivedFinished)
+  {
+    int dummy;
+    MPI_Recv(&dummy, 1, MPI_BYTE, MPI_ANY_SOURCE, RICH_TESELLATION_FINISHED_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    newFinished++;
+    MPI_Iprobe(MPI_ANY_SOURCE, RICH_TESELLATION_FINISHED_TAG, MPI_COMM_WORLD, &receivedFinished, MPI_STATUS_IGNORE);
+  }
+  return newFinished;
+}
+
+#endif // RICH_MPI
+
+/**
+ * gets a point index, and returns the maximal radius of the tetrahedra containing that point.
+ * @param index the index of the point (in the points list)
+*/
+double Voronoi3D::GetMaxRadius(std::size_t index)
+{
+  std::size_t N = PointTetras_[index].size();
+  double res = 0;
+  #ifdef __INTEL_COMPILER
+  #pragma ivdep
+  #endif
+  for(std::size_t i = 0; i < N; ++i)
+  {
+    res = std::max(res, GetRadius(PointTetras_[index][i]));
+  }
+  return res;
+}
+
+#ifdef RICH_MPI
+
+void Voronoi3D::BuildInitialize(size_t num_points)
 {
   //assert(points.size() > 0);
   // Clear data
   PointTetras_.clear();
   R_.clear();
-  R_.reserve(points.size() * 11);
+  R_.reserve(num_points * 11);
   tetra_centers_.clear();
-  tetra_centers_.reserve(points.size() * 11);
+  tetra_centers_.reserve(num_points * 11);
   del_.Clean();
   // Voronoi Data
   FacesInCell_.clear();
@@ -993,215 +1039,94 @@ void Voronoi3D::Build(vector<Vector3D> const &points, Tessellation3D const &tpro
   Nghost_.clear();
   duplicatedprocs_.clear();
   duplicated_points_.clear();
+}
 
-  int rank = 0;
+/**
+ * \author Maor Mizrachi
+ * \brief The algorithm follows arepro paper (https://www.mpa-garching.mpg.de/~volker/arepo/arepo_paper.pdf), section 2.4.
+*/
+void Voronoi3D::Build(const std::vector<Vector3D> &points, int hilbert_order)
+{
+  this->BuildInitialize(points.size());
+
+  int rank, size;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  vector<Vector3D> new_points = UpdateMPIPoints(tproc, rank, points, self_index_, sentprocs_, sentpoints_);
-  Norg_ = new_points.size();
-  /*	if (Norg_ == 0)
-	{
-	std::cout << "Zero Norg in rank " << rank << std::endl;
-	std::cout << "Rank CM " << tproc.GetCellCM(static_cast<size_t>(rank)).x << ","
-	<< tproc.GetCellCM(static_cast<size_t>(rank)).y << "," << tproc.GetCellCM(static_cast<size_t>(rank)).z << std::endl;
-	std::cout << "Rank point " << tproc.GetMeshPoint(static_cast<size_t>(rank)).x << ","
-	<< tproc.GetMeshPoint(static_cast<size_t>(rank)).y << "," << tproc.GetMeshPoint(static_cast<size_t>(rank)).z << std::endl;
-	std::cout << "Rank R " << tproc.GetWidth(static_cast<size_t>(rank)) << std::endl;
-	}
-	assert(Norg_ > 0);*/
-  std::pair<Vector3D, Vector3D> bounding_box = GetBoundingBox(tproc, rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-#ifdef timing
-  MPI_Barrier(MPI_COMM_WORLD);
-  double t0 = MPI_Wtime();
-#endif
+  // first, makes sure the current points I have are the correct points
+  HilbertAgent hilbertAgent(this->ll_, this->ur_, hilbert_order);
+  std::vector<Vector3D> new_points = hilbertAgent.pointsExchange(points, this->self_index_, this->sentprocs_, this->sentpoints_);
+
+  std::pair<Vector3D, Vector3D> bounding_box = hilbertAgent.getBoundingBox();
+  // performs internal tesselation:
   std::vector<size_t> order = HilbertOrder3D(new_points);
+  this->del_.Build(new_points, bounding_box.second, bounding_box.first, order);
 
-#ifdef vdebug
-  std::vector<Vector3D> bbox;
-  bbox.push_back(bounding_box.first);
-  bbox.push_back(bounding_box.second);
-  write_vecst(order, "order_" + int2str(rank) + ".bin");
-  write_vec3d(new_points, "points0_" + int2str(rank) + ".bin");
-  write_vec3d(bbox, "bb_" + int2str(rank) + ".bin");
-#endif
-
-  del_.Build(new_points, bounding_box.second, bounding_box.first, order);
-
-#ifdef timing
-  MPI_Barrier(MPI_COMM_WORLD);
-  double t1 = MPI_Wtime();
-  if (rank == 0)
-    std::cout << "First build time " << t1 - t0 << std::endl;
-#endif
-
-  R_.resize(del_.tetras_.size());
-  std::fill(R_.begin(), R_.end(), -1);
-  tetra_centers_.resize(R_.size());
-  bigtet_ = SetPointTetras(PointTetras_, Norg_, del_.tetras_, del_.empty_tetras_);
-
-  vector<vector<size_t>> self_duplicate;
-  vector<std::pair<std::size_t, std::size_t>> ghost_index;
-  MPIFirstIntersections(tproc, ghost_index);
-
-#ifdef timing
-  MPI_Barrier(MPI_COMM_WORLD);
-  t0 = MPI_Wtime();
-  if (rank == 0)
-    std::cout << "First ghost time " << t0 - t1 << std::endl;
-#endif
-
-  vector<Vector3D> extra_points = CreateBoundaryPointsMPI(ghost_index, tproc, self_duplicate);
-
-#ifdef vdebug
-  write_vec3d(extra_points, "points1_" + int2str(rank) + ".bin");
-#endif
-
-  try
+  if(this->radiuses.empty())
   {
-    del_.BuildExtra(extra_points);
-  }
-  catch (UniversalError &eo)
-  {
-    std::cout << "Error in first extra rank " << rank << std::endl;
-    string fname("extra_" + int2str(rank) + ".bin");
-    output_buildextra(fname);
-    tproc.output("vproc_" + int2str(rank) + ".bin");
-    throw;
+    // todo: right place?
+    this->radiuses.resize(this->del_.tetras_.size());
+    double volume = (this->ur_[0] - this->ll_[0]) * (this->ur_[1] - this->ll_[1]) * (this->ur_[2] - this->ll_[2]);
+    size_t N;
+    size_t myTetrads = this->del_.tetras_.size(); // todo: remove ghost tetrahedra?
+    MPI_Allreduce(&myTetrads, &N, 1, MPI_UNSIGNED_LONG, MPI_SUM, MPI_COMM_WORLD);
+    double initial_radius = std::pow(volume / N, 0.333333f);
+    std::fill(this->radiuses.begin(), this->radiuses.end(), initial_radius);
   }
 
-#ifdef timing
-  MPI_Barrier(MPI_COMM_WORLD);
-  t1 = MPI_Wtime();
-  if (rank == 0)
-    std::cout << "First ghost build time " << t1 - t0 << std::endl;
-#endif
+  bool sent_finished = false; // if I sent a finished message
+  int finished = 0; // the number of finished ranks
+  std::deque<int> current; // the indexes of the current "bad" points (points with h_i <= s_i)
 
-  R_.resize(del_.tetras_.size());
-  std::fill(R_.begin(), R_.end(), -1);
-  tetra_centers_.resize(R_.size());
-  bigtet_ = SetPointTetras(PointTetras_, Norg_, del_.tetras_, del_.empty_tetras_);
-  vector<unsigned char> checked_clear(Norg_, 0);
-  ghost_index = FindIntersections(tproc, 1, checked_clear); // intersecting tproc face, point index
-
-#ifdef timing
-  MPI_Barrier(MPI_COMM_WORLD);
-  t0 = MPI_Wtime();
-  if (rank == 0)
-    std::cout << "Second ghost time " << t0 - t1 << std::endl;
-#endif
-
-  extra_points = CreateBoundaryPointsMPI(ghost_index, tproc, self_duplicate);
-
-#ifdef vdebug
-  write_vec3d(extra_points, "points2_" + int2str(rank) + ".bin");
-#endif
-
-  try
+  for(std::size_t index = 0; index < this->del_.points_.size(); index++)
   {
-    del_.BuildExtra(extra_points);
-  }
-  catch (UniversalError &eo)
-  {
-    std::cout << "Error in second extra rank " << rank << std::endl;
-    string fname("extra_" + int2str(rank) + ".bin");
-    output_buildextra(fname);
-    tproc.output("vproc_" + int2str(rank) + ".bin");
-    throw;
+    // s equals 2 * (the maximal radius, among all the circumspheres of tetrahedra the point with index `index` is a vertex in) 
+    double s = 2 * GetMaxRadius(index);
+    if(s >= this->radiuses[index])
+    {
+      current.push_back(index); // h_i <= s_i, add to current
+    }
   }
 
-#ifdef timing
-  MPI_Barrier(MPI_COMM_WORLD);
-  t1 = MPI_Wtime();
-  if (rank == 0)
-    std::cout << "Second ghost build time " << t1 - t0 << std::endl;
-#endif
+  BruteForceFinder rangeFinder(this->del_.points_);
+  RangeAgent rangeAgent(hilbertAgent, &rangeFinder);
 
-  R_.resize(del_.tetras_.size());
-  std::fill(R_.begin(), R_.end(), -1);
-  tetra_centers_.resize(R_.size());
-  bigtet_ = SetPointTetras(PointTetras_, Norg_, del_.tetras_, del_.empty_tetras_);
-
-  ghost_index = FindIntersections(tproc, 2, checked_clear);
-
-#ifdef timing
-  MPI_Barrier(MPI_COMM_WORLD);
-  t0 = MPI_Wtime();
-  if (rank == 0)
-    std::cout << "Third ghost time " << t0 - t1 << std::endl;
-#endif
-
-  extra_points = CreateBoundaryPointsMPI(ghost_index, tproc, self_duplicate);
-
-#ifdef vdebug
-  write_vec3d(extra_points, "points3_" + int2str(rank) + ".bin");
-#endif
-
-  try
+  while(finished != size)
   {
-    del_.BuildExtra(extra_points);
+    std::queue<RangeQueryData> queries;
+    for(std::size_t i = 0; i < current.size(); i++)
+    {
+      double radius = this->radiuses[current[i]];
+      Vector3D &point = this->del_.points_[current[i]];
+      queries.push({{point.x, point.y, point.z}, radius});
+    }
+
+    QueryBatchInfo batchInfo = rangeAgent.runBatch(queries);
+    
+    // performs internal tesselation:
+    del_.BuildExtra(batchInfo.newPoints);
+
+    for(std::size_t i = 0; i < current.size(); i++)
+    {
+      double s = 2 * GetMaxRadius(current[i]);
+      if(this->radiuses[current[i]] > s)
+      {
+        // h_i > s_i, remove point from current
+        current.erase(current.cbegin() + current[i]);
+      }
+    }
+
+    if(current.empty() and !sent_finished)
+    {
+      for(int i = 0; i < size; i++)
+      {
+        int dummy = 0;
+        MPI_Send(&dummy, 1, MPI_BYTE, i, RICH_TESELLATION_FINISHED_TAG, MPI_COMM_WORLD);
+      }
+      sent_finished = true;
+    }
+    finished += getNewFinished();
   }
-  catch (UniversalError &eo)
-  {
-    std::cout << "Error in third extra rank " << rank << std::endl;
-    string fname("extra_" + int2str(rank) + ".bin");
-    output_buildextra(fname);
-    tproc.output("vproc_" + int2str(rank) + ".bin");
-    throw;
-  }
-
-#ifdef timing
-  MPI_Barrier(MPI_COMM_WORLD);
-  t1 = MPI_Wtime();
-  if (rank == 0)
-    std::cout << "Third ghost build time " << t1 - t0 << std::endl;
-#endif
-
-  R_.resize(del_.tetras_.size());
-  std::fill(R_.begin(), R_.end(), -1);
-  tetra_centers_.resize(R_.size());
-  bigtet_ = SetPointTetras(PointTetras_, Norg_, del_.tetras_, del_.empty_tetras_);
-
-  ghost_index = FindIntersections(tproc, 3, checked_clear);
-
-#ifdef timing
-  MPI_Barrier(MPI_COMM_WORLD);
-  t0 = MPI_Wtime();
-  if (rank == 0)
-    std::cout << "Fourth ghost time " << t0 - t1 << std::endl;
-#endif
-
-  extra_points = CreateBoundaryPointsMPI(ghost_index, tproc, self_duplicate);
-
-#ifdef vdebug
-  write_vec3d(extra_points, "points4_" + int2str(rank) + ".bin");
-#endif
-
-  try
-  {
-    del_.BuildExtra(extra_points);
-  }
-  catch (UniversalError &eo)
-  {
-    std::cout << "Error in fourth extra rank " << rank << std::endl;
-    string fname("extra_" + int2str(rank) + ".bin");
-    output_buildextra(fname);
-    tproc.output("vproc_" + int2str(rank) + ".bin");
-    throw;
-  }
-
-#ifdef timing
-  MPI_Barrier(MPI_COMM_WORLD);
-  t1 = MPI_Wtime();
-  if (rank == 0)
-    std::cout << "Fourth ghost build time " << t1 - t0 << std::endl;
-#endif
-  bigtet_ = SetPointTetras(PointTetras_, Norg_, del_.tetras_, del_.empty_tetras_);
-  std::vector<std::pair<size_t, size_t>>().swap(ghost_index);
-  std::vector<Vector3D>().swap(extra_points);
-
-  R_.resize(del_.tetras_.size());
-  std::fill(R_.begin(), R_.end(), -1);
-  tetra_centers_.resize(R_.size());
 
   CM_.resize(del_.points_.size());
   volume_.resize(Norg_);
@@ -1223,7 +1148,8 @@ void Voronoi3D::Build(vector<Vector3D> const &points, Tessellation3D const &tpro
     for (size_t j = 0; j < incoming.at(i).size(); ++j)
       CM_[Nghost_.at(i).at(j)] = incoming[i][j];
 }
-#endif
+
+#endif // RICH_MPI
 
 vector<vector<std::size_t>> &Voronoi3D::GetGhostIndeces(void)
 {
@@ -1614,19 +1540,6 @@ double Voronoi3D::GetRadius(std::size_t index)
     R_[index] = CalcTetraRadiusCenter(index);
   return R_[index];
 }
-
-/*
-double Voronoi3D::GetMaxRadius(std::size_t index)
-{
-  std::size_t N = PointTetras_[index].size();
-  double res = 0;
-#ifdef __INTEL_COMPILER
-#pragma ivdep
-#endif
-  for (std::size_t i = 0; i < N; ++i)
-    res = std::max(res, GetRadius(PointTetras_[index][i]));
-  return 2 * res;
-  }*/
 
 void Voronoi3D::FindIntersectionsSingle(vector<Face> const &box, std::size_t point, Sphere &sphere,
                                         vector<size_t> &intersecting_faces, std::vector<double> &Rtemp, std::vector<Vector3D> &vtemp)

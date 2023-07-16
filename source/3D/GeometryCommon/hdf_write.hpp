@@ -8,8 +8,8 @@
 
 #include <H5Cpp.h>
 #include <string>
-#include "Voronoi3D.hpp"
-#include "../../newtonian/three_dimensional/hdsim_3d.hpp"
+#include "../tesselation/voronoi/Voronoi3D.hpp"
+#include "newtonian/three_dimensional/hdsim_3d.hpp"
 
 
 //! \brief Appendix to data dump

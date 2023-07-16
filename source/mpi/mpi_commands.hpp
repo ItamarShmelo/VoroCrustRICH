@@ -4,12 +4,12 @@
 #ifdef RICH_MPI
 #include <vector>
 #include <mpi.h>
-#include "../newtonian/two_dimensional/computational_cell_2d.hpp"
-#include "../newtonian/two_dimensional/extensive.hpp"
-#include "../tessellation/tessellation.hpp"
-#include "../misc/serializable.hpp"
-#include "../misc/utils.hpp"
-#include "../3D/GeometryCommon/Tessellation3D.hpp"
+#include "newtonian/two_dimensional/computational_cell_2d.hpp"
+#include "newtonian/two_dimensional/extensive.hpp"
+#include "tessellation/tessellation.hpp"
+#include "misc/serializable.hpp"
+#include "misc/utils.hpp"
+#include "3D/tesselation/Tessellation3D.hpp"
 #include "stdint.h"
 
 using std::vector;

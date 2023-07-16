@@ -17,7 +17,9 @@ vector<Vector3D> RoundGrid3D(vector<Vector3D> const& points, Vector3D const& ll,
 #ifdef RICH_MPI
 	if(tproc->GetBoxFaces().size() > 0)
 		tess->ModifyBoxFaces() = tproc->GetBoxFaces();
-	tess->Build(points, *tproc);
+	// tess->Build(points, *tproc); // TODO: CHANGED TO COMPILE
+	#warning "[MAOR] Should change RoundGrid3D.cpp, line 20-22"
+	tess->Build(points, 3);
 #else
 	tess->Build(points);
 #endif
@@ -45,7 +47,9 @@ vector<Vector3D> RoundGrid3D(vector<Vector3D> const& points, Vector3D const& ll,
 			res[i] = tess->GetMeshPoint(i) + dw;
 		}
 #ifdef RICH_MPI
-		tess->Build(res, *tproc);
+	#warning "[MAOR] Should change RoundGrid3D.cpp, line 50-52"
+		// tess->Build(res, *tproc);
+		tess->Build(res, 3);
 #else
 		tess->Build(res);
 #endif

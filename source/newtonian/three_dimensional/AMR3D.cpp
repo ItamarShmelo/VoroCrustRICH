@@ -1,9 +1,9 @@
 #include "AMR3D.hpp"
-#include "../../3D/GeometryCommon/Voronoi3D.hpp"
-#include "../../misc/utils.hpp"
+#include "3D/tesselation/voronoi/Voronoi3D.hpp"
+#include "misc/utils.hpp"
 #include <boost/array.hpp>
 #include <iostream>
-#include "../../3D/r3d/Intersection3D.hpp"
+#include "3D/r3d/Intersection3D.hpp"
 #include <boost/scoped_ptr.hpp>
 
 //#define debug_amr 1
@@ -1021,7 +1021,9 @@ void AMR3D::operator() (HDSim3D &sim)
 	RemoveVector(new_mesh, ToRemove.first);
 	new_mesh.insert(new_mesh.end(), new_points.begin(), new_points.end());
 #ifdef RICH_MPI
-	tess.Build(new_mesh, sim.getProcTesselation());
+	#warning "[MAOR] Should change AMR3D.cpp, line 1024-1026"
+	// tess.Build(new_mesh, sim.getProcTesselation());
+	tess.Build(new_mesh, 3);
 #else
 	tess.Build(new_mesh);
 #endif

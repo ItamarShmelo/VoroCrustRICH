@@ -1,7 +1,7 @@
 #ifndef OPTDEPTHCALC_HPP
 #define OPTDEPTHCALC_HPP 1
 
-#include "../../3D/GeometryCommon/Tessellation3D.hpp"
+#include "3D/tesselation/Tessellation3D.hpp"
 #include "computational_cell.hpp"
 #include <string>
 

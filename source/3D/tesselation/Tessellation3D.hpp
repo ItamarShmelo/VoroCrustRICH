@@ -8,7 +8,8 @@
 
 #include <vector>
 #include <boost/container/small_vector.hpp>
-#include "Face.hpp"
+#include "../elementary/Face.hpp"
+
 //! \brief Container for points defining a face
 typedef boost::container::small_vector<size_t, 24> face_vec;
 //! \brief Container for neighbouring points
@@ -44,13 +45,17 @@ public:
   */
   virtual void Build(vector<Vector3D> const& points) = 0;
 
-#ifdef RICH_MPI
-  /*! \brief Builds the tessellation
-    \param points Initial position of mesh generating points
-    \param tproc The tessellation of the domain decomposition
-  */
-  virtual void Build(vector<Vector3D> const& points, Tessellation3D const& tproc) = 0;
-#endif
+// #ifdef RICH_MPI
+//   /*! \brief Builds the tessellation
+//     \param points Initial position of mesh generating points
+//     \param tproc The tessellation of the domain decomposition
+//   */
+//   virtual void Build(vector<Vector3D> const& points, Tessellation3D const& tproc) = 0;
+// #endif // RICH_MPI
+
+  #ifdef RICH_MPI
+  virtual void Build(vector<Vector3D> const& points, int hilbert_order) = 0;
+  #endif // RICH_MPI
 
   /*! \brief Get Total number of mesh generating points
     \return Number of mesh generating points

@@ -1,5 +1,5 @@
 #include "Ghost3D.hpp"
-#include "../../misc/utils.hpp"
+#include "misc/utils.hpp"
 
 Ghost3D::~Ghost3D(void) {}
 

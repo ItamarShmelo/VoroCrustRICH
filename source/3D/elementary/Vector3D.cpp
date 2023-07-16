@@ -1,7 +1,7 @@
 #include <cmath>
 #include <math.h>
 #include "Vector3D.hpp"
-#include "../../misc/utils.hpp"
+#include "misc/utils.hpp"
 
 #define EPSILON 1e-12
 

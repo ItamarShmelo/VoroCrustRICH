@@ -3,8 +3,8 @@
 \author Elad Steinberg
 */
 
-#include "../3D/GeometryCommon/HilbertOrder3D.hpp"
-#include "../3D/GeometryCommon/Tessellation3D.hpp"
+#include "3D/hilbert/HilbertOrder3D.hpp"
+#include "3D/tesselation/Tessellation3D.hpp"
 
 #ifndef HILBERTPROC_HPP
 #define HILBERTPROC_HPP 1

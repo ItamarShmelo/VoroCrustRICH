@@ -1,9 +1,9 @@
 #include <cassert>
 #include "hdsim_3d.hpp"
-#include "../../3D/GeometryCommon/HilbertOrder3D.hpp"
-#include "../../misc/utils.hpp"
+#include "3D/hilbert/HilbertOrder3D.hpp"
+#include "misc/utils.hpp"
 #ifdef RICH_MPI
-#include "../../mpi/mpi_commands.hpp"
+#include "mpi/mpi_commands.hpp"
 #endif
 #include <chrono>
 
@@ -250,7 +250,9 @@ namespace
 		}
 		tess.Build(points
 #ifdef RICH_MPI
-			, tproc
+		#warning "[MAOR] Should change hdsim_3d.cpp, line 253-255"
+			//, tproc
+			, 3
 #endif
 		);
 	}

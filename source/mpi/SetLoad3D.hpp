@@ -9,9 +9,9 @@
 
 #include "mpi_commands.hpp"
 #include "ConstNumberPerProc3D.hpp"
-#include "../newtonian/three_dimensional/computational_cell.hpp"
-#include "../3D/GeometryCommon/Voronoi3D.hpp"
-#include "../newtonian/three_dimensional/hdsim_3d.hpp"
+#include "newtonian/three_dimensional/computational_cell.hpp"
+#include "newtonian/three_dimensional/hdsim_3d.hpp"
+#include "3D/tesselation/voronoi/Voronoi3D.hpp"
 
 /*!
 \brief Corrects the load between processors based on number of cells per processor

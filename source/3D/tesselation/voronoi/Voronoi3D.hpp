@@ -11,19 +11,21 @@
 #include <cmath>
 #include <vector>
 #include <string>
-#include "Delaunay3D.hpp"
-#include "Intersections.hpp"
+#include "../delaunay/Delaunay3D.hpp"
+#include "3D/GeometryCommon/Intersections.hpp"
 #include <stack>
 #include <set>
 #include <array>
-#include "Tessellation3D.hpp"
+#include "../Tessellation3D.hpp"
 #include <boost/container/flat_set.hpp>
 #include <boost/container/small_vector.hpp>
 
 #ifdef RICH_MPI
-#include "../../newtonian/three_dimensional/computational_cell.hpp"
-#include "../../mpi/mpi_commands.hpp"
+#include "newtonian/three_dimensional/computational_cell.hpp"
+#include "mpi/mpi_commands.hpp"
 #endif
+
+#define RICH_TESELLATION_FINISHED_TAG 505
 
 typedef std::array<std::size_t, 4> b_array_4;
 typedef std::array<std::size_t, 3> b_array_3;
@@ -73,11 +75,11 @@ private:
   double GetTetraVolume(std::array<Vector3D, 4> const& points)const;
   //  void CalcCellCMVolume(std::size_t index);
   double GetRadius(std::size_t index);
-  //  double GetMaxRadius(std::size_t index);
   void CalcAllCM(void);
   vector<std::pair<std::size_t, std::size_t> > SerialFindIntersections(bool first_run);
   vector<std::pair<std::size_t, std::size_t> > SerialFirstIntersections(void);
   double CalcTetraRadiusCenterHiPrecision(std::size_t index);
+
 #ifdef RICH_MPI
   vector<std::pair<std::size_t, std::size_t> > FindIntersections(Tessellation3D const& tproc, size_t mode,
 								 vector<unsigned char> &checked_clear);
@@ -90,10 +92,15 @@ private:
    */
   void MPIFirstIntersections(Tessellation3D const& tproc, vector<std::pair<std::size_t, std::size_t> > &ghost_index);
 #endif
+
   double CalcTetraRadiusCenter(std::size_t index);
   vector<Vector3D> CreateBoundaryPoints(vector<std::pair<std::size_t, std::size_t> > const& to_duplicate,
 					vector<vector<size_t> > &past_duplicate);
   void BuildVoronoi(std::vector<size_t> const& order);
+
+  // TODO: ADDED BY MAOR:
+  void BuildInitialize(size_t num_points);
+  double GetMaxRadius(std::size_t index);
 
   Delaunay3D del_;
   //vector<vector<std::size_t> > PointTetras_; // The tetras containing each point
@@ -107,17 +114,19 @@ private:
   //vector<vector<std::size_t> > PointsInFace_; // Right hand with regard to first neighbor
   vector<std::pair<std::size_t, std::size_t> > FaceNeighbors_;
   vector<Vector3D> CM_,Face_CM_;
-  vector<double> volume_;
-  vector<double> area_;
+  vector<double> volume_; // volumes of each one of the tetrahedra
+  vector<double> area_; // surface area of each one of the tetrahedra
   vector<vector<std::size_t> > duplicated_points_;
   vector<int> sentprocs_, duplicatedprocs_;
   vector<vector<std::size_t> > sentpoints_, Nghost_;
-  vector<std::size_t> self_index_;
+  vector<std::size_t> self_index_; // indexes of the points which are truely mine (inside the points list)
   Voronoi3D();
   Voronoi3D(Voronoi3D const &other);
   std::array<Vector3D, 4> temp_points_;
   std::array<Vector3D, 5> temp_points2_;
   std::vector<Face> box_faces_;
+  std::vector<double> radiuses;
+  
 public:
 #ifdef RICH_MPI
   /*! \brief Update meta tessellation
@@ -166,14 +175,17 @@ public:
    */
   void output_buildextra(std::string const& filename)const;
 
-  void Build(vector<Vector3D> const& points, Tessellation3D const& tproc) override;
+  void Build(vector<Vector3D> const& points, int hilbert_order) override;
+
+  // void Build(vector<Vector3D> const& points, Tessellation3D const& tproc) override;
 
   //! \param display Logging flag
   friend void SetLoad(Voronoi3D &tproc, vector<Vector3D> &points, size_t Niter, double speed, int mode,double round, bool display);
 
   //! \param display Logging flag
   friend void SetLoad(Voronoi3D &tproc, vector<Vector3D> &points,vector<ComputationalCell3D> &cells, size_t Niter, double speed, int mode, double round, bool display);
-#endif
+
+#endif // RICH_MPI
 
   /*! \brief Dump debug information
     \param rank Rank of parallel process
@@ -385,6 +397,9 @@ public:
   std::vector<Face>& ModifyBoxFaces(void) {return box_faces_;}
 };
 
+/**
+ * TODO: following functions should be here?
+*/
 bool PointInPoly(Tessellation3D const& tess, Vector3D const& point, std::size_t index);
 
 bool PointInPoly(std::vector<Face> const& faces, Vector3D const &point);

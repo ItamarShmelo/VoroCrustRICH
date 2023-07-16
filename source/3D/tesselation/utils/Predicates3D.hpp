@@ -2,7 +2,7 @@
 #define PREDICATES3D_HPP 1
 
 #include <vector>
-#include "Vector3D.hpp"
+#include "3D/elementary/Vector3D.hpp"
 #include <array>
 
 double orient3d(std::array<Vector3D,4> const& points);

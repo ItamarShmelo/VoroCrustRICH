@@ -1,8 +1,8 @@
 #ifndef DELAUNAY3D_HPP
 #define DELAUNAY3D_HPP 1
 
-#include "Vector3D.hpp"
-#include "Tetrahedron.hpp"
+#include "../../elementary/Vector3D.hpp"
+#include "../../elementary/Tetrahedron.hpp"
 #include <string>
 #include <vector>
 #include <set>
@@ -23,11 +23,10 @@ public:
   vector<Vector3D> points_;
   //! \brief List of empty tetrahedra
   boost::container::flat_set<size_t> empty_tetras_;
-  //! \brief Length of list of real points
-  std::size_t Norg_;
+  //! \brief Length of list of real points (the first `Norg_` points from `points_` are actually mine, the rest are ghosts)
+  std::size_t Norg_; 
   //! \brief List of outside neighbours
   std::size_t outside_neighbor_;
-
 
   Delaunay3D();
 
@@ -60,7 +59,7 @@ public:
   /*! \brief Dump data to file
     \param filename Name of output file
    */
-  void output(string const& filename)const;
+  void output(string const& filename) const;
 
   /*! \brief Validate input
     \return True if input is valid

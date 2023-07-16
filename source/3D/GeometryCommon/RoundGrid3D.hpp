@@ -6,7 +6,7 @@
 #ifndef ROUNDGRID3D
 #define ROUNDGRID3D 1
 
-#include "Voronoi3D.hpp"
+#include "../tesselation/voronoi/Voronoi3D.hpp"
 
 /*!
 	\brief Makes the cells rounder

@@ -1,12 +1,13 @@
 #include "Delaunay3D.hpp"
-#include "Predicates3D.hpp"
+#include "../utils/Predicates3D.hpp"
 #include <limits>
 #include <algorithm>
 #include <fstream>
-#include "HilbertOrder3D.hpp"
+#include "../../hilbert/HilbertOrder3D.hpp"
 #include <boost/foreach.hpp>
 #include <iostream>
-#include "../../misc/utils.hpp"
+#include "misc/utils.hpp"
+
 //#define runcheks 1
 
 namespace

@@ -10,7 +10,7 @@
 #endif // _MSC_VER
 #include <cmath>
 #include <algorithm>
-#include "../3D/GeometryCommon/Tessellation3D.hpp"
+#include "3D/tesselation/Tessellation3D.hpp"
 
 //! \brief Updates the positions of the processes
 class ProcessorUpdate3D

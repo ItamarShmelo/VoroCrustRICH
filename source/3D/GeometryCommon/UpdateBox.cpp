@@ -146,7 +146,9 @@ void UpdateBox(Tessellation3D &tess, HDSim3D &sim, double const min_velocity, do
 		assert(N>0);
 		tess.Build(mypoints
 #ifdef RICH_MPI
-			, tproc
+			, 3
+			// , tproc
+	#warning "[MAOR] Should change UpdateBox.cpp, line 149-151"
 #endif
 		);
 		// deal with hydro

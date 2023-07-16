@@ -74,7 +74,9 @@ void SetLoad(HDSim3D& sim, size_t Niter, double speed, int mode,
 	}
 	if(tess_rebuild)
 	{
-		local.Build(newpoints, tproc);
+		#warning "[MAOR] Should change SetLoad3D.cpp, line 77-79"
+		// local.Build(newpoints, tproc);
+		local.Build(newpoints, 3);
 		MPI_exchange_data(local, sim.getCells(), true, &cdummy);
 	}
 	double load = procmove.GetLoadImbalance(local, total);

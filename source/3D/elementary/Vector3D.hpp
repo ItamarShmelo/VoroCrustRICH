@@ -9,7 +9,7 @@
 #include <vector>
 #include <limits>
 #include <cmath>
-#include "../../misc/serializable.hpp"
+#include "misc/serializable.hpp"
 
 using std::vector;
 

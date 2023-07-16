@@ -6,10 +6,11 @@
 #ifndef HILBERTORDER3D_UTILS_HPP
 #define HILBERTORDER3D_UTILS_HPP 1
 
-#include "Vector3D.hpp"
+#include "3D/elementary/Vector3D.hpp"
 #include <vector>
 #include <algorithm>
-#include "../../misc/utils.hpp"
+#include "hilbertTypes.h"
+#include "misc/utils.hpp"
 
 using std::vector;
 

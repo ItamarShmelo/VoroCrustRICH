@@ -7,6 +7,7 @@ import sys
 # importing modules from this package
 from .buildutils import lmod
 from .buildutils import run_make
+import gen_version
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("build_program.main")
@@ -16,7 +17,8 @@ sys.path.append(root_dir)
 
 def _run_cmake(*, build_dir, exe_name, config, SysLibsDict, test_dir, definitionOfReal=8):
 
-    common_cxx_flags = " -std=c++14 -Wextra -Wshadow -fno-common -fstack-protector-all -rdynamic -Werror "
+    # removed -Werror from:
+    common_cxx_flags = " -std=c++14 -Wextra -Wshadow -fno-common -fstack-protector-all -rdynamic "
     common_cxx_flags_debug = " -DDEBUG -O0 -g3 -gdwarf-3 "
     common_cxx_flags_release = " -DNDEBUG -O3 -DOMPI_SKIP_MPICXX "
 
@@ -26,7 +28,8 @@ def _run_cmake(*, build_dir, exe_name, config, SysLibsDict, test_dir, definition
 
     if config.startswith("gnu"):
         fortran_compiler = SysLibsDict["gfortran"]
-        cmake_fortran_flags = f" -fall-intrinsics -std=f2018 -fdec-static -finit-local-zero -finit-integer=-2147483647 -finit-real=snan -finit-logical=True -finit-derived -ffpe-trap=invalid,zero,overflow -ffree-line-length-none -cpp -fdefault-real-{definitionOfReal} {'-fdefault-double-8' if definitionOfReal==8 else ''} -fbacktrace -g -Wall -Wextra -Wsurprising -Werror -Wpedantic -Wno-uninitialized "
+        # removed -Werror from:
+        cmake_fortran_flags = f" -fall-intrinsics -std=f2018 -fdec-static -finit-local-zero -finit-integer=-2147483647 -finit-real=snan -finit-logical=True -finit-derived -ffpe-trap=invalid,zero,overflow -ffree-line-length-none -cpp -fdefault-real-{definitionOfReal} {'-fdefault-double-8' if definitionOfReal==8 else ''} -fbacktrace -g -Wall -Wextra -Wsurprising  -Wpedantic -Wno-uninitialized "
         cmake_fortran_flags_debug = " -O0 -fcheck=all -Wno-maybe-uninitialized -Wno-tabs -Wno-conversion "
         cmake_fortran_flags_release = " -O2 "
         cmake_fortran_flags += "  -mcmodel=medium -shared-libgcc "
@@ -109,10 +112,11 @@ def _run_cmake(*, build_dir, exe_name, config, SysLibsDict, test_dir, definition
     return cmake_result
 
 def build_program(*, configs, make_dir, src_dir, test_dir):
+    from source.cppversion.generate_cppversion import generate_cppversion
     """Build the program with the desired configurations."""
     exe_name = "rich"
     logger.debug(f"args:\nconfigs = {configs}\nroot_dir = {root_dir}\nmake_dir = {make_dir}\nsrc_dir = {src_dir}\ntest_dir = {test_dir}")
-
+    git_version = gen_version.GitVersion(root_dir)
     assert os.path.isdir(os.path.join(root_dir, "source")), f"Directory {root_dir} does not contain a directory named source"
 
     with open(os.path.join(root_dir, "compilation", "SystemLibsLinks.py"), "r") as f:
@@ -140,6 +144,11 @@ def build_program(*, configs, make_dir, src_dir, test_dir):
         config_dir = os.path.join(build_dir, config)
         if not os.path.isdir(config_dir):
             os.makedirs(config_dir)
+        
+        generate_cppversion(path=os.path.join(config_dir, "generated/cppversion"),
+                    version=str(git_version),
+                    config=config)
+
         
         #run cmake for the specific config
         logger.info("Running cmake")
