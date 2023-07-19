@@ -202,14 +202,16 @@ QueryBatchInfo RangeAgent::runBatch(std::queue<RangeQueryData> &queries)
             this->receiveQueries(queriesBatch, false);
         }
     }
-    MPI_Barrier(this->comm); // ensure everyone stopped sending
-    this->answerQueries(); // answer the arrived queries
+    // MPI_Barrier(this->comm); // ensure everyone stopped sending
+    // this->answerQueries(); // answer the arrived queries
     this->receiveQueries(queriesBatch, true); // receive the remain results
     // MPI_Barrier(this->comm);
+    /*
     if(this->requests.size() > 0)
     {
         MPI_Waitall(this->requests.size(), &(*(this->requests.begin())), MPI_STATUSES_IGNORE); // make sure any query was indeed received
     }
+    */
     // this->answerQueries();
     return queriesBatch;
 }

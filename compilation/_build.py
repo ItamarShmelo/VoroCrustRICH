@@ -20,7 +20,7 @@ def _run_cmake(*, build_dir, exe_name, config, SysLibsDict, test_dir, definition
     # removed -Werror from:
     common_cxx_flags = " -std=c++14 -Wextra -Wshadow -fno-common -fstack-protector-all -rdynamic "
     common_cxx_flags_debug = " -DDEBUG -O0 -g3 -gdwarf-3 "
-    common_cxx_flags_release = " -DNDEBUG -O3 -DOMPI_SKIP_MPICXX "
+    common_cxx_flags_release = " -DNDEBUG -g -O3 -DOMPI_SKIP_MPICXX "
 
     hdf5_lib_dir = SysLibsDict["hdf5_lib_dir"]
     hdf5_include_dir = SysLibsDict["hdf5_include"]
