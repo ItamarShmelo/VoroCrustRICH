@@ -72,10 +72,12 @@ std::pair<Vector3D, Vector3D> HilbertAgent::getBoundingBox() const
     return std::make_pair(ll, ur);
 }
 
-void HilbertAgent::pointsReceive(std::vector<Vector3D> &points, int &finished_ranks, bool blocking) const
+void HilbertAgent::pointsReceive(std::vector<Vector3D> &points, bool blocking) const
 {
     MPI_Status status;
     int received = 0;
+    int finished_ranks = 0;
+    bool sentFinished = false;
 
     if(blocking and finished_ranks != this->size)
     {
@@ -88,40 +90,45 @@ void HilbertAgent::pointsReceive(std::vector<Vector3D> &points, int &finished_ra
 
     while((blocking and finished_ranks != this->size) or (!blocking and received))
     {
-        switch(status.MPI_TAG)
+        if(status.MPI_TAG == POINT_SEND_TAG)
         {
-            case POINT_SEND_TAG:
-                _3DPoint point;
-                MPI_Recv(&point, sizeof(_3DPoint), MPI_BYTE, status.MPI_SOURCE, POINT_SEND_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-                points.push_back(Vector3D(point.x, point.y, point.z));
-                break;
-
-            case FINISH_TAG:
-                int dummy;
-                MPI_Recv(&dummy, 1, MPI_BYTE, status.MPI_SOURCE, FINISH_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-                finished_ranks++;
-                break;
-            
-            default:
-                MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-                break;
+            _3DPoint point;
+            MPI_Recv(&point, sizeof(_3DPoint), MPI_BYTE, status.MPI_SOURCE, POINT_SEND_TAG, MPI_COMM_WORLD, &status);
+            points.push_back(Vector3D(point.x, point.y, point.z));
+        } else if(status.MPI_TAG == FINISH_TAG)
+        {
+            int dummy;
+            MPI_Recv(&dummy, 1, MPI_BYTE, status.MPI_SOURCE, FINISH_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            finished_ranks++;
+        } else
+        {
+            MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
         }
         
-        if(blocking and finished_ranks != this->size)
+        MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &received, &status);
+
+        if(blocking)
         {
-            MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-        }
-        else
-        {
-            MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &received, &status);
+            if(!received and !sentFinished)
+            {
+                // we are done! send a finish
+                for(int i = 0; i < this->size; i++)
+                {
+                    int dummy = 0;
+                    MPI_Send(&dummy, 1, MPI_BYTE, i, FINISH_TAG, MPI_COMM_WORLD);
+                }
+                sentFinished = true;
+            }
+            if(finished_ranks != this->size)
+            {
+                MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+            }
         }
     }
 }
 
 std::vector<Vector3D> HilbertAgent::pointsExchange(const std::vector<Vector3D> &points, std::vector<size_t> &self_index_, std::vector<int> &sentprocs_, std::vector<std::vector<size_t>> &sentpoints_) const
 {
-    int finished_ranks = 0;
-    std::vector<MPI_Request> requests;
     std::vector<Vector3D> new_points;
 
     for(size_t i = 0; i < points.size(); i++)
@@ -131,16 +138,14 @@ std::vector<Vector3D> HilbertAgent::pointsExchange(const std::vector<Vector3D> &
         if(node != this->rank)
         {
             // point is not mine
-            auto it = std::find(sentprocs_.begin(), sentprocs_.end(), node);
-            int index = it - sentprocs_.begin();
-            if(it == sentprocs_.end())
+            size_t index = std::find(sentprocs_.begin(), sentprocs_.end(), node) - sentprocs_.begin();
+            if(index == sentprocs_.size())
             {
                 sentprocs_.push_back(node);
                 sentpoints_.push_back(std::vector<size_t>());
             }
             sentpoints_[index].push_back(i);
-            requests.push_back(MPI_REQUEST_NULL);
-            MPI_Isend(&point, sizeof(_3DPoint), MPI_BYTE, node, POINT_SEND_TAG, MPI_COMM_WORLD, &requests[requests.size() - 1]);
+            MPI_Send(&point, sizeof(_3DPoint), MPI_BYTE, node, POINT_SEND_TAG, MPI_COMM_WORLD);
         }
         else
         {
@@ -150,16 +155,11 @@ std::vector<Vector3D> HilbertAgent::pointsExchange(const std::vector<Vector3D> &
 
         if(i % POINTS_EXCHANGE_RECEIVE_CYCLE == 0)
         {
-            this->pointsReceive(new_points, finished_ranks, false);
+            this->pointsReceive(new_points, false);
         }
     }
-    // send a finish message
-    for(int i = 0; i < this->size; i++)
-    {
-        int dummy = 0;
-        MPI_Send(&dummy, 1, MPI_BYTE, i, FINISH_TAG, MPI_COMM_WORLD);
-    }
-    this->pointsReceive(new_points, finished_ranks, true);
+    MPI_Barrier(MPI_COMM_WORLD);
+    this->pointsReceive(new_points, true);
     return new_points;
 }
 

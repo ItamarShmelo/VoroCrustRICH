@@ -174,6 +174,8 @@ public:
     \param filename Output file name
    */
   void output_buildextra(std::string const& filename)const;
+  void initialBoxBuild(std::vector<Face> &box, std::vector<Vector3D> &normals);
+  void checkToMirror(const Vector3D &point, double radius, std::vector<Face> &box, std::vector<Vector3D> &normals, std::vector<Vector3D> &points);
 
   void Build(vector<Vector3D> const& points, int hilbert_order) override;
 

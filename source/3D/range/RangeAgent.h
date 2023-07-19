@@ -1,9 +1,7 @@
 #ifndef _RICH_RANGE_AGENT_H_
 #define _RICH_RANGE_AGENT_H_
 
-#include <iostream>
-#include <fstream>
-#include <filesystem>
+#include <iostream> // todo remove
 #include <algorithm>
 #include <cmath>
 #include <set>
@@ -16,8 +14,8 @@
 #define TAG_REQUEST 200
 #define TAG_RESPONSE 201
 
-#define QUERY_AUTOFLUSH_NUM 100
-#define RECEIVE_AUTOFLUSH_NUM 100
+#define QUERY_AUTOFLUSH_NUM 5
+#define RECEIVE_AUTOFLUSH_NUM 5
 #define MAX_RECEIVE_IN_CYCLE 200
 
 typedef struct RangeQueryData
@@ -46,6 +44,7 @@ typedef struct QueryBatchInfo
     std::vector<Vector3D> newPoints;
 } QueryBatchInfo;
 
+
 class RangeAgent
 {
 public:
@@ -57,7 +56,7 @@ public:
 
     void receiveQueries(QueryBatchInfo &batch, bool blocking);
     void answerQueries();
-    void sendQuery(QueryInfo &query);
+    void sendQuery(const QueryInfo &query);
     QueryBatchInfo runBatch(std::queue<RangeQueryData> &queries);
     void createArtificialQueries(coord_t radius);
 
@@ -69,13 +68,19 @@ private:
     int order;
     int cellsPerRank;
     hilbert_index_t myHilbertMin, myHilbertMax;
-    // RangeTree<Vector3D> *rangeTree;
     std::vector<MPI_Request> requests;
     std::vector<std::vector<char>> buffers;
     size_t receivedUntilNow;
     size_t shouldReceiveInTotal;
     HilbertAgent hilbertAgent;
     RangeFinder *rangeFinder;
+
+    std::vector<int> sentProcessorsRanks;
+    std::vector<std::vector<size_t>> sentPoints; 
+    std::vector<int> recvProcessorsRank;
+    std::vector<std::vector<size_t>> recvPoints; 
+    
+    std::vector<Vector3D> getRangeResult(const SubQueryData &query, int node);
 };
 
 #endif // _RICH_RANGE_AGENT_H_

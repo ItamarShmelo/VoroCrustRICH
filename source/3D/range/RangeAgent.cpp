@@ -5,7 +5,7 @@ RangeAgent::RangeAgent(MPI_Comm comm, const HilbertAgent &hilbertAgent, RangeFin
 {
     MPI_Comm_rank(this->comm, &this->rank);
     MPI_Comm_size(this->comm, &this->size);
-    
+
     int N = pow(2, this->hilbertAgent.getOrder()) * pow(2, this->hilbertAgent.getOrder()) * pow(2, this->hilbertAgent.getOrder());
     this->cellsPerRank = N / size;
     int HilbertCellsLastRank = this->cellsPerRank + N - (this->cellsPerRank * size);
@@ -34,7 +34,7 @@ void RangeAgent::receiveQueries(QueryBatchInfo &batch, bool blocking)
     {
         MPI_Iprobe(MPI_ANY_SOURCE, TAG_RESPONSE, this->comm, &receivedAnswer, &status);
     }
-    
+
     std::vector<char> buffer;
 
     while((!blocking and receivedAnswer and received < MAX_RECEIVE_IN_CYCLE) or (blocking and this->receivedUntilNow < this->shouldReceiveInTotal))
@@ -48,7 +48,7 @@ void RangeAgent::receiveQueries(QueryBatchInfo &batch, bool blocking)
         {
             buffer.resize(count);
         }
-        
+
         MPI_Recv(&(*(buffer.begin())), count, MPI_BYTE, status.MPI_SOURCE, TAG_RESPONSE, this->comm, MPI_STATUS_IGNORE);
         size_t id, length;
         int pos = 0;
@@ -56,9 +56,7 @@ void RangeAgent::receiveQueries(QueryBatchInfo &batch, bool blocking)
         MPI_Unpack(&(*(buffer.begin())), count, &pos, &length, 1, MPI_UNSIGNED_LONG, this->comm);
         if(length > 0)
         {
-            // insert the results to the points received by rank `status.MPI_SOURCE`
-
-            // insert the results to the query's result
+            // insert the results to the points received by rank `status.MPI_SOURCE` and to the queries result
             queries[id].finalResults.resize(queries[id].finalResults.size() + length);
             MPI_Unpack(&(*(buffer.begin())), count, &pos, &(*(queries[id].finalResults.end() - length)), length * sizeof(_3DPoint), MPI_BYTE, this->comm);
             pointsFromRanks[status.MPI_SOURCE].resize(pointsFromRanks[status.MPI_SOURCE].size() + length);
@@ -69,7 +67,6 @@ void RangeAgent::receiveQueries(QueryBatchInfo &batch, bool blocking)
                 pointsFromRanks[status.MPI_SOURCE].push_back(vector);
                 batch.newPoints.push_back(vector);
             }
-
         }
         if(blocking)
         {
@@ -89,6 +86,33 @@ void RangeAgent::receiveQueries(QueryBatchInfo &batch, bool blocking)
     }
 }
 
+std::vector<Vector3D> RangeAgent::getRangeResult(const SubQueryData &query, int node)
+{
+    // get what is the right index of `node` inside the sentProcessors vector. If it isn't there, create it
+    std::vector<Vector3D> result;
+    size_t rankIndex = std::find(this->sentProcessorsRanks.begin(), this->sentProcessorsRanks.end(), node) - this->sentProcessorsRanks.begin();
+    if(rankIndex == this->sentProcessorsRanks.size())
+    {
+        // rank is not inside the sentProcessors rank, add it
+        this->sentProcessorsRanks.push_back(node);
+        this->sentPoints.push_back(std::vector<size_t>());
+    }
+
+    // get the real results, and filter it (do not send points you sent before)
+    std::vector<size_t> nonFilteredResult = this->rangeFinder->range(Vector3D(query.data.center.x, query.data.center.y, query.data.center.z), query.data.radius);
+    for(const size_t &pointIdx : nonFilteredResult)
+    {
+        // check if the point wasn't already sent to node, only after that, add it to the result
+        if(std::find(this->sentPoints[rankIndex].begin(), this->sentPoints[rankIndex].end(), pointIdx) == this->sentPoints[rankIndex].end())
+        {
+            // point haven't been sent, send it
+            result.push_back(this->rangeFinder->getPoint(pointIdx));
+            this->sentPoints[rankIndex].push_back(pointIdx);
+        }
+    }
+    return result;
+}
+
 void RangeAgent::answerQueries()
 {
     MPI_Status status;
@@ -100,7 +124,7 @@ void RangeAgent::answerQueries()
     {
         SubQueryData query;
         MPI_Recv(&query, sizeof(SubQueryData), MPI_BYTE, status.MPI_SOURCE, TAG_REQUEST, this->comm, MPI_STATUS_IGNORE);
-        std::vector<Vector3D> result = this->rangeFinder->range(Vector3D(query.data.center.x, query.data.center.y, query.data.center.z), query.data.radius);
+        std::vector<Vector3D> result = this->getRangeResult(query, status.MPI_SOURCE);
         size_t resultSize = result.size();
 
         int pos = 0;
@@ -126,7 +150,7 @@ void RangeAgent::answerQueries()
     }
 }
 
-void RangeAgent::sendQuery(QueryInfo &query)
+void RangeAgent::sendQuery(const QueryInfo &query)
 {
     std::set<hilbert_index_t> intersectionHilbertCells = this->hilbertAgent.getIntersectingCircle(Vector3D(query.data.center.x, query.data.center.y, query.data.center.z), query.data.radius);
     std::set<int> possibleNodes;
@@ -145,7 +169,8 @@ void RangeAgent::sendQuery(QueryInfo &query)
         }
         ++this->shouldReceiveInTotal;
         SubQueryData subQuery = {query.data, query.id};
-        MPI_Send(&subQuery, sizeof(SubQueryData), MPI_BYTE, node, TAG_REQUEST, this->comm);
+        // this->requests.push_back(MPI_REQUEST_NULL);
+        MPI_Send(&subQuery, sizeof(SubQueryData), MPI_BYTE, node, TAG_REQUEST, this->comm/*, &this->requests[this->requests.size() - 1]*/);
     }
 }
 
@@ -154,11 +179,10 @@ QueryBatchInfo RangeAgent::runBatch(std::queue<RangeQueryData> &queries)
     this->receivedUntilNow = 0; // reset the receive counter
     this->shouldReceiveInTotal = 0; // reset the should-be-received counter
     this->buffers.clear();
+    this->requests.clear();
 
     QueryBatchInfo queriesBatch;
     std::vector<QueryInfo> &queriesInfo = queriesBatch.queriesAnswers;
-
-    MPI_Barrier(this->comm); // ensure everyone is ready
 
     size_t i = 0;
     while(!queries.empty())
@@ -181,8 +205,11 @@ QueryBatchInfo RangeAgent::runBatch(std::queue<RangeQueryData> &queries)
     MPI_Barrier(this->comm); // ensure everyone stopped sending
     this->answerQueries(); // answer the arrived queries
     this->receiveQueries(queriesBatch, true); // receive the remain results
-    MPI_Barrier(MPI_COMM_WORLD);
-    MPI_Waitall(this->requests.size(), &(*(this->requests.begin())), MPI_STATUSES_IGNORE); // make sure any query was indeed received
+    // MPI_Barrier(this->comm);
+    if(this->requests.size() > 0)
+    {
+        MPI_Waitall(this->requests.size(), &(*(this->requests.begin())), MPI_STATUSES_IGNORE); // make sure any query was indeed received
+    }
     // this->answerQueries();
     return queriesBatch;
 }

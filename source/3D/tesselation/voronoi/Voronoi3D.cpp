@@ -24,6 +24,8 @@
 #include <boost/container/static_vector.hpp>
 #include <omp.h>
 
+// #define VORONOI_DEBUG
+
 bool PointInPoly(Tessellation3D const &tess, Vector3D const &point, std::size_t index)
 {
   face_vec const &faces = tess.GetCellFaces(index);
@@ -982,6 +984,7 @@ vector<vector<std::size_t>> const &Voronoi3D::GetGhostIndeces(void) const
 */
 int getNewFinished()
 {
+  MPI_Status status;
   int newFinished = 0;
   int receivedFinished = 0;
 
@@ -989,7 +992,10 @@ int getNewFinished()
   while(receivedFinished)
   {
     int dummy;
-    MPI_Recv(&dummy, 1, MPI_BYTE, MPI_ANY_SOURCE, RICH_TESELLATION_FINISHED_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    MPI_Recv(&dummy, 1, MPI_BYTE, MPI_ANY_SOURCE, RICH_TESELLATION_FINISHED_TAG, MPI_COMM_WORLD, &status);
+    #ifdef VORONOI_DEBUG
+    std::cout << "received new finished from " << status.MPI_SOURCE << std::endl;
+    #endif // VORONOI_DEBUG
     newFinished++;
     MPI_Iprobe(MPI_ANY_SOURCE, RICH_TESELLATION_FINISHED_TAG, MPI_COMM_WORLD, &receivedFinished, MPI_STATUS_IGNORE);
   }
@@ -1000,10 +1006,19 @@ int getNewFinished()
 
 /**
  * gets a point index, and returns the maximal radius of the tetrahedra containing that point.
- * @param index the index of the point (in the points list)
+ * @param index the index of the point (within the points list)
 */
 double Voronoi3D::GetMaxRadius(std::size_t index)
 {
+  /*
+  #ifdef VORONOI_DEBUG
+  std::cout << "size of del_: " << this->del_.points_.size() << " while size of PointTetras_: " << this->PointTetras_.size() << std::endl;
+  for(const Vector3D &point : this->del_.points_)
+  {
+    std::cout << "point: (" << point.x << " , " << point.y << ", " << point.z << ")" << std::endl;
+  }
+  #endif // VORONOI_DEBUG
+  */
   std::size_t N = PointTetras_[index].size();
   double res = 0;
   #ifdef __INTEL_COMPILER
@@ -1011,6 +1026,9 @@ double Voronoi3D::GetMaxRadius(std::size_t index)
   #endif
   for(std::size_t i = 0; i < N; ++i)
   {
+    #ifdef VORONOI_DEBUG
+    std::cout << "tetrahedron containing the point of index " << index << " is " << PointTetras_[index][i] << std::endl;
+    #endif // VORONOI_DEBUG
     res = std::max(res, GetRadius(PointTetras_[index][i]));
   }
   return res;
@@ -1020,14 +1038,13 @@ double Voronoi3D::GetMaxRadius(std::size_t index)
 
 void Voronoi3D::BuildInitialize(size_t num_points)
 {
-  //assert(points.size() > 0);
+  // assert(num_points > 0);
   // Clear data
   PointTetras_.clear();
   R_.clear();
-  R_.reserve(num_points * 11);
+  if(num_points > 0) R_.reserve(num_points * 11);
   tetra_centers_.clear();
-  tetra_centers_.reserve(num_points * 11);
-  del_.Clean();
+   if(num_points > 0) tetra_centers_.reserve(num_points * 11);
   // Voronoi Data
   FacesInCell_.clear();
   PointsInFace_.clear();
@@ -1036,9 +1053,48 @@ void Voronoi3D::BuildInitialize(size_t num_points)
   Face_CM_.clear();
   volume_.clear();
   area_.clear();
-  Nghost_.clear();
+  Norg_ = num_points;
   duplicatedprocs_.clear();
   duplicated_points_.clear();
+  Nghost_.clear();
+}
+
+void Voronoi3D::checkToMirror(const Vector3D &point, double radius, std::vector<Face> &box, std::vector<Vector3D> &normals, std::vector<Vector3D> &points)
+{
+  for(size_t i = 0; i < box.size(); i++)
+  {
+    // check for intersecting the sphere with radius `radius` around `point`, with the `i`th face of `box`
+    Sphere sphere(point, radius);
+    if(FaceSphereIntersections(box[i], sphere, normals[i]))
+    {
+      #ifdef VORONOI_DEBUG
+      std::cout << "point " << point << " and radius " << radius << " intersects!" << std::endl;
+      #endif // VORONOI_DEBUG
+      // intersects! mirror the point
+      points.push_back(MirrorPoint(box[i], point));
+      #ifdef VORONOI_DEBUG
+      std::cout << "mirrored point is " << points[points.size() - 1] << std::endl;
+      #endif // VORONOI_DEBUG
+    }
+  }
+}
+
+/**
+ * if the initial box does not exist, builds its faces according to the leftmost and rightmost points.
+ * If it does, does not build the faces again.
+ * @return the normals to the faces
+*/
+void Voronoi3D::initialBoxBuild(std::vector<Face> &box, std::vector<Vector3D> &normals)
+{
+  box = box_faces_.empty() ? BuildBox(this->ll_, this->ur_) : this->box_faces_;
+  size_t Nfaces = box.size();
+  normals.resize(Nfaces);
+
+  for (size_t i = 0; i < Nfaces; ++i)
+  {
+    normals[i] = CrossProduct(box[i].vertices[1] - box[i].vertices[0], box[i].vertices[2] - box[i].vertices[0]);
+    normals[i] *= (1.0 / fastsqrt(ScalarProd(normals[i], normals[i])));
+  }
 }
 
 /**
@@ -1047,20 +1103,72 @@ void Voronoi3D::BuildInitialize(size_t num_points)
 */
 void Voronoi3D::Build(const std::vector<Vector3D> &points, int hilbert_order)
 {
-  this->BuildInitialize(points.size());
 
   int rank, size;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
 
+  std::vector<Face> box;
+  std::vector<Vector3D> normals;
+  this->initialBoxBuild(box, normals);
+
   // first, makes sure the current points I have are the correct points
   HilbertAgent hilbertAgent(this->ll_, this->ur_, hilbert_order);
   std::vector<Vector3D> new_points = hilbertAgent.pointsExchange(points, this->self_index_, this->sentprocs_, this->sentpoints_);
-
+  /*
   std::pair<Vector3D, Vector3D> bounding_box = hilbertAgent.getBoundingBox();
-  // performs internal tesselation:
-  std::vector<size_t> order = HilbertOrder3D(new_points);
-  this->del_.Build(new_points, bounding_box.second, bounding_box.first, order);
+  */
+  this->BuildInitialize(new_points.size());
+
+  std::cout << "rank " << rank << ", new_points.size() is " << new_points.size() << std::endl;
+
+  std::vector<size_t> order;
+
+  if(new_points.size() != 0)
+  {
+    std::pair<Vector3D, Vector3D> bounding_box = std::make_pair(new_points[0], new_points[0]);
+    for(const Vector3D &point : new_points)
+    {
+      bounding_box.first.x = std::min(bounding_box.first.x, point.x);
+      bounding_box.second.x = std::max(bounding_box.second.x, point.x);
+      bounding_box.first.y = std::min(bounding_box.first.y, point.y);
+      bounding_box.second.y = std::max(bounding_box.second.y, point.y);
+      bounding_box.first.z = std::min(bounding_box.first.z, point.y);
+      bounding_box.second.z = std::max(bounding_box.second.z, point.z);
+    }
+    #ifdef VORONOI_DEBUG
+    std::cout << "new points for rank " << rank << ": " << std::endl;    
+    for(const Vector3D &point : new_points)
+    {
+      std::cout << point << " ";
+    }
+    std::cout << std::endl;
+    #endif // VORONOI_DEBUG
+
+    // performs internal tesselation:
+    order = HilbertOrder3D(new_points);
+
+    // initial build for the points
+    this->del_.Build(new_points, bounding_box.second, bounding_box.first, order);
+  }
+
+  #ifdef VORONOI_DEBUG
+  std::cout << "rank " << rank << ", new points: " << std::endl;
+  for(const Vector3D &point : new_points)
+  {
+    std::cout << "[" << rank << "] (" << point.x << ", " << point.y << ", " << point.z << ")" << std::endl;
+  }
+  #endif // VORONOI_DEBUG
+
+  // updates the radiuses array of the tetrahedra, as well as the lists for each point what tetras it belongs to
+  this->R_.resize(this->del_.tetras_.size());
+  std::fill(this->R_.begin(), this->R_.end(), -1);
+  this->tetra_centers_.resize(this->R_.size());
+  this->bigtet_ = SetPointTetras(this->PointTetras_, this->Norg_, this->del_.tetras_, this->del_.empty_tetras_);
+
+  #ifdef VORONOI_DEBUG
+  std::cout << "rank is " << rank << ", bigtet is " << bigtet_ << ", size of tetras is " << del_.tetras_.size() << " and size of pointTetras is " << PointTetras_.size() << std::endl;
+  #endif // VORONOI_DEBUG
 
   if(this->radiuses.empty())
   {
@@ -1068,71 +1176,166 @@ void Voronoi3D::Build(const std::vector<Vector3D> &points, int hilbert_order)
     this->radiuses.resize(this->del_.tetras_.size());
     double volume = (this->ur_[0] - this->ll_[0]) * (this->ur_[1] - this->ll_[1]) * (this->ur_[2] - this->ll_[2]);
     size_t N;
-    size_t myTetrads = this->del_.tetras_.size(); // todo: remove ghost tetrahedra?
-    MPI_Allreduce(&myTetrads, &N, 1, MPI_UNSIGNED_LONG, MPI_SUM, MPI_COMM_WORLD);
+    MPI_Allreduce(&this->Norg_, &N, 1, MPI_UNSIGNED_LONG, MPI_SUM, MPI_COMM_WORLD);
     double initial_radius = std::pow(volume / N, 0.333333f);
+    #ifdef VORONOI_DEBUG
+    std::cout << "initial radius is " << initial_radius << std::endl;
+    #endif // VORONOI_DEBUG
     std::fill(this->radiuses.begin(), this->radiuses.end(), initial_radius);
   }
 
   bool sent_finished = false; // if I sent a finished message
   int finished = 0; // the number of finished ranks
-  std::deque<int> current; // the indexes of the current "bad" points (points with h_i <= s_i)
+  std::deque<int> current;  // the indexes of the current "bad" points (points with h_i <= s_i)
 
-  for(std::size_t index = 0; index < this->del_.points_.size(); index++)
+  for(size_t i = 0; i < new_points.size(); i++)
   {
-    // s equals 2 * (the maximal radius, among all the circumspheres of tetrahedra the point with index `index` is a vertex in) 
-    double s = 2 * GetMaxRadius(index);
-    if(s >= this->radiuses[index])
-    {
-      current.push_back(index); // h_i <= s_i, add to current
-    }
+    current.push_back(i);
   }
 
-  BruteForceFinder rangeFinder(this->del_.points_);
+  #ifdef VORONOI_DEBUG
+  std::cout << "finished max ranks" << std::endl;
+  #endif // VORONOI_DEBUG
+
+  BruteForceFinder rangeFinder(this->del_.points_.begin(), this->del_.points_.begin() + this->Norg_);
   RangeAgent rangeAgent(hilbertAgent, &rangeFinder);
+
+  #ifdef VORONOI_DEBUG
+  std::cout << "finished initializing agent" << std::endl;
+  #endif // VORONOI_DEBUG
+
+  std::vector<Vector3D> allMirrored;
+
+  MPI_Barrier(MPI_COMM_WORLD);
 
   while(finished != size)
   {
+    #ifdef VORONOI_DEBUG
+    std::cout << "finished is " << finished << " and size is " << size << ", current.size() is " << current.size() << std::endl;
+    #endif // VORONOI_DEBUG
     std::queue<RangeQueryData> queries;
+
+    std::vector<Vector3D> mirroedPoints;
+
     for(std::size_t i = 0; i < current.size(); i++)
     {
-      double radius = this->radiuses[current[i]];
+      double radius = std::min(this->radiuses[current[i]] * 1.1, 2 * GetMaxRadius(current[i])); // todo define 1.1 as a constant
+      this->checkToMirror(this->del_.points_[current[i]], radius, box, normals, mirroedPoints);
+      this->radiuses[current[i]] = radius;
       Vector3D &point = this->del_.points_[current[i]];
+
+      #ifdef VORONOI_DEBUG
+      std::cout << "a query: " << this->del_.points_[current[i]] << " and r=" << radius << std::endl;
+      #endif // VORONOI_DEBUG
       queries.push({{point.x, point.y, point.z}, radius});
     }
+  
+    #ifdef VORONOI_DEBUG
+    std::cout << "finished creating batches, total of queries.size()=" << queries.size() << std::endl;
+    #endif // VORONOI_DEBUG
 
+    // MPI_Barrier(MPI_COMM_WORLD); // todo: necessary?
     QueryBatchInfo batchInfo = rangeAgent.runBatch(queries);
-    
+    MPI_Barrier(MPI_COMM_WORLD); // todo: necessary?
+
+    std::vector<Vector3D> &newPoints = batchInfo.newPoints;
+
+    for(const Vector3D &point : mirroedPoints)
+    {
+      if(std::find(allMirrored.begin(), allMirrored.end(), point) == allMirrored.end())
+      {
+        allMirrored.push_back(point);
+        newPoints.push_back(point);
+      }
+    }
+
+    #ifdef VORONOI_DEBUG
+    std::cout << "finished running batches" << std::endl;
+    std::cout << "new points are: " << std::endl;
+    for(const Vector3D &point : batchInfo.newPoints)
+    {
+      std::cout << point << " ";
+    }
+    std::cout << std::endl;
+    #endif // VORONOI_DEBUG
+  
     // performs internal tesselation:
-    del_.BuildExtra(batchInfo.newPoints);
+    del_.BuildExtra(newPoints);
+
+    // updates the radiuses array of the tetrahedra, as well as the lists for each point what tetras it belongs to
+    this->R_.resize(this->del_.tetras_.size());
+    std::fill(this->R_.begin(), this->R_.end(), -1);
+    this->tetra_centers_.resize(this->R_.size());
+    this->bigtet_ = SetPointTetras(this->PointTetras_, this->Norg_, this->del_.tetras_, this->del_.empty_tetras_);
+
+    #ifdef VORONOI_DEBUG
+    std::cout << "finished build extra" << std::endl;
+    #endif // VORONOI_DEBUG
 
     for(std::size_t i = 0; i < current.size(); i++)
     {
       double s = 2 * GetMaxRadius(current[i]);
-      if(this->radiuses[current[i]] > s)
+
+      #ifdef VORONOI_DEBUG
+      std::cout << "point " << current[i] << ", radius s is " << s << " and h is " << this->radiuses[current[i]] << std::endl;
+      #endif // VORONOI_DEBUG
+
+      if(this->radiuses[current[i]] >= s)
       {
+        #ifdef VORONOI_DEBUG
+        std::cout << "radius is good for point " << current[i] << ", removing it" << std::endl;
+        #endif // VORONOI_DEBUG
+
         // h_i > s_i, remove point from current
-        current.erase(current.cbegin() + current[i]);
+        current.erase(current.cbegin() + i);
       }
     }
+
+    #ifdef VORONOI_DEBUG
+    std::cout << "finished updating current" << std::endl;
+    #endif // VORONOI_DEBUG
 
     if(current.empty() and !sent_finished)
     {
       for(int i = 0; i < size; i++)
       {
+        #ifdef VORONOI_DEBUG
+        std::cout << "rank " << rank << " sending finished to rank " << i << std::endl;
+        #endif // VORONOI_DEBUG
+
         int dummy = 0;
         MPI_Send(&dummy, 1, MPI_BYTE, i, RICH_TESELLATION_FINISHED_TAG, MPI_COMM_WORLD);
       }
       sent_finished = true;
     }
+
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    #ifdef VORONOI_DEBUG
+    int new_finished = getNewFinished();
+    std::cout << "[rank " << rank << "] new finished: " << new_finished << std::endl;
+    finished += new_finished;
+    #else
     finished += getNewFinished();
+    #endif // VORONOI_DEBUG
+
+    #ifdef VORONOI_DEBUG
+    std::cout << "finished updating finished" << std::endl;
+    #endif // VORONOI_DEBUG
   }
+
+  #ifdef VORONOI_DEBUG
+  std::cout << "rank " << rank << " reached voronoi building" << std::endl;
+  #endif // VORONOI_DEBUG
 
   CM_.resize(del_.points_.size());
   volume_.resize(Norg_);
 
-  // Create Voronoi
-  BuildVoronoi(order);
+  if(new_points.size() != 0)
+  {
+    // Create Voronoi
+    BuildVoronoi(order);
+  }
 
   std::vector<double>().swap(R_);
   std::vector<tetra_vec>().swap(PointTetras_);
@@ -1538,6 +1741,14 @@ double Voronoi3D::GetRadius(std::size_t index)
 {
   if (R_[index] < 0)
     R_[index] = CalcTetraRadiusCenter(index);
+  Tetrahedron &tet = this->del_.tetras_[index];
+
+  #ifdef VORONOI_DEBUG
+  std::cout << "tetrahedron with index " << index << " is with points: " << tet.points[0] << ", " << tet.points[1] << ", " << tet.points[2]  << ", and " << tet.points[3] << std::endl;
+  std::cout << "which are " << this->del_.points_[tet.points[0]] << ", " << this->del_.points_[tet.points[1]] << ", " << this->del_.points_[tet.points[2]] << ", and " << this->del_.points_[tet.points[3]] << std::endl;
+  std::cout << "checking the radius of tetrahedron " << index << ", it is " << R_[index] << std::endl;
+  #endif // VORONOI_DEBUG
+
   return R_[index];
 }
 
@@ -1904,15 +2115,10 @@ void Voronoi3D::MPIFirstIntersections(Tessellation3D const &tproc, vector<std::p
 
 vector<std::pair<std::size_t, std::size_t>> Voronoi3D::SerialFirstIntersections(void)
 {
-  vector<Face> box = box_faces_.empty() ? BuildBox(ll_, ur_) : box_faces_;
+  vector<Face> box;
+  vector<Vector3D> normals;
+  this->initialBoxBuild(box, normals);
   size_t Nfaces = box.size();
-  vector<Vector3D> normals(Nfaces);
-
-  for (size_t i = 0; i < Nfaces; ++i)
-  {
-    normals[i] = CrossProduct(box[i].vertices[1] - box[i].vertices[0], box[i].vertices[2] - box[i].vertices[0]);
-    normals[i] *= (1.0 / fastsqrt(ScalarProd(normals[i], normals[i])));
-  }
 
   //  vector<std::size_t> point_neigh;
   vector<std::pair<std::size_t, std::size_t>> res;

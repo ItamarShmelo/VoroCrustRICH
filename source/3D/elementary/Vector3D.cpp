@@ -283,3 +283,9 @@ Vector3D normalize(Vector3D const& vec)
 	double l = abs(vec);
 	return vec / l;
 }
+
+std::ostream &operator<<(std::ostream &stream, const Vector3D &vec)
+{
+	stream << "(" << vec.x << ", " << vec.y << ", " << vec.z << ")";
+	return stream;
+}

@@ -16,7 +16,7 @@
 
 #define POINT_SEND_TAG 115
 #define FINISH_TAG 116
-#define POINTS_EXCHANGE_RECEIVE_CYCLE 100
+#define POINTS_EXCHANGE_RECEIVE_CYCLE 5
 
 class HilbertAgent
 {
@@ -35,7 +35,7 @@ private:
     int order;
     int rank, size;
 
-    void pointsReceive(std::vector<Vector3D> &points, int &finished_ranks, bool blocking) const;
+    void pointsReceive(std::vector<Vector3D> &points, bool blocking) const;
     int getOwner(const Vector3D &point) const;
 };
 
