@@ -18,6 +18,7 @@
 #include "../../hilbert/HilbertOrder3D.hpp"
 #include "../../range/finders/BruteForce.hpp"
 #include "../../range/finders/RangeTree.hpp"
+#include "../../range/finders/SmartBruteForce.hpp"
 #include "3D/GeometryCommon/Intersections.hpp"
 #include "misc/int2str.hpp"
 #include <boost/multiprecision/cpp_dec_float.hpp>
@@ -1114,6 +1115,7 @@ void Voronoi3D::Build(const std::vector<Vector3D> &points, int hilbert_order)
 
   // first, makes sure the current points I have are the correct points
   HilbertAgent hilbertAgent(this->ll_, this->ur_, hilbert_order);
+  hilbertAgent.setBorders(points);
   std::vector<Vector3D> new_points = hilbertAgent.pointsExchange(points, this->self_index_, this->sentprocs_, this->sentpoints_);
   /*
   std::pair<Vector3D, Vector3D> bounding_box = hilbertAgent.getBoundingBox();
@@ -1197,7 +1199,8 @@ void Voronoi3D::Build(const std::vector<Vector3D> &points, int hilbert_order)
   std::cout << "finished max ranks" << std::endl;
   #endif // VORONOI_DEBUG
 
-  RangeTreeFinder rangeFinder(this->del_.points_.begin(), this->del_.points_.begin() + this->Norg_);
+  BruteForceFinder rangeFinder(this->del_.points_.begin(), this->del_.points_.begin() + this->Norg_);
+  //SmartBruteForceFinder rangeFinder(&hilbertAgent, this->del_.points_.begin(), this->del_.points_.begin() + this->Norg_);
   RangeAgent rangeAgent(hilbertAgent, &rangeFinder);
 
   #ifdef VORONOI_DEBUG
@@ -1208,6 +1211,7 @@ void Voronoi3D::Build(const std::vector<Vector3D> &points, int hilbert_order)
 
   MPI_Barrier(MPI_COMM_WORLD);
 
+  int i = 0;
   while(finished != size)
   {
     #ifdef VORONOI_DEBUG
@@ -1236,7 +1240,7 @@ void Voronoi3D::Build(const std::vector<Vector3D> &points, int hilbert_order)
 
     // MPI_Barrier(MPI_COMM_WORLD); // todo: necessary?
     QueryBatchInfo batchInfo = rangeAgent.runBatch(queries);
-    MPI_Barrier(MPI_COMM_WORLD); // todo: necessary?
+    // MPI_Barrier(MPI_COMM_WORLD); // todo: necessary?
 
     std::vector<Vector3D> &newPoints = batchInfo.newPoints;
 

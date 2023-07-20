@@ -113,17 +113,19 @@ std::vector<Vector3D> RangeAgent::getRangeResult(const SubQueryData &query, int 
     return result;
 }
 
-void RangeAgent::answerQueries()
+void RangeAgent::answerQueries(bool finishAnswering)
 {
     MPI_Status status;
     int arrivedNew = 0;
+    int answered = 0;
 
     MPI_Iprobe(MPI_ANY_SOURCE, TAG_REQUEST, this->comm, &arrivedNew, &status);
 
-    while(arrivedNew != 0)
+    while(arrivedNew != 0 and (finishAnswering or (!finishAnswering and answered < MAX_ANSWER_IN_CYCLE)))
     {
         SubQueryData query;
         MPI_Recv(&query, sizeof(SubQueryData), MPI_BYTE, status.MPI_SOURCE, TAG_REQUEST, this->comm, MPI_STATUS_IGNORE);
+        answered++;
         std::vector<Vector3D> result = this->getRangeResult(query, status.MPI_SOURCE);
         size_t resultSize = result.size();
 
@@ -195,7 +197,7 @@ QueryBatchInfo RangeAgent::runBatch(std::queue<RangeQueryData> &queries)
         ++i;
         if(i % QUERY_AUTOFLUSH_NUM == 0)
         {
-            this->answerQueries();
+            this->answerQueries(false);
         }
         if(i % RECEIVE_AUTOFLUSH_NUM == 0)
         {
@@ -203,13 +205,13 @@ QueryBatchInfo RangeAgent::runBatch(std::queue<RangeQueryData> &queries)
         }
     }
     MPI_Barrier(this->comm); // ensure everyone stopped sending
-    this->answerQueries(); // answer the arrived queries
+    this->answerQueries(true); // answer the arrived queries
     this->receiveQueries(queriesBatch, true); // receive the remain results
     // MPI_Barrier(this->comm);
     if(this->requests.size() > 0)
     {
         MPI_Waitall(this->requests.size(), &(*(this->requests.begin())), MPI_STATUSES_IGNORE); // make sure any query was indeed received
     }
-    // this->answerQueries();
+    // this->answerQueries(true);
     return queriesBatch;
 }

@@ -23,6 +23,12 @@ HilbertAgent::HilbertAgent(const Vector3D &origin, const Vector3D &corner, int o
 {
     MPI_Comm_rank(MPI_COMM_WORLD, &this->rank);
     MPI_Comm_size(MPI_COMM_WORLD, &this->size);
+    this->hilbert_cells = pow(pow(2, order), 3);
+    this->pointsPerRank = hilbert_cells / this->size;
+    this->sidesLengths = this->dx / pow(2, this->order);
+    this->myHilbertMin = this->rank * this->pointsPerRank;
+    this->myHilbertMax = (this->rank == this->size - 1)? this->hilbert_cells - 1 : (this->rank + 1) * this->pointsPerRank;
+    this->calculateBoundingBox();
 }
 
 hilbert_index_t HilbertAgent::xyz2d(const Vector3D &point) const
@@ -41,35 +47,20 @@ Vector3D HilbertAgent::d2xyz(hilbert_index_t d) const
                     scaledPoint.z * (this->dx.z) + this->ll.z);
 }
 
-int HilbertAgent::getOwner(const Vector3D &point) const
+void HilbertAgent::calculateBoundingBox()
 {
-    int hilbert_cells = pow(pow(2, order), 3);
-    int pointsPerRank = hilbert_cells / this->size;
-    hilbert_index_t d = this->xyz2d(point);
-    return std::min<int>(this->size - 1, static_cast<int>(d / pointsPerRank));
-}
-
-std::pair<Vector3D, Vector3D> HilbertAgent::getBoundingBox() const
-{
-    int hilbert_cells = pow(pow(2, order), 3);
-    int pointsPerRank = hilbert_cells / this->size;
-    hilbert_index_t myMin = rank * pointsPerRank;
-    hilbert_index_t myMax = (rank == size - 1)? hilbert_cells - 1 : (rank + 1) * pointsPerRank;
+    this->myur = this->myll = this->d2xyz(this->myHilbertMin);
     
-    Vector3D ll = this->d2xyz(myMin);
-    Vector3D ur(ll);
-    
-    for(hilbert_index_t d = myMin; d <= myMax; d++)
+    for(hilbert_index_t d = this->myHilbertMin; d <= this->myHilbertMax; d++)
     {
         Vector3D point = this->d2xyz(d);
-        ll.x = std::min(ll.x, point.x);
-        ll.y = std::min(ll.y, point.y);
-        ll.z = std::min(ll.z, point.z);
-        ur.x = std::max(ur.x, point.x);
-        ur.y = std::max(ur.y, point.y);
-        ur.z = std::max(ur.z, point.z);
+        this->myll.x = std::min(this->myll.x, point.x);
+        this->myll.y = std::min(this->myll.y, point.y);
+        this->myll.z = std::min(this->myll.z, point.z);
+        this->myur.x = std::max(this->myur.x, point.x);
+        this->myur.y = std::max(this->myur.y, point.y);
+        this->myur.z = std::max(this->myur.z, point.z);
     }
-    return std::make_pair(ll, ur);
 }
 
 void HilbertAgent::pointsReceive(std::vector<Vector3D> &points, bool blocking) const
@@ -163,53 +154,83 @@ std::vector<Vector3D> HilbertAgent::pointsExchange(const std::vector<Vector3D> &
     return new_points;
 }
 
+void HilbertAgent::setBorders(const std::vector<Vector3D> &points)
+{
+    std::vector<size_t> indices;
+    indices.resize(points.size());
+    for(const Vector3D &point : points)
+    {
+        indices.push_back(this->xyz2d(point));
+    }
+    /*
+    if(this->rank == 0)
+    {
+        std::cout << "rank " << this->rank << ": indices before: " << std::endl;
+        for(size_t idx : indices)
+        {
+            std::cout << idx << " ";
+        }
+        std::cout << std::endl;
+    }
+    parallelSort<size_t>(indices);
+    if(this->rank == 0)
+    {
+        std::cout << "rank " << this->rank << ": indices after: " << std::endl;
+        for(size_t idx : indices)
+        {
+            std::cout << idx << " ";
+        }
+        std::cout << std::endl;
+    }
+    */
+    //this->myHilbertMin = indices[0];
+    //this->myHilbertMax = indices[indices.size() - 1];
+
+    std::cout << "rank " << this->rank << ": my min is " << this->myHilbertMin << " and my max is " << this->myHilbertMax << std::endl;
+}
+
 std::set<hilbert_index_t> HilbertAgent::getIntersectingCircle(const Vector3D &center, coord_t r) const
 {
-    Vector3D sidesLengths = this->dx / pow(2, this->order);
     std::set<hilbert_index_t> hilbertCells;
 
     coord_t _minX, _maxX;
     _minX = std::max(std::min(center.x - r, this->ur.x), this->ll.x);
     _maxX = std::max(std::min(center.x + r, this->ur.x), this->ll.x);
-    _minX = getClosestCornerBelow(_minX, this->ll.x, sidesLengths.x);
-    _maxX = getClosestCornerAbove(_maxX, this->ll.x, sidesLengths.x);
+    _minX = getClosestCornerBelow(_minX, this->ll.x, this->sidesLengths.x);
+    _maxX = getClosestCornerAbove(_maxX, this->ll.x, this->sidesLengths.x);
 
-    for(coord_t _x = _minX; _x <= _maxX; _x += sidesLengths.x)
+    for(coord_t _x = _minX; _x <= _maxX; _x += this->sidesLengths.x)
     {
-        coord_t closestX =  (center.x < _x)? _x : ((center.x > _x + sidesLengths.x)? _x + sidesLengths.x : center.x);
+        coord_t closestX =  (center.x < _x)? _x : ((center.x > _x + this->sidesLengths.x)? _x + this->sidesLengths.x : center.x);
         coord_t distanceXSquared = r * r - (closestX - center.x) * (closestX - center.x);
         distanceXSquared = std::max(static_cast<double>(0), distanceXSquared);
 
         coord_t _minY, _maxY;
         _minY = std::max(std::min(center.y - sqrt(distanceXSquared), this->ur.y), this->ll.y);
         _maxY = std::max(std::min(center.y + sqrt(distanceXSquared), this->ur.y), this->ll.y);
-        _minY = getClosestCornerBelow(_minY, this->ll.y, sidesLengths.y);
-        _maxY = getClosestCornerAbove(_maxY, this->ll.y, sidesLengths.y);
+        _minY = getClosestCornerBelow(_minY, this->ll.y, this->sidesLengths.y);
+        _maxY = getClosestCornerAbove(_maxY, this->ll.y, this->sidesLengths.y);
 
-        for(coord_t _y = _minY; _y <= _maxY; _y += sidesLengths.y)
+        for(coord_t _y = _minY; _y <= _maxY; _y += this->sidesLengths.y)
         {
-            coord_t closestY =  (center.y < _y)? _y : ((center.y > _y + sidesLengths.y)? _y + sidesLengths.y : center.y);
+            coord_t closestY =  (center.y < _y)? _y : ((center.y > _y + this->sidesLengths.y)? _y + this->sidesLengths.y : center.y);
             coord_t distanceYSquared = distanceXSquared - (closestY - center.y) * (closestY - center.y);
             distanceYSquared = std::max(static_cast<double>(0), distanceYSquared);
             
             coord_t _minZ, _maxZ;
             _minZ = std::max(std::min(center.z - sqrt(distanceYSquared), this->ur.z), this->ll.z);
             _maxZ = std::max(std::min(center.z + sqrt(distanceYSquared), this->ur.z), this->ll.z);
-            _minZ = getClosestCornerBelow(_minZ, this->ll.z, sidesLengths.z);
-            _maxZ = getClosestCornerAbove(_maxZ, this->ll.z, sidesLengths.z);
+            _minZ = getClosestCornerBelow(_minZ, this->ll.z, this->sidesLengths.z);
+            _maxZ = getClosestCornerAbove(_maxZ, this->ll.z, this->sidesLengths.z);
             
-            for(coord_t _z = _minZ; _z <= _maxZ; _z += sidesLengths.z)
+            for(coord_t _z = _minZ; _z <= _maxZ; _z += this->sidesLengths.z)
             {
-                coord_t closestZ =  (center.z < _z)? _z : ((center.z > _z + sidesLengths.z)? _z + sidesLengths.z : center.z);
+                coord_t closestZ =  (center.z < _z)? _z : ((center.z > _z + this->sidesLengths.z)? _z + this->sidesLengths.z : center.z);
 
                 if(((closestX - center.x) * (closestX - center.x) + (closestY - center.y) * (closestY - center.y) + (closestZ - center.z) * (closestZ - center.z)) <= r*r + __DBL_EPSILON__)
                 {
                     // the testing point is inside the circle iff the whole cube intersects the circle
-                    hilbert_index_t d = curve.Hilbert3D_xyz2d(Vector3D((_x - this->ll.x + (sidesLengths.x) / 2) / this->dx.x,
-                                                                        (_y - this->ll.y + (sidesLengths.y) / 2) / this->dx.y,
-                                                                        (_z - this->ll.z + (sidesLengths.z) / 2) / this->dx.z),
-                                                            static_cast<int>(this->order));
-                    hilbertCells.insert(d);
+                    hilbertCells.insert(this->xyz2d(Vector3D(_x + (this->sidesLengths.x) / 2, _y + (this->sidesLengths.y) / 2, _z + (this->sidesLengths.z) / 2)));
                 }
             }
         }

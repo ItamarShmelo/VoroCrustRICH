@@ -17,6 +17,7 @@
 #define QUERY_AUTOFLUSH_NUM 5
 #define RECEIVE_AUTOFLUSH_NUM 5
 #define MAX_RECEIVE_IN_CYCLE 200
+#define MAX_ANSWER_IN_CYCLE 200
 
 typedef struct RangeQueryData
 {
@@ -34,6 +35,7 @@ typedef struct QueryInfo
 {
     RangeQueryData data;
     size_t id;
+    // int subQueriesNum;
     std::vector<_3DPoint> finalResults;
 } QueryInfo;
 
@@ -55,7 +57,7 @@ public:
     inline ~RangeAgent() = default;
 
     void receiveQueries(QueryBatchInfo &batch, bool blocking);
-    void answerQueries();
+    void answerQueries(bool finishAnswering);
     void sendQuery(const QueryInfo &query);
     QueryBatchInfo runBatch(std::queue<RangeQueryData> &queries);
     void createArtificialQueries(coord_t radius);

@@ -1,8 +1,6 @@
 #ifndef _BRUTE_FORCE_RANGE_HPP
 #define _BRUTE_FORCE_RANGE_HPP
 
-#include <iostream> // todo remove
-
 #include "RangeFinder.hpp"
 
 class BruteForceFinder : public RangeFinder
@@ -17,9 +15,9 @@ public:
     {
         std::vector<size_t> result;
         const Vector3D *_points = this->points.data();
-	__builtin_prefetch(_points);
-	for(size_t i = 0; i < this->pointsSize; i++)
+        for(size_t i = 0; i < this->pointsSize; i++)
         {
+            __builtin_prefetch(&_points[i]);
             const Vector3D &point = _points[i];
             double distanceSquared = (point.x - center.x) * (point.x - center.x) + (point.y - center.y) * (point.y - center.y) + (point.z - center.z) * (point.z - center.z);
             if(distanceSquared <= radius * radius)
