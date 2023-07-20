@@ -17,7 +17,7 @@
 #include "../../range/RangeAgent.h"
 #include "../../hilbert/HilbertOrder3D.hpp"
 #include "../../range/finders/BruteForce.hpp"
-// #include "../../range/finders/RangeTree.hpp"
+#include "../../range/finders/RangeTree.hpp"
 #include "3D/GeometryCommon/Intersections.hpp"
 #include "misc/int2str.hpp"
 #include <boost/multiprecision/cpp_dec_float.hpp>
@@ -1197,7 +1197,7 @@ void Voronoi3D::Build(const std::vector<Vector3D> &points, int hilbert_order)
   std::cout << "finished max ranks" << std::endl;
   #endif // VORONOI_DEBUG
 
-  BruteForceFinder rangeFinder(this->del_.points_.begin(), this->del_.points_.begin() + this->Norg_);
+  RangeTreeFinder rangeFinder(this->del_.points_.begin(), this->del_.points_.begin() + this->Norg_);
   RangeAgent rangeAgent(hilbertAgent, &rangeFinder);
 
   #ifdef VORONOI_DEBUG

@@ -17,6 +17,7 @@ using std::vector;
 class Vector3D : public Serializable
 {
 public:
+    using coord_type = double;
 
 	/*! \brief Null constructor
 	\details Sets all components to 0

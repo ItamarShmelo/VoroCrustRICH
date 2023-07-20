@@ -39,10 +39,14 @@ public:
     inline RangeTree(const InputIterator &first, const InputIterator &last, int dimensions): RangeTree<T>(){for(InputIterator it = first; it < last; it++) this->insert(*it);}
 ;
     template<typename RandomAccessIterator>
-    inline void build(RandomAccessIterator &first, RandomAccessIterator &last){assert(this->treeSize == 0); std::sort(first, last, this->compare); this->setRoot(this->buildHelper(first, last));};
+    inline void build(RandomAccessIterator first, RandomAccessIterator last){assert(this->treeSize == 0); std::sort(first, last, this->compare); this->setRoot(this->buildHelper(first, last));};
+    template<typename Container>
+    inline void build(Container &&container){this->build(container.begin(), container.end());};
+    template<typename Container>
+    inline void build(Container &container){this->build(container.begin(), container.end());};
 
     inline std::vector<T> range(const std::vector<std::pair<typename T::coord_type, typename T::coord_type>> &range) const{std::vector<T> result; this->rangeHelper(range, this->getRoot(), 0, result); return result;};
-    inline std::vector<T> circularRange(const T &center, typename T::coord_type radius) const/*{std::vector<T> result; this->circularRangeHelper(center, radius, this->getRoot(), 0, result); return result;}*/;
+    std::vector<T> circularRange(const T &center, typename T::coord_type radius) const;
     std::vector<T> circularRangeRectangular(const T &center, typename T::coord_type radius) const;
 
 private:
