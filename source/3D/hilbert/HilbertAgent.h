@@ -13,6 +13,7 @@
 #include <vector>
 #include <map>
 #include <set>
+#include <boost/container/flat_set.hpp>
 #include <mpi.h>
 
 #define POINT_SEND_TAG 115
@@ -23,7 +24,7 @@ class HilbertAgent
 {
 public:
     HilbertAgent(const Vector3D &origin, const Vector3D &corner, int order);
-    std::set<hilbert_index_t> getIntersectingCircle(const Vector3D &center, coord_t r) const;
+    boost::container::flat_set<size_t> getIntersectingCircle(const Vector3D &center, coord_t r) const;
     std::vector<Vector3D> pointsExchange(const std::vector<Vector3D> &points, std::vector<size_t> &self_index_, std::vector<int> &sentprocs_, std::vector<std::vector<size_t>> &sentpoints_) const;
     inline int getOrder() const{return this->order;};
     std::pair<Vector3D, Vector3D> getBoundingBox() const{return std::make_pair(this->myll, this->myur);};

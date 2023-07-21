@@ -8,6 +8,8 @@
 #include <queue>
 #include <vector>
 #include <mpi.h>
+#include <boost/container/flat_set.hpp>
+
 #include "../hilbert/HilbertAgent.h"
 #include "finders/RangeFinder.hpp"
 
@@ -78,7 +80,7 @@ private:
     RangeFinder *rangeFinder;
 
     std::vector<int> sentProcessorsRanks;
-    std::vector<std::vector<size_t>> sentPoints; 
+    std::vector<boost::container::flat_set<size_t>> sentPoints; 
     std::vector<int> recvProcessorsRank;
     std::vector<std::vector<size_t>> recvPoints; 
     

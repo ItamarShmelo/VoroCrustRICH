@@ -95,7 +95,7 @@ std::vector<Vector3D> RangeAgent::getRangeResult(const SubQueryData &query, int 
     {
         // rank is not inside the sentProcessors rank, add it
         this->sentProcessorsRanks.push_back(node);
-        this->sentPoints.push_back(std::vector<size_t>());
+        this->sentPoints.push_back(boost::container::flat_set<size_t>());
     }
 
     // get the real results, and filter it (do not send points you sent before)
@@ -103,11 +103,12 @@ std::vector<Vector3D> RangeAgent::getRangeResult(const SubQueryData &query, int 
     for(const size_t &pointIdx : nonFilteredResult)
     {
         // check if the point wasn't already sent to node, only after that, add it to the result
-        if(std::find(this->sentPoints[rankIndex].begin(), this->sentPoints[rankIndex].end(), pointIdx) == this->sentPoints[rankIndex].end())
+        //if(std::find(this->sentPoints[rankIndex].begin(), this->sentPoints[rankIndex].end(), pointIdx) == this->sentPoints[rankIndex].end())
+        if(this->sentPoints[rankIndex].find(pointIdx) == this->sentPoints[rankIndex].end())
         {
             // point haven't been sent, send it
             result.push_back(this->rangeFinder->getPoint(pointIdx));
-            this->sentPoints[rankIndex].push_back(pointIdx);
+            this->sentPoints[rankIndex].insert(pointIdx);
         }
     }
     return result;
@@ -154,7 +155,7 @@ void RangeAgent::answerQueries(bool finishAnswering)
 
 void RangeAgent::sendQuery(const QueryInfo &query)
 {
-    std::set<hilbert_index_t> intersectionHilbertCells = this->hilbertAgent.getIntersectingCircle(Vector3D(query.data.center.x, query.data.center.y, query.data.center.z), query.data.radius);
+    boost::container::flat_set<size_t> intersectionHilbertCells = this->hilbertAgent.getIntersectingCircle(Vector3D(query.data.center.x, query.data.center.y, query.data.center.z), query.data.radius);
     std::set<int> possibleNodes;
 
     for(const hilbert_index_t &index : intersectionHilbertCells)

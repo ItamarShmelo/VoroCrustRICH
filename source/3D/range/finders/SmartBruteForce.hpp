@@ -34,7 +34,7 @@ public:
 
     std::vector<size_t> range(const Vector3D &center, double radius) const override
     {
-        std::set<hilbert_index_t> intersectingCells = this->hilbertAgent->getIntersectingCircle(center, radius);
+        boost::container::flat_set<size_t> intersectingCells = this->hilbertAgent->getIntersectingCircle(center, radius);
         std::vector<size_t> result;
         for(hilbert_index_t cell : intersectingCells)
         {

@@ -191,9 +191,9 @@ void HilbertAgent::setBorders(const std::vector<Vector3D> &points)
     
 }
 
-std::set<hilbert_index_t> HilbertAgent::getIntersectingCircle(const Vector3D &center, coord_t r) const
+boost::container::flat_set<size_t> HilbertAgent::getIntersectingCircle(const Vector3D &center, coord_t r) const
 {
-    std::set<hilbert_index_t> hilbertCells;
+    boost::container::flat_set<size_t> hilbertCells;
 
     coord_t _minX, _maxX;
     _minX = std::max(std::min(center.x - r, this->ur.x), this->ll.x);
