@@ -1,5 +1,4 @@
 #include "Voronoi3D.hpp"
-#define RICH_MPI 1 // todo remove...
 #ifdef RICH_MPI
 #include <mpi.h>
 #endif
@@ -19,6 +18,7 @@
 #include "../../range/finders/BruteForce.hpp"
 #include "../../range/finders/RangeTree.hpp"
 #include "../../range/finders/SmartBruteForce.hpp"
+#include "../../range/finders/HashBruteForce.hpp"
 #include "3D/GeometryCommon/Intersections.hpp"
 #include "misc/int2str.hpp"
 #include <boost/multiprecision/cpp_dec_float.hpp>
@@ -1179,7 +1179,7 @@ void Voronoi3D::Build(const std::vector<Vector3D> &points, int hilbert_order)
     double volume = (this->ur_[0] - this->ll_[0]) * (this->ur_[1] - this->ll_[1]) * (this->ur_[2] - this->ll_[2]);
     size_t N;
     MPI_Allreduce(&this->Norg_, &N, 1, MPI_UNSIGNED_LONG, MPI_SUM, MPI_COMM_WORLD);
-    double initial_radius = std::pow(volume / N, 0.333333f);
+    double initial_radius = 3 * std::pow(volume / N, 0.333333f);
     #ifdef VORONOI_DEBUG
     std::cout << "initial radius is " << initial_radius << std::endl;
     #endif // VORONOI_DEBUG
@@ -1199,8 +1199,10 @@ void Voronoi3D::Build(const std::vector<Vector3D> &points, int hilbert_order)
   std::cout << "finished max ranks" << std::endl;
   #endif // VORONOI_DEBUG
 
-  BruteForceFinder rangeFinder(this->del_.points_.begin(), this->del_.points_.begin() + this->Norg_);
+  //BruteForceFinder rangeFinder(this->del_.points_.begin(), this->del_.points_.begin() + this->Norg_);
+  //RangeTreeFinder rangeFinder(this->del_.points_.begin(), this->del_.points_.begin() + this->Norg_);
   //SmartBruteForceFinder rangeFinder(&hilbertAgent, this->del_.points_.begin(), this->del_.points_.begin() + this->Norg_);
+  HashBruteForceFinder rangeFinder(&hilbertAgent, this->del_.points_.begin(), this->del_.points_.begin() + this->Norg_);
   RangeAgent rangeAgent(hilbertAgent, &rangeFinder);
 
   #ifdef VORONOI_DEBUG
@@ -1209,16 +1211,16 @@ void Voronoi3D::Build(const std::vector<Vector3D> &points, int hilbert_order)
 
   std::vector<Vector3D> allMirrored;
 
-  MPI_Barrier(MPI_COMM_WORLD);
-
-  int i = 0;
+  #ifdef VORONOI_DEBUG
+  int t = 0;
+  #endif // VORONOI_DEBUG
   while(finished != size)
   {
     #ifdef VORONOI_DEBUG
-    std::cout << "finished is " << finished << " and size is " << size << ", current.size() is " << current.size() << std::endl;
+    std::cout << "iteration " << (t++) << ", finished is " << finished << " and size is " << size << ", current.size() is " << current.size() << std::endl;
     #endif // VORONOI_DEBUG
-    std::queue<RangeQueryData> queries;
 
+    std::queue<RangeQueryData> queries;
     std::vector<Vector3D> mirroedPoints;
 
     for(std::size_t i = 0; i < current.size(); i++)
@@ -1238,9 +1240,31 @@ void Voronoi3D::Build(const std::vector<Vector3D> &points, int hilbert_order)
     std::cout << "finished creating batches, total of queries.size()=" << queries.size() << std::endl;
     #endif // VORONOI_DEBUG
 
+    if(current.empty() and !sent_finished)
+    {
+      for(int i = 0; i < size; i++)
+      {
+        #ifdef VORONOI_DEBUG
+        std::cout << "rank " << rank << " sending finished to rank " << i << std::endl;
+        #endif // VORONOI_DEBUG
+
+        int dummy = 0;
+        MPI_Send(&dummy, 1, MPI_BYTE, i, RICH_TESELLATION_FINISHED_TAG, MPI_COMM_WORLD);
+      }
+      sent_finished = true;
+    }
+
     // MPI_Barrier(MPI_COMM_WORLD); // todo: necessary?
     QueryBatchInfo batchInfo = rangeAgent.runBatch(queries);
     // MPI_Barrier(MPI_COMM_WORLD); // todo: necessary?
+
+    #ifdef VORONOI_DEBUG
+    int new_finished = getNewFinished();
+    std::cout << "[rank " << rank << "] new finished: " << new_finished << std::endl;
+    finished += new_finished;
+    #else
+    finished += getNewFinished();
+    #endif // VORONOI_DEBUG
 
     std::vector<Vector3D> &newPoints = batchInfo.newPoints;
 
@@ -1256,7 +1280,7 @@ void Voronoi3D::Build(const std::vector<Vector3D> &points, int hilbert_order)
     #ifdef VORONOI_DEBUG
     std::cout << "finished running batches" << std::endl;
     std::cout << "new points are: " << std::endl;
-    for(const Vector3D &point : batchInfo.newPoints)
+    for(const Vector3D &point : newPoints)
     {
       std::cout << point << " ";
     }
@@ -1298,34 +1322,6 @@ void Voronoi3D::Build(const std::vector<Vector3D> &points, int hilbert_order)
     #ifdef VORONOI_DEBUG
     std::cout << "finished updating current" << std::endl;
     #endif // VORONOI_DEBUG
-
-    if(current.empty() and !sent_finished)
-    {
-      for(int i = 0; i < size; i++)
-      {
-        #ifdef VORONOI_DEBUG
-        std::cout << "rank " << rank << " sending finished to rank " << i << std::endl;
-        #endif // VORONOI_DEBUG
-
-        int dummy = 0;
-        MPI_Send(&dummy, 1, MPI_BYTE, i, RICH_TESELLATION_FINISHED_TAG, MPI_COMM_WORLD);
-      }
-      sent_finished = true;
-    }
-
-    MPI_Barrier(MPI_COMM_WORLD);
-
-    #ifdef VORONOI_DEBUG
-    int new_finished = getNewFinished();
-    std::cout << "[rank " << rank << "] new finished: " << new_finished << std::endl;
-    finished += new_finished;
-    #else
-    finished += getNewFinished();
-    #endif // VORONOI_DEBUG
-
-    #ifdef VORONOI_DEBUG
-    std::cout << "finished updating finished" << std::endl;
-    #endif // VORONOI_DEBUG
   }
 
   #ifdef VORONOI_DEBUG
@@ -1355,6 +1351,8 @@ void Voronoi3D::Build(const std::vector<Vector3D> &points, int hilbert_order)
     for (size_t j = 0; j < incoming.at(i).size(); ++j)
       CM_[Nghost_.at(i).at(j)] = incoming[i][j];
 }
+
+
 
 #endif // RICH_MPI
 
@@ -1741,19 +1739,15 @@ void Voronoi3D::BuildVoronoi(std::vector<size_t> const &order)
     FacesInCell_[i].shrink_to_fit();
 }
 
-double Voronoi3D::GetRadius(std::size_t index)
+inline double Voronoi3D::GetRadius(std::size_t index)
 {
-  if (R_[index] < 0)
-    R_[index] = CalcTetraRadiusCenter(index);
-  Tetrahedron &tet = this->del_.tetras_[index];
-
   #ifdef VORONOI_DEBUG
+  Tetrahedron &tet = this->del_.tetras_[index];
   std::cout << "tetrahedron with index " << index << " is with points: " << tet.points[0] << ", " << tet.points[1] << ", " << tet.points[2]  << ", and " << tet.points[3] << std::endl;
   std::cout << "which are " << this->del_.points_[tet.points[0]] << ", " << this->del_.points_[tet.points[1]] << ", " << this->del_.points_[tet.points[2]] << ", and " << this->del_.points_[tet.points[3]] << std::endl;
   std::cout << "checking the radius of tetrahedron " << index << ", it is " << R_[index] << std::endl;
   #endif // VORONOI_DEBUG
-
-  return R_[index];
+  return (R_[index] = (R_[index] < 0)? CalcTetraRadiusCenter(index) : R_[index]);
 }
 
 void Voronoi3D::FindIntersectionsSingle(vector<Face> const &box, std::size_t point, Sphere &sphere,

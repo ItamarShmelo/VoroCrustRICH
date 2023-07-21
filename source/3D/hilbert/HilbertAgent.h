@@ -6,7 +6,7 @@
 #ifndef _RICH_3DINTERSECT_H
 #define _RICH_3DINTERSECT_H
 
-#include "utils/sort.hpp"
+// #include "utils/sort.hpp"
 #include "hilbertTypes.h"
 #include "HilbertOrder3D.hpp"
 #include <iostream>

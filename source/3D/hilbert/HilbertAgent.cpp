@@ -156,6 +156,7 @@ std::vector<Vector3D> HilbertAgent::pointsExchange(const std::vector<Vector3D> &
 
 void HilbertAgent::setBorders(const std::vector<Vector3D> &points)
 {
+    /*
     std::vector<size_t> indices;
     indices.resize(points.size());
     for(const Vector3D &point : points)
@@ -186,7 +187,8 @@ void HilbertAgent::setBorders(const std::vector<Vector3D> &points)
     //this->myHilbertMin = indices[0];
     //this->myHilbertMax = indices[indices.size() - 1];
 
-    std::cout << "rank " << this->rank << ": my min is " << this->myHilbertMin << " and my max is " << this->myHilbertMax << std::endl;
+    //std::cout << "rank " << this->rank << ": my min is " << this->myHilbertMin << " and my max is " << this->myHilbertMax << std::endl;
+    
 }
 
 std::set<hilbert_index_t> HilbertAgent::getIntersectingCircle(const Vector3D &center, coord_t r) const
