@@ -8,6 +8,7 @@
 #ifndef _RICH_BST_H
 #define _RICH_BST_H
 
+#include <algorithm>
 #include <functional>
 #include <vector>
 #include <utility>

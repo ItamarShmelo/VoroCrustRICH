@@ -6,7 +6,7 @@
 #ifndef _RICH_3DINTERSECT_H
 #define _RICH_3DINTERSECT_H
 
-// #include "utils/sort.hpp"
+#include "utils/sort/sort.hpp"
 #include "hilbertTypes.h"
 #include "HilbertOrder3D.hpp"
 #include <iostream>
@@ -43,6 +43,7 @@ private:
     int hilbert_cells;
     int pointsPerRank;
     hilbert_index_t myHilbertMin, myHilbertMax;
+    std::vector<hilbert_index_t> range;
 
     void calculateBoundingBox();
     void pointsReceive(std::vector<Vector3D> &points, bool blocking) const;

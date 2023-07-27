@@ -23,6 +23,7 @@ HilbertAgent::HilbertAgent(const Vector3D &origin, const Vector3D &corner, int o
 {
     MPI_Comm_rank(MPI_COMM_WORLD, &this->rank);
     MPI_Comm_size(MPI_COMM_WORLD, &this->size);
+    this->range.resize(this->size);
     this->hilbert_cells = pow(pow(2, order), 3);
     this->pointsPerRank = hilbert_cells / this->size;
     this->sidesLengths = this->dx / pow(2, this->order);
@@ -33,6 +34,7 @@ HilbertAgent::HilbertAgent(const Vector3D &origin, const Vector3D &corner, int o
 
 hilbert_index_t HilbertAgent::xyz2d(const Vector3D &point) const
 {
+    // todo: re-implement
     return curve.Hilbert3D_xyz2d(Vector3D((point.x - this->ll.x) / this->dx.x, 
                                             (point.y - this->ll.y) / this->dx.y,
                                             (point.z - this->ll.z) / this->dx.z),
@@ -156,44 +158,35 @@ std::vector<Vector3D> HilbertAgent::pointsExchange(const std::vector<Vector3D> &
 
 void HilbertAgent::setBorders(const std::vector<Vector3D> &points)
 {
-    /*
-    std::vector<size_t> indices;
+    std::vector<hilbert_index_t> indices;
     indices.resize(points.size());
     for(const Vector3D &point : points)
     {
         indices.push_back(this->xyz2d(point));
     }
-    /*
-    if(this->rank == 0)
-    {
-        std::cout << "rank " << this->rank << ": indices before: " << std::endl;
-        for(size_t idx : indices)
-        {
-            std::cout << idx << " ";
-        }
-        std::cout << std::endl;
-    }
-    parallelSort<size_t>(indices);
-    if(this->rank == 0)
-    {
-        std::cout << "rank " << this->rank << ": indices after: " << std::endl;
-        for(size_t idx : indices)
-        {
-            std::cout << idx << " ";
-        }
-        std::cout << std::endl;
-    }
-    */
-    //this->myHilbertMin = indices[0];
-    //this->myHilbertMax = indices[indices.size() - 1];
 
-    //std::cout << "rank " << this->rank << ": my min is " << this->myHilbertMin << " and my max is " << this->myHilbertMax << std::endl;
-    
+    std::cout << "before _sortpoints's length: " << indices.size() << std::endl;
+    parallelSort(indices);
+    std::cout << "after _sortpoints's length: " << indices.size() << std::endl;
+
+    if(!indices.empty())
+    {
+        this->myHilbertMin = indices[0];
+        this->myHilbertMax = indices[indices.size() - 1];
+    }
+    else
+    {
+        this->myHilbertMin = this->myHilbertMax = -1;
+    }
+    std::cout << "my max: " << this->myHilbertMax << " and this->range[0]'s address: " << (&this->range[0]) << std::endl;
+    MPI_Alltoall(&this->myHilbertMax, sizeof(hilbert_index_t), MPI_BYTE, &this->range[0], sizeof(hilbert_index_t), MPI_BYTE, MPI_COMM_WORLD);
+    std::cout << "rank " << this->rank << ": my min is " << this->myHilbertMin << " and my max is " << this->myHilbertMax << std::endl;
 }
 
 boost::container::flat_set<size_t> HilbertAgent::getIntersectingCircle(const Vector3D &center, coord_t r) const
 {
     boost::container::flat_set<size_t> hilbertCells;
+    hilbertCells.reserve(128);
 
     coord_t _minX, _maxX;
     _minX = std::max(std::min(center.x - r, this->ur.x), this->ll.x);

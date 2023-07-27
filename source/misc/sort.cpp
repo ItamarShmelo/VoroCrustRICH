@@ -1,3 +1,4 @@
+#if 0
 /*
 Recommended reading about the samplesort algorithm here:
 https://brunomaga.github.io/Distributed-Sort
@@ -219,3 +220,4 @@ void sort(std::vector<int> &data)
     // phase 5: re-sort my new array
     std::sort(data.begin(), data.end());
 }
+#endif

@@ -7,7 +7,6 @@
 #ifndef _RICH_RANGETREE_H_
 #define _RICH_RANGETREE_H_
 
-#include <algorithm>
 #include "../BinaryTree.h"
 
 template<typename T>
@@ -19,7 +18,7 @@ protected:
     public:
         RangeNode(): BinaryTree<T>::Node(), subtree(nullptr){};
         RangeNode(const T &value): BinaryTree<T>::Node(value), subtree(nullptr){};
-        ~RangeNode() override{delete subtree;};
+        ~RangeNode() override{delete this->subtree;};
 
         RangeTree *subtree;
     };
@@ -36,7 +35,7 @@ public:
     ~RangeTree() override{this->deleteSubtree(this->getRoot());};
 
     template<typename InputIterator>
-    inline RangeTree(const InputIterator &first, const InputIterator &last, int dimensions): RangeTree<T>(){for(InputIterator it = first; it < last; it++) this->insert(*it);}
+    inline RangeTree(const InputIterator &first, const InputIterator &last, int dimensions): RangeTree<T>(){for(InputIterator it = first; it != last; it++) this->insert(*it);}
 ;
     template<typename RandomAccessIterator>
     inline void build(RandomAccessIterator first, RandomAccessIterator last){assert(this->treeSize == 0); std::sort(first, last, this->compare); this->setRoot(this->buildHelper(first, last));};

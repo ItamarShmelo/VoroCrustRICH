@@ -156,12 +156,11 @@ void RangeAgent::answerQueries(bool finishAnswering)
 void RangeAgent::sendQuery(const QueryInfo &query)
 {
     boost::container::flat_set<size_t> intersectionHilbertCells = this->hilbertAgent.getIntersectingCircle(Vector3D(query.data.center.x, query.data.center.y, query.data.center.z), query.data.radius);
-    std::set<int> possibleNodes;
+    boost::container::flat_set<int> possibleNodes;
 
     for(const hilbert_index_t &index : intersectionHilbertCells)
     {
-        int node = std::min<int>(this->size - 1, static_cast<int>(index / this->cellsPerRank));
-        possibleNodes.insert(node);
+        possibleNodes.insert(this->hilbertAgent.getCellOwner(index));
     }
 
     for(const int &node : possibleNodes)
