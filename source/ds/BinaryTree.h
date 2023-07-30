@@ -21,7 +21,7 @@ template<typename T>
 class BinaryTree
 {
 protected:
-    using Compare=std::function<bool(const T&, const T&)>; 
+    using Compare = std::function<bool(const T&, const T&)>; 
 
     class Node
     {

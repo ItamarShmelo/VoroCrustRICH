@@ -63,6 +63,7 @@ void RangeTree<T>::rangeHelper(const std::vector<std::pair<typename T::coord_typ
         }
         else
         {
+            // not the whole subtree matches, so check myself and move the recursion to my children
             int i;
             for(i = coord; i < this->dim; i++) if(node->value[i] < range[i].first or node->value[i] > range[i].second) break;
             if(i == this->dim) result.push_back(node->value);
