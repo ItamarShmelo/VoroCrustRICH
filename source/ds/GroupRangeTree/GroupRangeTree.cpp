@@ -1,29 +1,5 @@
 #include "GroupRangeTree.h"
 
-
-struct _3DPoint
-{
-    using coord_type = double;
-
-    coord_type x, y, z;
-
-    inline _3DPoint(double x, double y, double z): x(x), y(y), z(z){};
-    explicit inline _3DPoint(): _3DPoint(0, 0, 0){};
-    inline _3DPoint(const _3DPoint &other){this->x = other.x; this->y = other.y; this->z = other.z;};
-
-    inline coord_type &operator[](int idx){if(idx == 0) return this->x; if(idx == 1) return this->y; return this->z;};
-    inline const coord_type &operator[](int idx) const{if(idx == 0) return this->x; if(idx == 1) return this->y; return this->z;};
-    inline bool operator==(const _3DPoint &other) const{return this->x == other.x and this->y == other.y and this->z == other.z;};
-    inline bool operator<=(const _3DPoint &other) const
-    {
-        if(this->x < other.x) return true;
-        if(this->x == other.x and this->y < other.y) return true;
-        if(this->x == other.x and this->y == other.y and this->z <= other.z) return true;
-        return false;
-    }
-    friend std::ostream &operator<<(std::ostream &stream, const _3DPoint &point);
-};
-
 template<typename T, int N>
 void GroupRangeTree<T, N>::recreateSubtree(GroupRangeNode *node)
 {
@@ -185,19 +161,24 @@ typename GroupRangeTree<T, N>::GroupRangeNode *GroupRangeTree<T, N>::tryInsert(c
     }
 
     GroupRangeNode *addTo;
-    if(current->numValues < N)
+    if(current->numValues < N and current->left == nullptr and current->right == nullptr)
     {
         addTo = current;
     }
     else
     {
-        this->splitNode(current);
+        if(current->numValues < N)
+        {
+            this->splitNode(current);
+        }
         if(this->compare(value, current->values[0]))
         {
             if(current->left == nullptr)
             {
+                // not a leaf, so we need to create it a child
                 current->left = new GroupRangeNode(value);
                 current->left->parent = current;
+                current->left->numValues = 0;
             }
             addTo = dynamic_cast<GroupRangeNode*>(current->left);
         }
@@ -205,16 +186,16 @@ typename GroupRangeTree<T, N>::GroupRangeNode *GroupRangeTree<T, N>::tryInsert(c
         {
             if(current->right == nullptr)
             {
+                // not a leaf, so we need to create it a child
                 current->right = new GroupRangeNode(value);
                 current->right->parent = current;
+                current->right->numValues = 0;
             }
             addTo = dynamic_cast<GroupRangeNode*>(current->right);
         }
-        addTo->numValues -= 1;
     }
-    addTo->values[addTo->numValues] = value;
-    addTo->numValues++;
-    
+    addTo->values[addTo->numValues++] = value;
+
     // add the new value to its ancestors subtrees:
     if(this->currentDim != this->dim - 1)
     {
@@ -224,7 +205,7 @@ typename GroupRangeTree<T, N>::GroupRangeNode *GroupRangeTree<T, N>::tryInsert(c
             if(node->subtree == nullptr)
             {
                 assert(node == addTo);
-                // should not happen, unless `node` is `addTo` (because its ancesors' subtrees should be exist)
+                // should not happen, unless `node` is `addTo` (because its ancesors' subtrees should exist)
                 node->subtree = new GroupRangeTree<T, N>(this->currentDim + 1, this->dim);
             }
             node->subtree->insert(value);
