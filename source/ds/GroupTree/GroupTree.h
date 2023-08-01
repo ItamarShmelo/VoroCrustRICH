@@ -7,9 +7,8 @@
 #include <functional>
 #include <algorithm>
 #include <assert.h>
-#include <iostream> // todo remove
 
-#define DEBUG_MODE // todo remove
+#undef DEBUG_MODE
 
 template<typename T, int N>
 class GroupTree

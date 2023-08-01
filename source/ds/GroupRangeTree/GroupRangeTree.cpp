@@ -262,3 +262,27 @@ void GroupRangeTree<T, N>::rangeHelper(const std::vector<std::pair<typename T::c
         }
     }
 }
+
+template<typename T, int N>
+std::vector<T> GroupRangeTree<T, N>::circularRange(const T &center, typename T::coord_type radius) const
+{
+    std::vector<std::pair<typename T::coord_type, typename T::coord_type>> range;
+    for(int i = 0; i < this->dim; i++)
+    {
+        range.push_back(std::make_pair(center[i] - radius, center[i] + radius));
+    }
+    std::vector<T> result;
+    for(const T &possible_value : this->range(range))
+    {
+        typename T::coord_type distanceSquared = 0;
+        for(int i = 0; i < this->dim; i++)
+        {
+            distanceSquared += (possible_value[i] - center[i]) * (possible_value[i] - center[i]);
+        }
+        if(distanceSquared <= radius * radius)
+        {
+            result.push_back(possible_value);
+        }
+    }
+    return result;
+}

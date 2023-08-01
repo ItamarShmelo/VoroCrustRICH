@@ -20,6 +20,7 @@
 #include "3D/range/finders/OctTree.hpp"
 #include "3D/range/finders/SmartBruteForce.hpp"
 #include "3D/range/finders/HashBruteForce.hpp"
+#include "3D/range/finders/GroupRangeTree.hpp"
 #include "3D/GeometryCommon/Intersections.hpp"
 #include "misc/int2str.hpp"
 #include <boost/multiprecision/cpp_dec_float.hpp>
@@ -1116,8 +1117,9 @@ void Voronoi3D::Build(const std::vector<Vector3D> &points, int hilbert_order)
 
   // first, makes sure the current points I have are the correct points
   HilbertAgent hilbertAgent(this->ll_, this->ur_, hilbert_order);
-  // hilbertAgent.setBorders(points);
-  std::vector<Vector3D> new_points = hilbertAgent.pointsExchange(points, this->self_index_, this->sentprocs_, this->sentpoints_);
+  std::vector<Vector3D> new_points = hilbertAgent.setBorders(points);
+  hilbertAgent.calculateBoundingBox();
+  //std::vector<Vector3D> new_points = hilbertAgent.pointsExchange(points, this->self_index_, this->sentprocs_, this->sentpoints_);
   /*
   std::pair<Vector3D, Vector3D> bounding_box = hilbertAgent.getBoundingBox();
   */
@@ -1203,8 +1205,9 @@ void Voronoi3D::Build(const std::vector<Vector3D> &points, int hilbert_order)
   //BruteForceFinder rangeFinder(this->del_.points_.begin(), this->del_.points_.begin() + this->Norg_);
   //RangeTreeFinder rangeFinder(this->del_.points_.begin(), this->del_.points_.begin() + this->Norg_);
   //SmartBruteForceFinder rangeFinder(&hilbertAgent, this->del_.points_.begin(), this->del_.points_.begin() + this->Norg_);
-  //HashBruteForceFinder rangeFinder(&hilbertAgent, this->del_.points_.begin(), this->del_.points_.begin() + this->Norg_);
-  OctTreeFinder rangeFinder(this->del_.points_.begin(), this->del_.points_.begin() + this->Norg_, this->ll_, this->ur_);
+  HashBruteForceFinder rangeFinder(&hilbertAgent, this->del_.points_.begin(), this->del_.points_.begin() + this->Norg_);
+  //OctTreeFinder rangeFinder(this->del_.points_.begin(), this->del_.points_.begin() + this->Norg_, this->ll_, this->ur_);
+  //GroupRangeTreeFinder<4> rangeFinder(this->del_.points_.begin(), this->del_.points_.begin() + this->Norg_);
   RangeAgent rangeAgent(hilbertAgent, &rangeFinder);
 
   #ifdef VORONOI_DEBUG

@@ -4,14 +4,14 @@
 typedef double coord_t;
 
 template<typename T>
-class BoundingBox
+class _BoundingBox
 {
 public:
     T ll; // leftmost point of the box
     T ur; // rightmost point of the box
 
-    inline BoundingBox(const T &ll, const T &ur): ll(ll), ur(ur){};
-    inline BoundingBox(): BoundingBox(T(), T()){};
+    inline _BoundingBox(const T &ll, const T &ur): ll(ll), ur(ur){};
+    inline _BoundingBox(): _BoundingBox(T(), T()){};
     
     inline bool contains(const T &point, int dim) const
     {
@@ -47,7 +47,7 @@ public:
 };
 
 template<typename T>
-bool SphereBoxIntersection(const BoundingBox<T> &box, const _Sphere<T> &sphere)
+bool SphereBoxIntersection(const _BoundingBox<T> &box, const _Sphere<T> &sphere)
 {
     T closestPoint;
     coord_t distance = 0;

@@ -30,6 +30,7 @@ typedef struct IndexedVector3D
         }
         return false;
     }
+    inline bool operator<(const IndexedVector3D &other) const{return (*this) <= other;};
     inline coord_t &operator[](size_t idx){switch(idx){case 0: return this->x; case 1: return this->y;} return this->z;};
     inline const coord_t &operator[](size_t idx) const{switch(idx){case 0: return this->x; case 1: return this->y;} return this->z;};
     inline IndexedVector3D operator+(const IndexedVector3D &other) const{return IndexedVector3D(this->x + other.x, this->y + other.y, this->z + other.z, ILLEGAL_IDX);};

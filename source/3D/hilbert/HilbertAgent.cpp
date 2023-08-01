@@ -27,9 +27,12 @@ HilbertAgent::HilbertAgent(const Vector3D &origin, const Vector3D &corner, int o
     this->hilbert_cells = pow(pow(2, order), 3);
     this->pointsPerRank = hilbert_cells / this->size;
     this->sidesLengths = this->dx / pow(2, this->order);
+    /*
     this->myHilbertMin = this->rank * this->pointsPerRank;
     this->myHilbertMax = (this->rank == this->size - 1)? this->hilbert_cells - 1 : (this->rank + 1) * this->pointsPerRank;
-    this->calculateBoundingBox();
+    */
+
+    // this->calculateBoundingBox();
 }
 
 hilbert_index_t HilbertAgent::xyz2d(const Vector3D &point) const
@@ -51,7 +54,8 @@ Vector3D HilbertAgent::d2xyz(hilbert_index_t d) const
 
 void HilbertAgent::calculateBoundingBox()
 {
-    this->myur = this->myll = this->d2xyz(this->myHilbertMin);
+    this->myll = this->ur;
+    this->myur = this->ll;
     
     for(hilbert_index_t d = this->myHilbertMin; d <= this->myHilbertMax; d++)
     {
@@ -65,6 +69,7 @@ void HilbertAgent::calculateBoundingBox()
     }
 }
 
+/*
 void HilbertAgent::pointsReceive(std::vector<Vector3D> &points, bool blocking) const
 {
     MPI_Status status;
@@ -95,6 +100,7 @@ void HilbertAgent::pointsReceive(std::vector<Vector3D> &points, bool blocking) c
             finished_ranks++;
         } else
         {
+            std::cerr << "Invalid tag arrived (tag " << status.MPI_TAG << ", source " << status.MPI_SOURCE << ", dest " << this->rank << ")" << std::endl;
             MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
         }
         
@@ -156,31 +162,50 @@ std::vector<Vector3D> HilbertAgent::pointsExchange(const std::vector<Vector3D> &
     return new_points;
 }
 
-void HilbertAgent::setBorders(const std::vector<Vector3D> &points)
+*/
+
+struct _Hilbert3DPoint
 {
-    std::vector<hilbert_index_t> indices;
-    indices.resize(points.size());
+    coord_t x, y, z;
+    hilbert_index_t idx;
+
+    inline _Hilbert3DPoint(coord_t x, coord_t y, coord_t z, hilbert_index_t idx): x(x), y(y), z(z), idx(idx){};
+    inline explicit _Hilbert3DPoint(): _Hilbert3DPoint(0, 0, 0, -1){};
+    bool operator<(const _Hilbert3DPoint &other) const{return this->idx < other.idx;};
+    bool operator==(const _Hilbert3DPoint &other) const{return this->idx == other.idx;};
+};
+
+std::vector<Vector3D> HilbertAgent::setBorders(const std::vector<Vector3D> &points)
+{
+    // todo: rename
+    std::vector<_Hilbert3DPoint> indices;
     for(const Vector3D &point : points)
     {
-        indices.push_back(this->xyz2d(point));
+        indices.push_back(_Hilbert3DPoint(point.x, point.y, point.z, this->xyz2d(point)));
     }
-
-    std::cout << "before _sortpoints's length: " << indices.size() << std::endl;
-    parallelSort(indices);
-    std::cout << "after _sortpoints's length: " << indices.size() << std::endl;
+    BalanceJob<_Hilbert3DPoint> balance(indices);
+    indices = balance.balance();
 
     if(!indices.empty())
     {
-        this->myHilbertMin = indices[0];
-        this->myHilbertMax = indices[indices.size() - 1];
+        this->myHilbertMin = indices[0].idx;
+        this->myHilbertMax = indices[indices.size() - 1].idx;
     }
     else
     {
-        this->myHilbertMin = this->myHilbertMax = -1;
+        this->myHilbertMin = this->myHilbertMax = 0;
     }
-    std::cout << "my max: " << this->myHilbertMax << " and this->range[0]'s address: " << (&this->range[0]) << std::endl;
-    MPI_Alltoall(&this->myHilbertMax, sizeof(hilbert_index_t), MPI_BYTE, &this->range[0], sizeof(hilbert_index_t), MPI_BYTE, MPI_COMM_WORLD);
-    std::cout << "rank " << this->rank << ": my min is " << this->myHilbertMin << " and my max is " << this->myHilbertMax << std::endl;
+    if(this->myHilbertMax == this->hilbert_cells - 1)
+    {
+        this->myHilbertMax = this->hilbert_cells;
+    }
+    MPI_Allgather(&this->myHilbertMax, sizeof(hilbert_index_t), MPI_BYTE, &this->range[0], sizeof(hilbert_index_t), MPI_BYTE, MPI_COMM_WORLD);
+    std::vector<Vector3D> result;
+    for(const _Hilbert3DPoint &point : indices)
+    {
+        result.push_back(Vector3D(point.x, point.y, point.z));
+    }
+    return result;
 }
 
 boost::container::flat_set<size_t> HilbertAgent::getIntersectingCircle(const Vector3D &center, coord_t r) const

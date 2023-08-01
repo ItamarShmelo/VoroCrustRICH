@@ -7,6 +7,7 @@
 #define _RICH_3DINTERSECT_H
 
 #include "utils/sort/sort.hpp"
+#include "utils/balance/balance.hpp"
 #include "hilbertTypes.h"
 #include "HilbertOrder3D.hpp"
 #include <iostream>
@@ -25,15 +26,16 @@ class HilbertAgent
 public:
     HilbertAgent(const Vector3D &origin, const Vector3D &corner, int order);
     boost::container::flat_set<size_t> getIntersectingCircle(const Vector3D &center, coord_t r) const;
-    std::vector<Vector3D> pointsExchange(const std::vector<Vector3D> &points, std::vector<size_t> &self_index_, std::vector<int> &sentprocs_, std::vector<std::vector<size_t>> &sentpoints_) const;
+    //std::vector<Vector3D> pointsExchange(const std::vector<Vector3D> &points, std::vector<size_t> &self_index_, std::vector<int> &sentprocs_, std::vector<std::vector<size_t>> &sentpoints_) const;
     inline int getOrder() const{return this->order;};
     std::pair<Vector3D, Vector3D> getBoundingBox() const{return std::make_pair(this->myll, this->myur);};
     hilbert_index_t xyz2d(const Vector3D &point) const;
     Vector3D d2xyz(hilbert_index_t d) const;
-    inline int getCellOwner(hilbert_index_t d) const{return std::min<int>(this->size - 1, static_cast<int>(d / this->pointsPerRank));};
+    inline int getCellOwner(hilbert_index_t d) const{return (std::upper_bound(this->range.begin(), this->range.end(), d) - this->range.begin());};
     inline hilbert_index_t getMyHilbertMin() const{return this->myHilbertMin;};
     inline hilbert_index_t getMyHilbertMax() const{return this->myHilbertMax;};
-    void setBorders(const std::vector<Vector3D> &points);
+    std::vector<Vector3D> setBorders(const std::vector<Vector3D> &points);
+    void calculateBoundingBox();
 
 private:
     HilbertCurve3D curve;
@@ -45,8 +47,7 @@ private:
     hilbert_index_t myHilbertMin, myHilbertMax;
     std::vector<hilbert_index_t> range;
 
-    void calculateBoundingBox();
-    void pointsReceive(std::vector<Vector3D> &points, bool blocking) const;
+    //void pointsReceive(std::vector<Vector3D> &points, bool blocking) const;
     inline int getOwner(const Vector3D &point) const{return this->getCellOwner(this->xyz2d(point));};
 };
 

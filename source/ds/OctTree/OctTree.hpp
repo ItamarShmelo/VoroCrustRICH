@@ -1,6 +1,7 @@
 #ifndef _OCTTREE_HPP
 #define _OCTTREE_HPP
 
+#include <vector>
 #include <assert.h>
 #include <utility>
 #include "geometry_utils.hpp"
@@ -18,14 +19,14 @@ private:
     class OctTreeNode
     {
     public:
-        inline OctTreeNode(const T &ll, const T &ur): isValue(false), value((ll + ur)/2), boundingBox(BoundingBox(ll, ur)), parent(nullptr), height(0), depth(0)
+        inline OctTreeNode(const T &ll, const T &ur): isValue(false), value((ll + ur)/2), boundingBox(_BoundingBox(ll, ur)), parent(nullptr), height(0), depth(0)
         {
             for(int i = 0; i < CHILDREN; i++)
             {
                 this->children[i] = nullptr;
             }
         }
-        inline OctTreeNode(const T &point): isValue(true), value(point), boundingBox(BoundingBox(point, point)), parent(nullptr), height(0), depth(0)
+        inline OctTreeNode(const T &point): isValue(true), value(point), boundingBox(_BoundingBox(point, point)), parent(nullptr), height(0), depth(0)
         {
             for(int i = 0; i < CHILDREN; i++)
             {
@@ -36,7 +37,7 @@ private:
 
         bool isValue;
         T value; // if a leaf, that's a point value, otherwise, thats the value for partition
-        BoundingBox<T> boundingBox;
+        _BoundingBox<T> boundingBox;
         OctTreeNode *children[CHILDREN];
         OctTreeNode *parent;
         int height;

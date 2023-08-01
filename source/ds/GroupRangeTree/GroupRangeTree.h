@@ -48,8 +48,7 @@ public:
     ~GroupRangeTree() override{this->deleteTree();};
 
     inline std::vector<T> range(const std::vector<std::pair<typename T::coord_type, typename T::coord_type>> &range) const{std::vector<T> result; this->rangeHelper(range, this->getRoot(), 0, result); return result;};
-    std::vector<T> circularRange(const T &center, typename T::coord_type radius) const; // todo - implement
-    std::vector<T> circularRangeRectangular(const T &center, typename T::coord_type radius) const; // todo - implement
+    std::vector<T> circularRange(const T &center, typename T::coord_type radius) const; 
 
     template<typename RandomAccessIterator>
     inline void build(RandomAccessIterator first, RandomAccessIterator last){assert(this->treeSize == 0); std::sort(first, last, this->compare); this->setRoot(this->fastBuildHelper(first, last));};
