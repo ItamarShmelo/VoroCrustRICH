@@ -21,12 +21,13 @@
 #define FINISH_TAG 116
 #define POINTS_EXCHANGE_RECEIVE_CYCLE 5
 
+#define AVERAGE_INTERSECT 128
+
 class HilbertAgent
 {
 public:
     HilbertAgent(const Vector3D &origin, const Vector3D &corner, int order);
     boost::container::flat_set<size_t> getIntersectingCircle(const Vector3D &center, coord_t r) const;
-    //std::vector<Vector3D> pointsExchange(const std::vector<Vector3D> &points, std::vector<size_t> &self_index_, std::vector<int> &sentprocs_, std::vector<std::vector<size_t>> &sentpoints_) const;
     inline int getOrder() const{return this->order;};
     std::pair<Vector3D, Vector3D> getBoundingBox() const{return std::make_pair(this->myll, this->myur);};
     hilbert_index_t xyz2d(const Vector3D &point) const;
@@ -34,7 +35,8 @@ public:
     inline int getCellOwner(hilbert_index_t d) const{return (std::upper_bound(this->range.begin(), this->range.end(), d) - this->range.begin());};
     inline hilbert_index_t getMyHilbertMin() const{return this->myHilbertMin;};
     inline hilbert_index_t getMyHilbertMax() const{return this->myHilbertMax;};
-    std::vector<Vector3D> setBorders(const std::vector<Vector3D> &points);
+    std::vector<Vector3D> determineBordersAndExchange(const std::vector<Vector3D> &points);
+    std::vector<Vector3D> pointsExchange(const std::vector<Vector3D> &points, std::vector<size_t> &self_index_, std::vector<int> &sentprocs_, std::vector<std::vector<size_t>> &sentpoints_) const;
     void calculateBoundingBox();
 
 private:
@@ -47,7 +49,7 @@ private:
     hilbert_index_t myHilbertMin, myHilbertMax;
     std::vector<hilbert_index_t> range;
 
-    //void pointsReceive(std::vector<Vector3D> &points, bool blocking) const;
+    void pointsReceive(std::vector<Vector3D> &points, bool blocking) const;
     inline int getOwner(const Vector3D &point) const{return this->getCellOwner(this->xyz2d(point));};
 };
 

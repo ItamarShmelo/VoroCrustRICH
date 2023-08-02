@@ -18,6 +18,7 @@
 #define BALANCE_FINISHED_TAG 904
 #define BALANCE_DATA_REBALANCE_TAG 905
 #define BALANCE_DATA_NONE_TAG 906
+#define BALANCE_NEW_BOUND_TAG 907
 
 template<typename T>
 class BalanceJob
@@ -53,17 +54,24 @@ private:
     void helpBuildHeap();
     Heap buildHeap();
     void heapReplaceMin(Heap &heap);
-    void answerToRequests();
-    std::vector<T> rebalanceToBounds(const std::vector<T> &bounds);
-    std::vector<T> kthOrderStatistics(std::vector<size_t> &orders);
+    bool answerToRequests();
+    void reorderBound(int _rank, const T &bound);
+    void reorder();
+    void receiveNewElements();
+    void announceBound(const T &bound);
+    void kthOrderStatistics(std::vector<size_t> &orders);
 
     std::vector<T> values;
+    std::vector<T> newValues;
+    std::vector<MPI_Request> requests;
     Compare comparator;
     int rank, size;
-    size_t pos;
+    int ranksSent, ranksReceived;
+    size_t heapPos;
+    size_t boundPos;
 
 public:
-    inline BalanceJob(const std::vector<T> &values, Compare comparator): values(values), comparator(comparator), pos(0)
+    inline BalanceJob(const std::vector<T> &values, Compare comparator): values(values), comparator(comparator), ranksSent(0), ranksReceived(0), heapPos(0), boundPos(0)
     {
         MPI_Comm_rank(MPI_COMM_WORLD, &this->rank);
         MPI_Comm_size(MPI_COMM_WORLD, &this->size);
@@ -80,14 +88,14 @@ void BalanceJob<T>::helpBuildHeap()
     {
         return;
     }
-    if(this->pos >= this->values.size())
+    if(this->heapPos >= this->values.size())
     {
         int dummy = 0;
         MPI_Send(&dummy, 1, MPI_INT, BALANCE_ROOT, BALANCE_STOP_ITERATION_TAG, MPI_COMM_WORLD);
     }
     else
     {
-        MPI_Send(&this->values[this->pos++], sizeof(T), MPI_BYTE, BALANCE_ROOT, BALANCE_MINIMAL_RESPONSE_TAG, MPI_COMM_WORLD);
+        MPI_Send(&this->values[this->heapPos++], sizeof(T), MPI_BYTE, BALANCE_ROOT, BALANCE_MINIMAL_RESPONSE_TAG, MPI_COMM_WORLD);
     }
 }
 
@@ -95,9 +103,9 @@ template<typename T>
 typename BalanceJob<T>::Heap BalanceJob<T>::buildHeap()
 {
     Heap heap(_T_Wrapper_Comp<Compare>(this->comparator));
-    if(this->values.size() > this->pos)
+    if(this->values.size() > this->heapPos)
     {
-        heap.push(_T_Wrapper(this->values[this->pos++], this->rank));
+        heap.push(_T_Wrapper(this->values[this->heapPos++], this->rank));
     }
     for(int _rank = 0; _rank < this->size; _rank++)
     {
@@ -145,18 +153,24 @@ void BalanceJob<T>::heapReplaceMin(BalanceJob<T>::Heap &heap)
     heap.pop();
     if(full_value.rank == this->rank)
     {
-        if(this->values.size() <= this->pos)
+        if(this->values.size() <= this->heapPos)
         {
             return;
         }
-        heap.push(_T_Wrapper(this->values[this->pos++], this->rank));
+        heap.push(_T_Wrapper(this->values[this->heapPos++], this->rank));
     }
     else
     {
         int dummy = 0;
         MPI_Send(&dummy, 1, MPI_INT, full_value.rank, BALANCE_MINIMAL_REQUEST_TAG, MPI_COMM_WORLD);
         MPI_Status status;
-        MPI_Probe(full_value.rank, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+        int received = 0;
+        while(!received)
+        {
+            MPI_Iprobe(full_value.rank, BALANCE_MINIMAL_RESPONSE_TAG, MPI_COMM_WORLD, &received, &status);
+            if(received) break;
+            MPI_Iprobe(full_value.rank, BALANCE_STOP_ITERATION_TAG, MPI_COMM_WORLD, &received, &status);
+        }
         switch(status.MPI_TAG)
         {
             case BALANCE_MINIMAL_RESPONSE_TAG:
@@ -182,40 +196,56 @@ void BalanceJob<T>::heapReplaceMin(BalanceJob<T>::Heap &heap)
 }
 
 template<typename T>
-void BalanceJob<T>::answerToRequests()
+bool BalanceJob<T>::answerToRequests()
 {
     MPI_Status status;
     int dummy;
 
-    while(true)
+    int finished = 0;
+    MPI_Iprobe(MPI_ANY_SOURCE, BALANCE_FINISHED_TAG, MPI_COMM_WORLD, &finished, &status);
+    if(finished)
     {
-        MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-        MPI_Recv(&dummy, 1, MPI_INT, status.MPI_SOURCE, status.MPI_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        MPI_Recv(&dummy, 1, MPI_INT, status.MPI_SOURCE, BALANCE_FINISHED_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        return true;
+    }
 
-        switch(status.MPI_TAG)
+    int received = 0;
+    MPI_Iprobe(MPI_ANY_SOURCE, BALANCE_MINIMAL_REQUEST_TAG, MPI_COMM_WORLD, &received, &status);
+    while(received)
+    {
+        MPI_Recv(&dummy, 1, MPI_INT, status.MPI_SOURCE, BALANCE_MINIMAL_REQUEST_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+        if(this->heapPos >= this->values.size())
         {
-            case BALANCE_FINISHED_TAG:
-                return;
-            case BALANCE_MINIMAL_REQUEST_TAG:
-                if(this->pos >= this->values.size())
-                {
-                    int dummy = 0;
-                    MPI_Send(&dummy, 1, MPI_INT, status.MPI_SOURCE, BALANCE_STOP_ITERATION_TAG, MPI_COMM_WORLD);
-                }
-                else
-                {
-                    MPI_Send(&this->values[this->pos++], sizeof(T), MPI_BYTE, status.MPI_SOURCE, BALANCE_MINIMAL_RESPONSE_TAG, MPI_COMM_WORLD);
-                }
-                break;
+            int dummy = 0;
+            MPI_Send(&dummy, 1, MPI_INT, status.MPI_SOURCE, BALANCE_STOP_ITERATION_TAG, MPI_COMM_WORLD);
         }
+        else
+        {
+            MPI_Send(&this->values[this->heapPos++], sizeof(T), MPI_BYTE, status.MPI_SOURCE, BALANCE_MINIMAL_RESPONSE_TAG, MPI_COMM_WORLD);
+        }
+        break;
+        MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &received, &status);
+    }
+    return false;
+}
+
+template<typename T>
+void BalanceJob<T>::announceBound(const T &bound)
+{
+    for(int _rank = 0; _rank < this->size; _rank++)
+    {
+        MPI_Send(&bound, sizeof(T), MPI_BYTE, _rank, BALANCE_NEW_BOUND_TAG, MPI_COMM_WORLD);
     }
 }
 
 template<typename T>
-std::vector<T> BalanceJob<T>::kthOrderStatistics(std::vector<size_t> &orders)
+void BalanceJob<T>::kthOrderStatistics(std::vector<size_t> &orders)
 {
-    std::vector<T> result;
-    this->pos = 0;
+    this->heapPos = 0;
+    this->boundPos = 0;
+    this->ranksSent = 0;
+    this->ranksReceived = 0;
 
     this->helpBuildHeap();
     if(this->rank == BALANCE_ROOT)
@@ -232,7 +262,7 @@ std::vector<T> BalanceJob<T>::kthOrderStatistics(std::vector<size_t> &orders)
                 j++;
             }
             const _T_Wrapper &value = heap.top();
-            result.push_back(value.value);
+            this->announceBound(value.value);
             i++;
         }
         // done all! send finish messages
@@ -248,58 +278,92 @@ std::vector<T> BalanceJob<T>::kthOrderStatistics(std::vector<size_t> &orders)
     else
     {
         // answer to queries
-        this->answerToRequests();
+        bool finished = false;
+        while(!finished)
+        {
+            this->reorder();
+            this->receiveNewElements();
+            finished = this->answerToRequests();
+        }
     }
-    return result;
 }
 
 template<typename T>
-std::vector<T> BalanceJob<T>::rebalanceToBounds(const std::vector<T> &bounds)
+void BalanceJob<T>::reorder()
 {
-    std::vector<MPI_Request> requests;
-    size_t i = 0;
-    std::vector<T> newValues;
-    for(int _rank = 0; _rank < this->size; _rank++)
+    // checks if a new bound has arrived. If yes, activates the re-ordering (sending data to the relevant rank)
+    if(this->ranksSent == this->size)
     {
-        std::vector<T> toSend;
-        const T &bound = bounds[_rank];
-        while(i < this->values.size() and (this->comparator(this->values[i], bound) or (_rank == this->size - 1)))
+        return;
+    }
+    MPI_Status status;
+    int arrived = 0;
+    MPI_Iprobe(MPI_ANY_SOURCE, BALANCE_NEW_BOUND_TAG, MPI_COMM_WORLD, &arrived, &status);
+    while(arrived)
+    {
+        T bound;
+        MPI_Recv(&bound, sizeof(T), MPI_BYTE, status.MPI_SOURCE, BALANCE_NEW_BOUND_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        this->reorderBound(this->ranksSent, bound);
+        this->ranksSent++;
+        MPI_Iprobe(MPI_ANY_SOURCE, BALANCE_NEW_BOUND_TAG, MPI_COMM_WORLD, &arrived, &status);
+    }
+}
+
+template<typename T>
+void BalanceJob<T>::reorderBound(int _rank, const T &bound)
+{
+    std::vector<T> toSend;
+    // add the elements to the send buffer, until they are too big for this bound
+    while(this->boundPos < this->values.size() and (this->comparator(this->values[this->boundPos], bound) or (_rank == this->size - 1)))
+    {
+        if(_rank == this->rank)
         {
-            if(_rank == this->rank)
-            {
-                newValues.push_back(this->values[i]);
-            }
-            else
-            {
-                toSend.push_back(this->values[i]);
-            }
-            i++;
+            this->newValues.push_back(this->values[this->boundPos]);
         }
-        requests.push_back(MPI_REQUEST_NULL);
-        if(_rank != this->rank)
+        else
         {
-            if(toSend.empty())
-            {
-                int dummy = 0;
-                MPI_Send(&dummy, 1, MPI_INT, _rank, BALANCE_DATA_NONE_TAG, MPI_COMM_WORLD);
-            }
-            else
-            {
-                MPI_Send(&toSend[0], toSend.size() * sizeof(T), MPI_BYTE, _rank, BALANCE_DATA_REBALANCE_TAG, MPI_COMM_WORLD/*, &requests[requests.size() - 1]*/);
-            }
+            toSend.push_back(this->values[this->boundPos]);
+        }
+        this->boundPos++;
+    }
+    this->requests.push_back(MPI_REQUEST_NULL);
+
+    // if rank is not me, send the relevant values, or a message that there are no values
+    if(_rank != this->rank)
+    {
+        if(toSend.empty())
+        {
+            int dummy = 0;
+            MPI_Send(&dummy, 1, MPI_INT, _rank, BALANCE_DATA_NONE_TAG, MPI_COMM_WORLD);
+        }
+        else
+        {
+            // this line can be blocking, which is dangerous
+            MPI_Send(&toSend[0], toSend.size() * sizeof(T), MPI_BYTE, _rank, BALANCE_DATA_REBALANCE_TAG, MPI_COMM_WORLD);
         }
     }
-    assert(i >= this->values.size());
+}
 
-    int rankArrived = 0;
-    while(rankArrived != this->size - 1)
+template<typename T>
+void BalanceJob<T>::receiveNewElements()
+{
+    if(this->ranksReceived == this->size - 1)
     {
-        MPI_Status status;
-        MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+        return;
+    }    
+    MPI_Status status;
+    int arrived = 0;
+    MPI_Iprobe(MPI_ANY_SOURCE, BALANCE_DATA_NONE_TAG, MPI_COMM_WORLD, &arrived, &status);
+    if(!arrived) MPI_Iprobe(MPI_ANY_SOURCE, BALANCE_DATA_REBALANCE_TAG, MPI_COMM_WORLD, &arrived, &status);
+
+    while(arrived)
+    {
         switch(status.MPI_TAG)
         {
+            // check if data has arrived, or `none` was sent
             case BALANCE_DATA_NONE_TAG:
             {
+                // none was sent
                 int dummy = 0;
                 int count;
                 MPI_Get_count(&status, MPI_INT, &count);
@@ -309,14 +373,16 @@ std::vector<T> BalanceJob<T>::rebalanceToBounds(const std::vector<T> &bounds)
             }
             case BALANCE_DATA_REBALANCE_TAG:
             {
+                // data has arrived
                 int count;
                 MPI_Get_count(&status, MPI_BYTE, &count);
-                assert(count != 0 and count % sizeof(T) == 0);
+                assert(count % sizeof(T) == 0);
+                assert(count > 0);
                 count /= sizeof(T);
-                size_t oldSize = newValues.size();
-                newValues.resize(oldSize + count);
-                assert(newValues.size() == oldSize + count);
-                MPI_Recv(&newValues[oldSize], count * sizeof(T), MPI_BYTE, status.MPI_SOURCE, BALANCE_DATA_REBALANCE_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                size_t oldSize = this->newValues.size();
+                this->newValues.resize(oldSize + count);
+                assert(this->newValues.size() == oldSize + count);
+                MPI_Recv(&this->newValues[oldSize], count * sizeof(T), MPI_BYTE, status.MPI_SOURCE, BALANCE_DATA_REBALANCE_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);                
                 break;
             }
             default:
@@ -325,10 +391,11 @@ std::vector<T> BalanceJob<T>::rebalanceToBounds(const std::vector<T> &bounds)
                 MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
                 break;
         }
-        rankArrived++;
+        this->ranksReceived++;
+        MPI_Iprobe(MPI_ANY_SOURCE, BALANCE_DATA_NONE_TAG, MPI_COMM_WORLD, &arrived, &status);
+        if(!arrived) MPI_Iprobe(MPI_ANY_SOURCE, BALANCE_DATA_REBALANCE_TAG, MPI_COMM_WORLD, &arrived, &status);
+
     }
-    MPI_Waitall(requests.size(), &requests[0], MPI_STATUSES_IGNORE); // make sure all the messages were handled
-    return newValues;
 }
 
 template<typename T>
@@ -347,15 +414,14 @@ std::vector<T> BalanceJob<T>::balance()
     }
     stats[this->size - 1] = totalSize - 1;
 
-    std::vector<T> bounds = this->kthOrderStatistics(stats);
-    if(this->rank != BALANCE_ROOT)
+    this->kthOrderStatistics(stats);
+    while((this->ranksReceived != this->size - 1) or (this->ranksSent != this->size))
     {
-        bounds.clear();
-        bounds.resize(this->size);
+        this->reorder();
+        this->receiveNewElements();
     }
-    MPI_Bcast(&bounds[0], this->size * sizeof(T), MPI_BYTE, BALANCE_ROOT, MPI_COMM_WORLD);
-    std::vector<T> balanced = this->rebalanceToBounds(bounds);
-    std::sort(balanced.begin(), balanced.end(), this->comparator);
-    return balanced;
+    assert(this->boundPos == this->values.size());
+    std::sort(this->newValues.begin(), this->newValues.end(), this->comparator);
+    return this->newValues;
 }
 

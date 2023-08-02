@@ -175,7 +175,7 @@ struct _Hilbert3DPoint
     bool operator==(const _Hilbert3DPoint &other) const{return this->idx == other.idx;};
 };
 
-std::vector<Vector3D> HilbertAgent::setBorders(const std::vector<Vector3D> &points)
+std::vector<Vector3D> HilbertAgent::determineBordersAndExchange(const std::vector<Vector3D> &points)
 {
     // todo: rename
     std::vector<_Hilbert3DPoint> indices;
@@ -195,7 +195,7 @@ std::vector<Vector3D> HilbertAgent::setBorders(const std::vector<Vector3D> &poin
     {
         this->myHilbertMin = this->myHilbertMax = 0;
     }
-    if(this->myHilbertMax == this->hilbert_cells - 1)
+    if(this->myHilbertMax == static_cast<size_t>(this->hilbert_cells - 1))
     {
         this->myHilbertMax = this->hilbert_cells;
     }
@@ -211,7 +211,7 @@ std::vector<Vector3D> HilbertAgent::setBorders(const std::vector<Vector3D> &poin
 boost::container::flat_set<size_t> HilbertAgent::getIntersectingCircle(const Vector3D &center, coord_t r) const
 {
     boost::container::flat_set<size_t> hilbertCells;
-    hilbertCells.reserve(128);
+    hilbertCells.reserve(AVERAGE_INTERSECT);
 
     coord_t _minX, _maxX;
     _minX = std::max(std::min(center.x - r, this->ur.x), this->ll.x);

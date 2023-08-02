@@ -1117,9 +1117,9 @@ void Voronoi3D::Build(const std::vector<Vector3D> &points, int hilbert_order)
 
   // first, makes sure the current points I have are the correct points
   HilbertAgent hilbertAgent(this->ll_, this->ur_, hilbert_order);
-  std::vector<Vector3D> new_points = hilbertAgent.setBorders(points);
+  std::vector<Vector3D> new_points = hilbertAgent.determineBordersAndExchange(points);
   hilbertAgent.calculateBoundingBox();
-  //std::vector<Vector3D> new_points = hilbertAgent.pointsExchange(points, this->self_index_, this->sentprocs_, this->sentpoints_);
+  std::vector<Vector3D> new_points = hilbertAgent.pointsExchange(points, this->self_index_, this->sentprocs_, this->sentpoints_);
   /*
   std::pair<Vector3D, Vector3D> bounding_box = hilbertAgent.getBoundingBox();
   */
@@ -1259,9 +1259,7 @@ void Voronoi3D::Build(const std::vector<Vector3D> &points, int hilbert_order)
       sent_finished = true;
     }
 
-    // MPI_Barrier(MPI_COMM_WORLD); // todo: necessary?
     QueryBatchInfo batchInfo = rangeAgent.runBatch(queries);
-    // MPI_Barrier(MPI_COMM_WORLD); // todo: necessary?
 
     #ifdef VORONOI_DEBUG
     int new_finished = getNewFinished();
