@@ -69,7 +69,6 @@ void HilbertAgent::calculateBoundingBox()
     }
 }
 
-/*
 void HilbertAgent::pointsReceive(std::vector<Vector3D> &points, bool blocking) const
 {
     MPI_Status status;
@@ -162,22 +161,8 @@ std::vector<Vector3D> HilbertAgent::pointsExchange(const std::vector<Vector3D> &
     return new_points;
 }
 
-*/
-
-struct _Hilbert3DPoint
-{
-    coord_t x, y, z;
-    hilbert_index_t idx;
-
-    inline _Hilbert3DPoint(coord_t x, coord_t y, coord_t z, hilbert_index_t idx): x(x), y(y), z(z), idx(idx){};
-    inline explicit _Hilbert3DPoint(): _Hilbert3DPoint(0, 0, 0, -1){};
-    bool operator<(const _Hilbert3DPoint &other) const{return this->idx < other.idx;};
-    bool operator==(const _Hilbert3DPoint &other) const{return this->idx == other.idx;};
-};
-
 std::vector<Vector3D> HilbertAgent::determineBordersAndExchange(const std::vector<Vector3D> &points)
 {
-    // todo: rename
     std::vector<_Hilbert3DPoint> indices;
     for(const Vector3D &point : points)
     {

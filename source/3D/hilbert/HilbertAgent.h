@@ -23,6 +23,17 @@
 
 #define AVERAGE_INTERSECT 128
 
+struct _Hilbert3DPoint
+{
+    coord_t x, y, z;
+    hilbert_index_t idx;
+
+    inline _Hilbert3DPoint(coord_t x, coord_t y, coord_t z, hilbert_index_t idx): x(x), y(y), z(z), idx(idx){};
+    inline explicit _Hilbert3DPoint(): _Hilbert3DPoint(0, 0, 0, -1){};
+    bool operator<(const _Hilbert3DPoint &other) const{return this->idx < other.idx;};
+    bool operator==(const _Hilbert3DPoint &other) const{return this->idx == other.idx;};
+};
+
 class HilbertAgent
 {
 public:
@@ -37,7 +48,9 @@ public:
     inline hilbert_index_t getMyHilbertMax() const{return this->myHilbertMax;};
     std::vector<Vector3D> determineBordersAndExchange(const std::vector<Vector3D> &points);
     std::vector<Vector3D> pointsExchange(const std::vector<Vector3D> &points, std::vector<size_t> &self_index_, std::vector<int> &sentprocs_, std::vector<std::vector<size_t>> &sentpoints_) const;
+    std::vector<Vector3D> pointsExchange(const std::vector<Vector3D> &points) const{std::vector<size_t> self_index_; std::vector<int> sentprocs_; std::vector<std::vector<size_t>> sentpoints_; return this->pointsExchange(points, self_index_, sentprocs_, sentpoints_);};
     void calculateBoundingBox();
+    void buildHilbertOctTree();
 
 private:
     HilbertCurve3D curve;
@@ -48,7 +61,7 @@ private:
     int pointsPerRank;
     hilbert_index_t myHilbertMin, myHilbertMax;
     std::vector<hilbert_index_t> range;
-
+    
     void pointsReceive(std::vector<Vector3D> &points, bool blocking) const;
     inline int getOwner(const Vector3D &point) const{return this->getCellOwner(this->xyz2d(point));};
 };

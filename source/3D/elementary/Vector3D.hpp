@@ -143,6 +143,7 @@ public:
 	void unserialize(const vector<double>& data) override;
 
 	friend std::ostream &operator<<(std::ostream &stream, const Vector3D &vec);
+	friend std::istream &operator>>(std::istream &stream, Vector3D &vec);
 	
 #ifdef __INTEL_COMPILER
 #pragma omp declare simd

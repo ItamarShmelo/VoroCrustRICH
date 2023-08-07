@@ -15,9 +15,17 @@ typedef double coord_t;
 template<typename T>
 class OctTree
 {
-private:
+    template<typename U>
+    class DistributedOctTree;
+    template<typename U>
+    friend class DistributedOctTree;
+
+public:
+    // todo: fast build methods?
     class OctTreeNode
     {
+        friend class OctTree;
+
     public:
         inline OctTreeNode(const T &ll, const T &ur): isValue(false), value((ll + ur)/2), boundingBox(_BoundingBox(ll, ur)), parent(nullptr), height(0), depth(0)
         {
@@ -34,6 +42,19 @@ private:
             }
         }
         OctTreeNode(OctTreeNode *parent, int childNumber);
+        inline OctTreeNode(OctTreeNode &&other): isValue(other.isValue), value(other.value), boundingBox(other.boundingBox)
+        {
+            for(int i = 0; i < CHILDREN; i++)
+            {
+                this->children[i] = other.children[i];
+                other.children[i] = nullptr;
+            }
+            this->parent = other.parent;
+            other.parent = nullptr;
+        }
+
+        OctTreeNode *createChild(int childNumber);
+        int getChildNumberContaining(const T &point) const;
 
         bool isValue;
         T value; // if a leaf, that's a point value, otherwise, thats the value for partition
@@ -46,17 +67,17 @@ private:
     private:
         void fixHeightsRecursively();
         void splitNode();
-        OctTreeNode *createChild(int childNumber);
-        int getChildNumberContaining(const T &point) const;
         const OctTreeNode *getChildContaining(const T &point) const{return this->children[this->getChildNumberContaining(point)];};
 
-        friend class OctTree;
     };
 
+private:
     void deleteSubtree(OctTreeNode *node);
 
     const OctTreeNode *tryFind(const T &point) const;
     inline OctTreeNode *tryFind(const T &point){return const_cast<OctTreeNode*>(std::as_const(*this).tryFind(point));};
+    const OctTreeNode *tryFindParent(const T &point) const;
+    inline OctTreeNode *tryFindParent(const T &point){return const_cast<OctTreeNode*>(std::as_const(*this).tryFindParent(point));};
     OctTreeNode *tryInsert(const T &point);
 
     #ifdef DEBUG_MODE
@@ -99,8 +120,8 @@ public:
     #ifdef DEBUG_MODE
     void print() const{this->printHelper(this->getRoot(), 0);};
     #endif // DEBUG_MODE
-    inline int getDepth(){assert(this->getRoot() != nullptr); return this->getRoot()->depth;};
-
+    inline int getDepth() const{assert(this->getRoot() != nullptr); return this->getRoot()->depth;};
+    inline size_t getSize() const{return this->treeSize;};
     inline std::vector<T> range(const _Sphere<T> &sphere) const{std::vector<T> result; this->rangeHelper(this->getRoot(), sphere, result); return result;};
 };
 
@@ -126,7 +147,7 @@ OctTree<T>::OctTreeNode::OctTreeNode(OctTreeNode *parent, int childNumber): isVa
     // determine box:
     for(int i = 0; i < DIM; i++)
     {
-        if((childNumber >> (2 - i)) & 1)
+        if((childNumber >> ((DIM - 1) - i)) & 1)
         {
             this->boundingBox.ll[i] = (parent->boundingBox.ll[i] + parent->boundingBox.ur[i]) / 2;
             this->boundingBox.ur[i] = parent->boundingBox.ur[i];
@@ -164,6 +185,32 @@ int OctTree<T>::OctTreeNode::getChildNumberContaining(const T &point) const
         direction = (direction << 1) | ((this->value[i] < point[i])? 1 : 0);
     }
     return direction;
+}
+
+template<typename T>
+const typename OctTree<T>::OctTreeNode *OctTree<T>::tryFindParent(const T &point) const
+{
+    const OctTreeNode *current = this->getRoot();
+    while(current != nullptr)
+    {
+        if(current->isValue)
+        {
+            if(current->value == point)
+            {
+                return current;
+            }
+            return nullptr;
+        }
+        // otherwise, determine the direction to go
+        const OctTreeNode *nextChild = current->getChildContaining(point);
+        if(nextChild == nullptr)
+        {
+            return current;
+        }
+        current = nextChild;
+
+    }
+    return nullptr;
 }
 
 template<typename T>
@@ -384,7 +431,7 @@ void OctTree<T>::rangeHelper(const OctTreeNode *node, const _Sphere<T> &sphere, 
     }
     if(node->isValue)
     {
-        if(sphere.contains(node->value))
+        if(SphereBoxIntersection(node->boundingBox, sphere))
         {
             result.push_back(node->value);
         }

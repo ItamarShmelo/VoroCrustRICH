@@ -64,6 +64,7 @@ private:
     std::vector<T> values;
     std::vector<T> newValues;
     std::vector<MPI_Request> requests;
+    std::vector<std::vector<T>> buffers;
     Compare comparator;
     int rank, size;
     int ranksSent, ranksReceived;
@@ -248,6 +249,7 @@ void BalanceJob<T>::kthOrderStatistics(std::vector<size_t> &orders)
     this->ranksReceived = 0;
 
     this->helpBuildHeap();
+
     if(this->rank == BALANCE_ROOT)
     {
         std::sort(orders.begin(), orders.end());
@@ -312,7 +314,9 @@ void BalanceJob<T>::reorder()
 template<typename T>
 void BalanceJob<T>::reorderBound(int _rank, const T &bound)
 {
-    std::vector<T> toSend;
+    this->buffers.push_back(std::vector<T>());
+    std::vector<T> &toSend = this->buffers[this->buffers.size() - 1];
+
     // add the elements to the send buffer, until they are too big for this bound
     while(this->boundPos < this->values.size() and (this->comparator(this->values[this->boundPos], bound) or (_rank == this->size - 1)))
     {
@@ -327,19 +331,19 @@ void BalanceJob<T>::reorderBound(int _rank, const T &bound)
         this->boundPos++;
     }
     this->requests.push_back(MPI_REQUEST_NULL);
-
     // if rank is not me, send the relevant values, or a message that there are no values
     if(_rank != this->rank)
     {
         if(toSend.empty())
         {
             int dummy = 0;
-            MPI_Send(&dummy, 1, MPI_INT, _rank, BALANCE_DATA_NONE_TAG, MPI_COMM_WORLD);
+            MPI_Isend(&dummy, 1, MPI_INT, _rank, BALANCE_DATA_NONE_TAG, MPI_COMM_WORLD, &this->requests[this->requests.size() - 1]);
+            this->buffers.pop_back();
         }
         else
         {
             // this line can be blocking, which is dangerous
-            MPI_Send(&toSend[0], toSend.size() * sizeof(T), MPI_BYTE, _rank, BALANCE_DATA_REBALANCE_TAG, MPI_COMM_WORLD);
+            MPI_Isend(&toSend[0], toSend.size() * sizeof(T), MPI_BYTE, _rank, BALANCE_DATA_REBALANCE_TAG, MPI_COMM_WORLD, &this->requests[this->requests.size() - 1]);
         }
     }
 }
@@ -415,6 +419,7 @@ std::vector<T> BalanceJob<T>::balance()
     stats[this->size - 1] = totalSize - 1;
 
     this->kthOrderStatistics(stats);
+
     while((this->ranksReceived != this->size - 1) or (this->ranksSent != this->size))
     {
         this->reorder();

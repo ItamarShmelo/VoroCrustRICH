@@ -289,3 +289,16 @@ std::ostream &operator<<(std::ostream &stream, const Vector3D &vec)
 	stream << "(" << vec.x << ", " << vec.y << ", " << vec.z << ")";
 	return stream;
 }
+
+std::istream &operator>>(std::istream &stream, Vector3D &point)
+{
+    std::string str;
+    std::getline(stream, str, '(');
+    std::getline(stream, str, ',');
+    point.x = std::stod(str);
+    std::getline(stream, str, ',');
+    point.y = std::stod(str);
+    std::getline(stream, str, ')');
+    point.z = std::stod(str);
+    return stream;
+}

@@ -10,6 +10,7 @@
 #include <mpi.h>
 #include <boost/container/flat_set.hpp>
 
+#include "ds/DistributedOctTree/DistributedOctTree.hpp"
 #include "../hilbert/HilbertAgent.h"
 #include "finders/RangeFinder.hpp"
 
@@ -56,7 +57,7 @@ public:
     inline RangeAgent(const HilbertAgent &hilbertAgent, RangeFinder *rangeFinder): RangeAgent(MPI_COMM_WORLD, hilbertAgent, rangeFinder){};
     inline RangeAgent(MPI_Comm comm, const Vector3D &origin, const Vector3D &corner, int order, RangeFinder *rangeFinder): RangeAgent(comm, HilbertAgent(origin, corner, order), rangeFinder){};
     inline RangeAgent(const Vector3D &origin, const Vector3D &corner, int order, RangeFinder *rangeFinder): RangeAgent(MPI_COMM_WORLD, origin, corner, order, rangeFinder){};
-    inline ~RangeAgent() = default;
+    inline ~RangeAgent(){delete this->hilbertTree;};
 
     void receiveQueries(QueryBatchInfo &batch, bool blocking);
     void answerQueries(bool finishAnswering);
@@ -65,19 +66,19 @@ public:
     void createArtificialQueries(coord_t radius);
 
     inline size_t getNumPoints(){return this->rangeFinder->size();};
+    inline void buildHilbertTree(const OctTree<Vector3D> *tree){this->hilbertTree = new DistributedOctTree(tree);};
 
 private:
     MPI_Comm comm;
     int rank, size;
     int order;
-    int cellsPerRank;
-    hilbert_index_t myHilbertMin, myHilbertMax;
     std::vector<MPI_Request> requests;
     std::vector<std::vector<char>> buffers;
     size_t receivedUntilNow;
     size_t shouldReceiveInTotal;
     HilbertAgent hilbertAgent;
     RangeFinder *rangeFinder;
+    DistributedOctTree<Vector3D> *hilbertTree;
 
     std::vector<int> sentProcessorsRanks;
     std::vector<boost::container::flat_set<size_t>> sentPoints; 
@@ -85,6 +86,7 @@ private:
     std::vector<std::vector<size_t>> recvPoints; 
     
     std::vector<Vector3D> getRangeResult(const SubQueryData &query, int node);
+    boost::container::flat_set<int> getIntersectingRanks(const Vector3D &center, coord_t radius) const;
 };
 
 #endif // _RICH_RANGE_AGENT_H_

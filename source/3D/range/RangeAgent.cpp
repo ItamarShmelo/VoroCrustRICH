@@ -1,16 +1,10 @@
 #include "RangeAgent.h"
 
 RangeAgent::RangeAgent(MPI_Comm comm, const HilbertAgent &hilbertAgent, RangeFinder *rangeFinder):
-        comm(comm), hilbertAgent(hilbertAgent), rangeFinder(rangeFinder)
+        comm(comm), hilbertAgent(hilbertAgent), rangeFinder(rangeFinder), hilbertTree(nullptr)
 {
     MPI_Comm_rank(this->comm, &this->rank);
     MPI_Comm_size(this->comm, &this->size);
-
-    int N = pow(2, this->hilbertAgent.getOrder()) * pow(2, this->hilbertAgent.getOrder()) * pow(2, this->hilbertAgent.getOrder());
-    this->cellsPerRank = N / size;
-    int HilbertCellsLastRank = this->cellsPerRank + N - (this->cellsPerRank * size);
-    this->myHilbertMin = this->cellsPerRank * rank;
-    this->myHilbertMax = this->myHilbertMin + ((rank != size - 1)? this->cellsPerRank : HilbertCellsLastRank) - 1;
 }
 
 void RangeAgent::receiveQueries(QueryBatchInfo &batch, bool blocking)
@@ -86,6 +80,9 @@ void RangeAgent::receiveQueries(QueryBatchInfo &batch, bool blocking)
     }
 }
 
+/**
+ * gets a query, and who requests it, and returns the answer that should be sent.
+*/
 std::vector<Vector3D> RangeAgent::getRangeResult(const SubQueryData &query, int node)
 {
     // get what is the right index of `node` inside the sentProcessors vector. If it isn't there, create it
@@ -153,16 +150,29 @@ void RangeAgent::answerQueries(bool finishAnswering)
     }
 }
 
-void RangeAgent::sendQuery(const QueryInfo &query)
+boost::container::flat_set<int> RangeAgent::getIntersectingRanks(const Vector3D &center, coord_t radius) const
 {
-    boost::container::flat_set<size_t> intersectionHilbertCells = this->hilbertAgent.getIntersectingCircle(Vector3D(query.data.center.x, query.data.center.y, query.data.center.z), query.data.radius);
     boost::container::flat_set<int> possibleNodes;
 
-    for(const hilbert_index_t &index : intersectionHilbertCells)
+    if(this->hilbertTree == nullptr)
     {
-        possibleNodes.insert(this->hilbertAgent.getCellOwner(index));
+        boost::container::flat_set<size_t> intersectionHilbertCells = this->hilbertAgent.getIntersectingCircle(center, radius);
+        for(const hilbert_index_t &index : intersectionHilbertCells)
+        {
+            possibleNodes.insert(this->hilbertAgent.getCellOwner(index));
+        }
+    }
+    else
+    {
+        possibleNodes = this->hilbertTree->getIntersectingRanks(center, radius);
     }
 
+    return possibleNodes;
+}
+
+void RangeAgent::sendQuery(const QueryInfo &query)
+{
+    boost::container::flat_set<int> possibleNodes = this->getIntersectingRanks(Vector3D(query.data.center.x, query.data.center.y, query.data.center.z), query.data.radius);
     for(const int &node : possibleNodes)
     {
         if(node == this->rank)
@@ -176,6 +186,7 @@ void RangeAgent::sendQuery(const QueryInfo &query)
     }
 }
 
+// todo: change the parallel model: each one sends a message when it finishes sending requests. Waits to `size` such messages, then answers all again
 QueryBatchInfo RangeAgent::runBatch(std::queue<RangeQueryData> &queries)
 {
     this->receivedUntilNow = 0; // reset the receive counter
