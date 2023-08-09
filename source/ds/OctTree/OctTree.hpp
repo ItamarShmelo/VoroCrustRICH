@@ -41,6 +41,7 @@ public:
                 this->children[i] = nullptr;
             }
         }
+
         OctTreeNode(OctTreeNode *parent, int childNumber);
         inline OctTreeNode(OctTreeNode &&other): isValue(other.isValue), value(other.value), boundingBox(other.boundingBox)
         {
@@ -99,6 +100,16 @@ private:
 
 public:
     OctTree(const T &ll, const T &ur): root(new OctTreeNode(ll, ur)), treeSize(0){};
+    template<typename InputIterator>
+    OctTree(const T &ll, const T &ur, const InputIterator &first, const InputIterator &last): OctTree(ll, ur)
+    {
+        for(InputIterator it = first; it != last; it++)
+        {
+            this->insert(*it);
+        }
+    };
+    template<typename Container>
+    OctTree(const T &ll, const T &ur, Container container): OctTree(ll, ur, container.begin(), container.end()){};
     explicit OctTree(): root(nullptr), treeSize(0){};
     ~OctTree(){this->deleteSubtree(this->root);};
 
@@ -120,7 +131,7 @@ public:
     #ifdef DEBUG_MODE
     void print() const{this->printHelper(this->getRoot(), 0);};
     #endif // DEBUG_MODE
-    inline int getDepth() const{assert(this->getRoot() != nullptr); return this->getRoot()->depth;};
+    inline int getDepth() const{assert(this->getRoot() != nullptr); return this->getRoot()->height;};
     inline size_t getSize() const{return this->treeSize;};
     inline std::vector<T> range(const _Sphere<T> &sphere) const{std::vector<T> result; this->rangeHelper(this->getRoot(), sphere, result); return result;};
 };

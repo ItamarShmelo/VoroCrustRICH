@@ -87,6 +87,8 @@ private:
     HilbertAgent hilbertAgent;
     RangeFinder *rangeFinder;
     DistributedOctTree<Vector3D> *hilbertTree;
+    int myCurrentRound;
+    int finishedForNextRound;
 
     std::vector<int> sentProcessorsRanks;
     std::vector<_set<size_t>> sentPoints; 
@@ -95,6 +97,8 @@ private:
     
     std::vector<Vector3D> getRangeResult(const SubQueryData &query, int node);
     _set<int> getIntersectingRanks(const Vector3D &center, coord_t radius) const;
+    void sendFinish(const int &dummy);
+    int checkForFinishMessages() const;
 };
 
 #endif // _RICH_RANGE_AGENT_H_

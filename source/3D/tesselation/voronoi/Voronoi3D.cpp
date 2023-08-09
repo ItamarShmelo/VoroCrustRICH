@@ -1161,15 +1161,14 @@ void Voronoi3D::BuildHilbert(const std::vector<Vector3D> &points)
   {
     // todo save the indices of points I sent to which one, and those I left for myself
     // new_points = this->hilbertAgent.determineBordersAndExchange(points, this->self_index_, this->sentprocs_, this->sentpoints_);
+    OctTree<Vector3D> tree(this->ll_, this->ur_, points);
+    int depth = tree.getDepth();
+    MPI_Allreduce(&depth, &depth, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+    this->hilbertAgent.setOrder(depth);
     this->hilbertAgent.determineBorders(points);
   }
   new_points = this->hilbertAgent.pointsExchange(points, this->self_index_, this->sentprocs_, this->sentpoints_, this->radiuses);
 
-  OctTree<Vector3D> pointsTree(this->ll_, this->ur_);
-  for(const Vector3D &point : new_points)
-  {
-    pointsTree.insert(point);
-  }
   // hilbertAgent.calculateBoundingBox();
   //std::vector<Vector3D> new_points = hilbertAgent.pointsExchange(points, this->self_index_, this->sentprocs_, this->sentpoints_);
   /*
@@ -1244,12 +1243,14 @@ void Voronoi3D::BuildHilbert(const std::vector<Vector3D> &points)
   std::cout << "finished max ranks" << std::endl;
   #endif // VORONOI_DEBUG
 
-  BruteForceFinder rangeFinder(this->del_.points_.begin(), this->del_.points_.begin() + this->Norg_);
+  //BruteForceFinder rangeFinder(this->del_.points_.begin(), this->del_.points_.begin() + this->Norg_);
   //RangeTreeFinder rangeFinder(this->del_.points_.begin(), this->del_.points_.begin() + this->Norg_);
   //SmartBruteForceFinder rangeFinder(&hilbertAgent, this->del_.points_.begin(), this->del_.points_.begin() + this->Norg_);
   //HashBruteForceFinder rangeFinder(&hilbertAgent, this->del_.points_.begin(), this->del_.points_.begin() + this->Norg_);
-  //OctTreeFinder rangeFinder(this->del_.points_.begin(), this->del_.points_.begin() + this->Norg_, this->ll_, this->ur_);
+  OctTreeFinder rangeFinder(this->del_.points_.begin(), this->del_.points_.begin() + this->Norg_, this->ll_, this->ur_);
   //GroupRangeTreeFinder<4> rangeFinder(this->del_.points_.begin(), this->del_.points_.begin() + this->Norg_);
+  
+  OctTree<Vector3D> pointsTree(this->ll_, this->ur_, new_points);
   RangeAgent rangeAgent(this->hilbertAgent, &rangeFinder);
   rangeAgent.buildHilbertTree(&pointsTree);
 

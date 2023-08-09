@@ -40,7 +40,8 @@ class HilbertAgent
     using _set = boost::container::flat_set<T>;
 
 public:
-    HilbertAgent(const Vector3D &origin, const Vector3D &corner, int order);
+    HilbertAgent(const Vector3D &origin, const Vector3D &corner);
+    HilbertAgent(const Vector3D &origin, const Vector3D &corner, int order): HilbertAgent(origin, corner){this->setOrder(order);};
     _set<size_t> getIntersectingCircle(const Vector3D &center, coord_t r) const;
     inline int getOrder() const{return this->order;};
     std::pair<Vector3D, Vector3D> getBoundingBox() const{return std::make_pair(this->myll, this->myur);};
@@ -58,6 +59,7 @@ public:
     // inline std::vector<Vector3D> pointsExchange(const std::vector<Vector3D> &points) const{std::vector<size_t> self_index_; std::vector<int> sentprocs_; std::vector<std::vector<size_t>> sentpoints_; return this->pointsExchange(points, self_index_, sentprocs_, sentpoints_);};
     void calculateBoundingBox();
     void buildHilbertOctTree();
+    void setOrder(int order);
 
 private:
     HilbertCurve3D curve;

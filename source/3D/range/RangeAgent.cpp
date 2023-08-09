@@ -1,7 +1,7 @@
 #include "RangeAgent.h"
 
 RangeAgent::RangeAgent(MPI_Comm comm, const HilbertAgent &hilbertAgent, RangeFinder *rangeFinder):
-        globalComm(comm), hilbertAgent(hilbertAgent), rangeFinder(rangeFinder), hilbertTree(nullptr)
+        globalComm(comm), hilbertAgent(hilbertAgent), rangeFinder(rangeFinder), hilbertTree(nullptr), myCurrentRound(0), finishedForNextRound(0)
 {
     MPI_Comm_rank(this->globalComm, &this->rank);
     MPI_Comm_size(this->globalComm, &this->size);
@@ -199,6 +199,29 @@ void RangeAgent::sendQuery(const QueryInfo &query)
     }
 }
 
+void RangeAgent::sendFinish(const int &dummy)
+{
+    for(int _rank = 0; _rank < this->size; _rank++)
+    {
+        this->requests.push_back(MPI_REQUEST_NULL);
+        MPI_Isend(&dummy, 1, MPI_BYTE, _rank, TAG_FINISHED, this->finishedComm, &this->requests[this->requests.size() - 1]);
+    }
+}
+
+int RangeAgent::checkForFinishMessages() const
+{
+    int arrived = 0;
+    MPI_Status status;
+    MPI_Iprobe(MPI_ANY_SOURCE, TAG_FINISHED, this->finishedComm, &arrived, &status);
+    if(arrived)
+    {
+        int dummy = 0;
+        MPI_Recv(&dummy, 1, MPI_BYTE, MPI_ANY_SOURCE, TAG_FINISHED, this->finishedComm, MPI_STATUS_IGNORE);
+        return 1;
+    }
+    return 0;
+}
+
 // todo: change the parallel model: each one sends a message when it finishes sending requests. Waits to `size` such messages, then answers all again
 QueryBatchInfo RangeAgent::runBatch(std::queue<RangeQueryData> &queries)
 {
@@ -206,7 +229,6 @@ QueryBatchInfo RangeAgent::runBatch(std::queue<RangeQueryData> &queries)
     this->shouldReceiveInTotal = 0; // reset the should-be-received counter
     this->buffers.clear();
     this->requests.clear();
-
     QueryBatchInfo queriesBatch;
     std::vector<QueryInfo> &queriesInfo = queriesBatch.queriesAnswers;
 
@@ -218,7 +240,6 @@ QueryBatchInfo RangeAgent::runBatch(std::queue<RangeQueryData> &queries)
         queriesInfo.push_back({queryData, i, std::vector<_3DPoint>()});
         QueryInfo &query = queriesInfo[queriesInfo.size() - 1];
         this->sendQuery(query);
-        ++i;
         if(i % QUERY_AUTOFLUSH_NUM == 0)
         {
             this->answerQueries(false);
@@ -227,11 +248,50 @@ QueryBatchInfo RangeAgent::runBatch(std::queue<RangeQueryData> &queries)
         {
             this->receiveQueries(queriesBatch, false);
         }
+        ++i;
     }
-    MPI_Barrier(this->globalComm); // ensure everyone stopped sending
-    this->answerQueries(true); // answer the arrived queries
-    this->receiveQueries(queriesBatch, true); // receive the remain results
+    int finishedReceived = 0;
+    bool sentFinished = false;
+
+    int dummy = 0;
+    i = 0;
+    while(finishedReceived < this->size) 
+    {
+        if(i % QUERY_AUTOFLUSH_NUM == 0)
+        {
+            this->answerQueries(false);
+        }
+        if(i % RECEIVE_AUTOFLUSH_NUM == 0)
+        {
+            this->receiveQueries(queriesBatch, false);
+        }
+        if(i % QUERY_AUTOFLUSH_NUM == 0)
+        {
+            if(this->shouldReceiveInTotal <= this->receivedUntilNow and !sentFinished)
+            {
+                sentFinished = true;
+                this->sendFinish(dummy);
+            }
+            finishedReceived += this->checkForFinishMessages();
+            // std::cout << "rank " << this->rank << "(" << this->receivedUntilNow << "/" << this->shouldReceiveInTotal << ") received until now " << finishedReceived << " out of " << this->size << std::endl;
+        }
+        i++;
+        /*
+        if(i % QUERY_AUTOFLUSH_NUM == 0)
+        {
+            this->answerQueries(false);
+        }
+        if(i % RECEIVE_AUTOFLUSH_NUM == 0)
+        {
+            this->receiveQueries(queriesBatch, false);
+        }
+        */
+    }
+    // MPI_Barrier(this->globalComm); // ensure everyone stopped sending
+    // this->answerQueries(true); // answer the arrived queries
+    // this->receiveQueries(queriesBatch, true); // receive the remain results
     // MPI_Barrier(this->globalComm);
+    
     if(this->requests.size() > 0)
     {
         MPI_Waitall(this->requests.size(), &(*(this->requests.begin())), MPI_STATUSES_IGNORE); // make sure any query was indeed received

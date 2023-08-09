@@ -19,20 +19,19 @@ namespace
     }
 }
 
-HilbertAgent::HilbertAgent(const Vector3D &origin, const Vector3D &corner, int order): ll(origin), ur(corner), order(order), dx(corner - origin)
+HilbertAgent::HilbertAgent(const Vector3D &origin, const Vector3D &corner): ll(origin), ur(corner), dx(corner - origin)
 {
     MPI_Comm_rank(MPI_COMM_WORLD, &this->rank);
     MPI_Comm_size(MPI_COMM_WORLD, &this->size);
     this->range.resize(this->size);
+}
+
+void HilbertAgent::setOrder(int order)
+{
+    this->order = order;
     this->hilbert_cells = pow(pow(2, order), 3);
     this->pointsPerRank = hilbert_cells / this->size;
     this->sidesLengths = this->dx / pow(2, this->order);
-    /*
-    this->myHilbertMin = this->rank * this->pointsPerRank;
-    this->myHilbertMax = (this->rank == this->size - 1)? this->hilbert_cells - 1 : (this->rank + 1) * this->pointsPerRank;
-    */
-
-    // this->calculateBoundingBox();
 }
 
 hilbert_index_t HilbertAgent::xyz2d(const Vector3D &point) const
