@@ -320,6 +320,7 @@ std::vector<T> BalanceJob<T>::getBorders()
     while(bounds.size() != this->size)
     {
         this->getNewBounds(bounds);
+        usleep(10);
     }
     return bounds;
 }
