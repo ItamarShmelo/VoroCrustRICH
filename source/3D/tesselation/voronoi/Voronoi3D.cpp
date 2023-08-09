@@ -13,15 +13,13 @@
 #include <iostream>
 #include <boost/container/flat_map.hpp>
 #include <boost/container/flat_set.hpp>
-#include "3D/hilbert/HilbertOrder3D.hpp"
-#include "3D/range/RangeAgent.h"
+#include "3D/GeometryCommon/Intersections.hpp"
 #include "3D/range/finders/BruteForce.hpp"
 #include "3D/range/finders/RangeTree.hpp"
 #include "3D/range/finders/OctTree.hpp"
 #include "3D/range/finders/SmartBruteForce.hpp"
 #include "3D/range/finders/HashBruteForce.hpp"
 #include "3D/range/finders/GroupRangeTree.hpp"
-#include "3D/GeometryCommon/Intersections.hpp"
 #include "misc/int2str.hpp"
 #include <boost/multiprecision/cpp_dec_float.hpp>
 #include <boost/container/static_vector.hpp>
@@ -754,7 +752,7 @@ Voronoi3D::Voronoi3D() : ll_(Vector3D()), ur_(Vector3D()), Norg_(0), bigtet_(0),
                          CM_(vector<Vector3D>()), Face_CM_(vector<Vector3D>()),
                          volume_(vector<double>()), area_(vector<double>()), duplicated_points_(vector<vector<std::size_t>>()),
                          sentprocs_(vector<int>()), duplicatedprocs_(vector<int>()), sentpoints_(vector<vector<std::size_t>>()), Nghost_(vector<vector<std::size_t>>()),
-                         self_index_(vector<std::size_t>()), temp_points_(std::array<Vector3D, 4>()), temp_points2_(std::array<Vector3D, 5>())
+                         self_index_(vector<std::size_t>()), temp_points_(std::array<Vector3D, 4>()), temp_points2_(std::array<Vector3D, 5>()), hilbertAgent(HilbertAgent(this->ll_, this->ur_, DEFAULT_HILBERT_ACCURACY))
 {
 }
 
@@ -766,7 +764,7 @@ Voronoi3D::Voronoi3D(std::vector<Face> const& box_faces) : Norg_(0), bigtet_(0),
                                                                CM_(vector<Vector3D>()), Face_CM_(vector<Vector3D>()),
                                                                volume_(vector<double>()), area_(vector<double>()), duplicated_points_(vector<vector<std::size_t>>()),
                                                                sentprocs_(vector<int>()), duplicatedprocs_(vector<int>()), sentpoints_(vector<vector<std::size_t>>()), Nghost_(vector<vector<std::size_t>>()),
-                                                               self_index_(vector<std::size_t>()), temp_points_(std::array<Vector3D, 4>()), temp_points2_(std::array<Vector3D, 5>()), box_faces_(box_faces) 
+                                                               self_index_(vector<std::size_t>()), temp_points_(std::array<Vector3D, 4>()), temp_points2_(std::array<Vector3D, 5>()), box_faces_(box_faces), hilbertAgent(HilbertAgent(this->ll_, this->ur_, DEFAULT_HILBERT_ACCURACY))
 {
   size_t const Nfaces = box_faces.size();
   if(Nfaces < 4)
@@ -796,7 +794,7 @@ Voronoi3D::Voronoi3D(Vector3D const &ll, Vector3D const &ur) : ll_(ll), ur_(ur),
                                                                CM_(vector<Vector3D>()), Face_CM_(vector<Vector3D>()),
                                                                volume_(vector<double>()), area_(vector<double>()), duplicated_points_(vector<vector<std::size_t>>()),
                                                                sentprocs_(vector<int>()), duplicatedprocs_(vector<int>()), sentpoints_(vector<vector<std::size_t>>()), Nghost_(vector<vector<std::size_t>>()),
-                                                               self_index_(vector<std::size_t>()), temp_points_(std::array<Vector3D, 4>()), temp_points2_(std::array<Vector3D, 5>()), box_faces_(std::vector<Face> ()) {}
+                                                               self_index_(vector<std::size_t>()), temp_points_(std::array<Vector3D, 4>()), temp_points2_(std::array<Vector3D, 5>()), box_faces_(std::vector<Face> ()), hilbertAgent(HilbertAgent(this->ll_, this->ur_, DEFAULT_HILBERT_ACCURACY)){}
 
 void Voronoi3D::CalcRigidCM(std::size_t face_index)
 {
@@ -1049,6 +1047,7 @@ void Voronoi3D::BuildInitialize(size_t num_points)
   tetra_centers_.clear();
    if(num_points > 0) tetra_centers_.reserve(num_points * 11);
   // Voronoi Data
+  del_.Clean();
   FacesInCell_.clear();
   PointsInFace_.clear();
   FaceNeighbors_.clear();
@@ -1059,6 +1058,9 @@ void Voronoi3D::BuildInitialize(size_t num_points)
   Norg_ = num_points;
   duplicatedprocs_.clear();
   duplicated_points_.clear();
+  self_index_.clear();
+  sentprocs_.clear();
+  sentpoints_.clear();
   Nghost_.clear();
 }
 
@@ -1100,13 +1102,36 @@ void Voronoi3D::initialBoxBuild(std::vector<Face> &box, std::vector<Vector3D> &n
   }
 }
 
+bool Voronoi3D::checkForRebalance()
+{
+  static int round = 0;
+  return (round++ == 0);
+}
+
+/*
+template<typename T>
+void reportDuplications(const std::vector<T> &vector)
+{
+  for(size_t i = 0; i < vector.size(); i++)
+  {
+    for(size_t j = 0; j < vector.size(); j++)
+    {
+      if(i == j) continue;
+      if(vector[i] == vector[j])
+      {
+        std::cout << "duplication found in indices " << i << " and " << j << ": " << vector[i] << std::endl;
+      }
+    }
+  }
+}
+*/
+
 /**
  * \author Maor Mizrachi
  * \brief The algorithm follows arepro paper (https://www.mpa-garching.mpg.de/~volker/arepo/arepo_paper.pdf), section 2.4.
 */
-void Voronoi3D::Build(const std::vector<Vector3D> &points, int hilbert_order)
+void Voronoi3D::BuildHilbert(const std::vector<Vector3D> &points)
 {
-
   int rank, size;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
@@ -1115,10 +1140,31 @@ void Voronoi3D::Build(const std::vector<Vector3D> &points, int hilbert_order)
   std::vector<Vector3D> normals;
   this->initialBoxBuild(box, normals);
 
+  if(this->radiuses.empty())
+  {
+    // todo: right place?
+    this->radiuses.resize(points.size());
+    double volume = (this->ur_[0] - this->ll_[0]) * (this->ur_[1] - this->ll_[1]) * (this->ur_[2] - this->ll_[2]);
+    size_t mySize = points.size();
+    size_t N;
+    MPI_Allreduce(&mySize, &N, 1, MPI_UNSIGNED_LONG, MPI_SUM, MPI_COMM_WORLD);
+    double initial_radius = 4 * std::pow(volume / N, 0.333333f);
+    #ifdef VORONOI_DEBUG
+    std::cout << "initial radius is " << initial_radius << std::endl;
+    #endif // VORONOI_DEBUG
+    std::fill(this->radiuses.begin(), this->radiuses.end(), initial_radius);
+  }
+
   // first, makes sure the current points I have are the correct points
-  HilbertAgent hilbertAgent(this->ll_, this->ur_, hilbert_order);
-  // todo save the indices of points I sent to which one, and those I left for myself
-  std::vector<Vector3D> new_points = hilbertAgent.determineBordersAndExchange(points);
+  std::vector<Vector3D> new_points;
+  if(this->checkForRebalance())
+  {
+    // todo save the indices of points I sent to which one, and those I left for myself
+    // new_points = this->hilbertAgent.determineBordersAndExchange(points, this->self_index_, this->sentprocs_, this->sentpoints_);
+    this->hilbertAgent.determineBorders(points);
+  }
+  new_points = this->hilbertAgent.pointsExchange(points, this->self_index_, this->sentprocs_, this->sentpoints_, this->radiuses);
+
   OctTree<Vector3D> pointsTree(this->ll_, this->ur_);
   for(const Vector3D &point : new_points)
   {
@@ -1130,8 +1176,6 @@ void Voronoi3D::Build(const std::vector<Vector3D> &points, int hilbert_order)
   std::pair<Vector3D, Vector3D> bounding_box = hilbertAgent.getBoundingBox();
   */
   this->BuildInitialize(new_points.size());
-
-  std::cout << "rank " << rank << ", new_points.size() is " << new_points.size() << std::endl;
 
   std::vector<size_t> order;
 
@@ -1157,6 +1201,7 @@ void Voronoi3D::Build(const std::vector<Vector3D> &points, int hilbert_order)
     #endif // VORONOI_DEBUG
 
     // performs internal tesselation:
+    // reportDuplications(new_points);
     order = HilbertOrder3D(new_points);
 
     // initial build for the points
@@ -1181,18 +1226,9 @@ void Voronoi3D::Build(const std::vector<Vector3D> &points, int hilbert_order)
   std::cout << "rank is " << rank << ", bigtet is " << bigtet_ << ", size of tetras is " << del_.tetras_.size() << " and size of pointTetras is " << PointTetras_.size() << std::endl;
   #endif // VORONOI_DEBUG
 
-  if(this->radiuses.empty())
+  if(this->radiuses.size() != new_points.size())
   {
-    // todo: right place?
-    this->radiuses.resize(this->del_.tetras_.size());
-    double volume = (this->ur_[0] - this->ll_[0]) * (this->ur_[1] - this->ll_[1]) * (this->ur_[2] - this->ll_[2]);
-    size_t N;
-    MPI_Allreduce(&this->Norg_, &N, 1, MPI_UNSIGNED_LONG, MPI_SUM, MPI_COMM_WORLD);
-    double initial_radius = 3 * std::pow(volume / N, 0.333333f);
-    #ifdef VORONOI_DEBUG
-    std::cout << "initial radius is " << initial_radius << std::endl;
-    #endif // VORONOI_DEBUG
-    std::fill(this->radiuses.begin(), this->radiuses.end(), initial_radius);
+    throw UniversalError("Rank " + std::to_string(rank) + ", wrong size of radiuses (in voronoi build) (given this->radiuses.size()=" + std::to_string(this->radiuses.size()) + " while should be new_points.size()=" + std::to_string(new_points.size()) + ")");
   }
 
   bool sent_finished = false; // if I sent a finished message
@@ -1214,7 +1250,7 @@ void Voronoi3D::Build(const std::vector<Vector3D> &points, int hilbert_order)
   //HashBruteForceFinder rangeFinder(&hilbertAgent, this->del_.points_.begin(), this->del_.points_.begin() + this->Norg_);
   //OctTreeFinder rangeFinder(this->del_.points_.begin(), this->del_.points_.begin() + this->Norg_, this->ll_, this->ur_);
   //GroupRangeTreeFinder<4> rangeFinder(this->del_.points_.begin(), this->del_.points_.begin() + this->Norg_);
-  RangeAgent rangeAgent(hilbertAgent, &rangeFinder);
+  RangeAgent rangeAgent(this->hilbertAgent, &rangeFinder);
   rangeAgent.buildHilbertTree(&pointsTree);
 
   #ifdef VORONOI_DEBUG
@@ -1237,7 +1273,8 @@ void Voronoi3D::Build(const std::vector<Vector3D> &points, int hilbert_order)
 
     for(std::size_t i = 0; i < current.size(); i++)
     {
-      double radius = std::min(this->radiuses[current[i]] * 1.1, 2 * GetMaxRadius(current[i])); // todo define 1.1 as a constant
+      /*
+      double radius = std::min(this->radiuses[current[i]] * 1.618, 2 * GetMaxRadius(current[i])); // todo define 1.618 as a constant
       this->checkToMirror(this->del_.points_[current[i]], radius, box, normals, mirroedPoints);
       this->radiuses[current[i]] = radius;
       Vector3D &point = this->del_.points_[current[i]];
@@ -1245,7 +1282,11 @@ void Voronoi3D::Build(const std::vector<Vector3D> &points, int hilbert_order)
       #ifdef VORONOI_DEBUG
       std::cout << "a query: " << this->del_.points_[current[i]] << " and r=" << radius << std::endl;
       #endif // VORONOI_DEBUG
-      queries.push({{point.x, point.y, point.z}, radius});
+      // std::cout << "adding query: " << point << " and r=" << radius << std::endl;
+      queries.push({{point.x, point.y, point.z}, radius});*/
+      this->checkToMirror(this->del_.points_[current[i]], this->radiuses[current[i]], box, normals, mirroedPoints);
+      Vector3D &point = this->del_.points_[current[i]];
+      queries.push({{point.x, point.y, point.z}, this->radiuses[current[i]]});
     }
   
     #ifdef VORONOI_DEBUG
@@ -1326,6 +1367,11 @@ void Voronoi3D::Build(const std::vector<Vector3D> &points, int hilbert_order)
 
         // h_i > s_i, remove point from current
         current.erase(current.cbegin() + i);
+      }
+      else
+      {
+        double radius = std::min(this->radiuses[current[i]] * 1.618, s); // todo define 1.618 as a constant
+        this->radiuses[current[i]] = radius;
       }
     }
 
@@ -2587,7 +2633,7 @@ Voronoi3D::Voronoi3D(Voronoi3D const &other) : ll_(other.ll_), ur_(other.ur_), N
                                                tetra_centers_(other.tetra_centers_), FacesInCell_(other.FacesInCell_), PointsInFace_(other.PointsInFace_),
                                                FaceNeighbors_(other.FaceNeighbors_), CM_(other.CM_), Face_CM_(other.Face_CM_), volume_(other.volume_), area_(other.area_),
                                                duplicated_points_(other.duplicated_points_), sentprocs_(other.sentprocs_), duplicatedprocs_(other.duplicatedprocs_), sentpoints_(other.sentpoints_),
-                                               Nghost_(other.Nghost_), self_index_(other.self_index_), temp_points_(std::array<Vector3D, 4>()), temp_points2_(std::array<Vector3D, 5>()), box_faces_(other.box_faces_) {}
+                                               Nghost_(other.Nghost_), self_index_(other.self_index_), temp_points_(std::array<Vector3D, 4>()), temp_points2_(std::array<Vector3D, 5>()), box_faces_(other.box_faces_), hilbertAgent(other.hilbertAgent) {}
 
 bool Voronoi3D::NearBoundary(std::size_t index) const
 {

@@ -8,7 +8,10 @@
 #include <queue>
 #include <vector>
 #include <mpi.h>
+
+// set data structure:
 #include <boost/container/flat_set.hpp>
+#include <unordered_set>
 
 #include "ds/DistributedOctTree/DistributedOctTree.hpp"
 #include "../hilbert/HilbertAgent.h"
@@ -16,11 +19,13 @@
 
 #define TAG_REQUEST 200
 #define TAG_RESPONSE 201
+#define TAG_FINISHED 202
 
-#define QUERY_AUTOFLUSH_NUM 100
+#define QUERY_AUTOFLUSH_NUM 5
 #define RECEIVE_AUTOFLUSH_NUM 5
 #define MAX_RECEIVE_IN_CYCLE 1000
 #define MAX_ANSWER_IN_CYCLE 1000
+#define SLEEP_PERIOD 50
 
 typedef struct RangeQueryData
 {
@@ -52,6 +57,9 @@ typedef struct QueryBatchInfo
 
 class RangeAgent
 {
+    template<typename T>
+    using _set = std::unordered_set<T>;
+
 public:
     RangeAgent(MPI_Comm comm, const HilbertAgent &hilbertAgent, RangeFinder *rangeFinder);
     inline RangeAgent(const HilbertAgent &hilbertAgent, RangeFinder *rangeFinder): RangeAgent(MPI_COMM_WORLD, hilbertAgent, rangeFinder){};
@@ -69,7 +77,7 @@ public:
     inline void buildHilbertTree(const OctTree<Vector3D> *tree){this->hilbertTree = new DistributedOctTree(tree);};
 
 private:
-    MPI_Comm comm;
+    MPI_Comm globalComm, requestsComm, answersComm, finishedComm;
     int rank, size;
     int order;
     std::vector<MPI_Request> requests;
@@ -81,12 +89,12 @@ private:
     DistributedOctTree<Vector3D> *hilbertTree;
 
     std::vector<int> sentProcessorsRanks;
-    std::vector<boost::container::flat_set<size_t>> sentPoints; 
+    std::vector<_set<size_t>> sentPoints; 
     std::vector<int> recvProcessorsRank;
     std::vector<std::vector<size_t>> recvPoints; 
     
     std::vector<Vector3D> getRangeResult(const SubQueryData &query, int node);
-    boost::container::flat_set<int> getIntersectingRanks(const Vector3D &center, coord_t radius) const;
+    _set<int> getIntersectingRanks(const Vector3D &center, coord_t radius) const;
 };
 
 #endif // _RICH_RANGE_AGENT_H_

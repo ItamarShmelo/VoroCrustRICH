@@ -36,19 +36,26 @@ struct _Hilbert3DPoint
 
 class HilbertAgent
 {
+    template<typename T>
+    using _set = boost::container::flat_set<T>;
+
 public:
     HilbertAgent(const Vector3D &origin, const Vector3D &corner, int order);
-    boost::container::flat_set<size_t> getIntersectingCircle(const Vector3D &center, coord_t r) const;
+    _set<size_t> getIntersectingCircle(const Vector3D &center, coord_t r) const;
     inline int getOrder() const{return this->order;};
     std::pair<Vector3D, Vector3D> getBoundingBox() const{return std::make_pair(this->myll, this->myur);};
     hilbert_index_t xyz2d(const Vector3D &point) const;
     Vector3D d2xyz(hilbert_index_t d) const;
-    inline int getCellOwner(hilbert_index_t d) const{return (std::upper_bound(this->range.begin(), this->range.end(), d) - this->range.begin());};
+    inline int getCellOwner(hilbert_index_t d) const
+    {
+        return std::min<size_t>(std::upper_bound(this->range.begin(), this->range.end(), d) - this->range.begin(), this->size - 1);
+    };
     inline hilbert_index_t getMyHilbertMin() const{return this->myHilbertMin;};
     inline hilbert_index_t getMyHilbertMax() const{return this->myHilbertMax;};
-    std::vector<Vector3D> determineBordersAndExchange(const std::vector<Vector3D> &points);
-    std::vector<Vector3D> pointsExchange(const std::vector<Vector3D> &points, std::vector<size_t> &self_index_, std::vector<int> &sentprocs_, std::vector<std::vector<size_t>> &sentpoints_) const;
-    std::vector<Vector3D> pointsExchange(const std::vector<Vector3D> &points) const{std::vector<size_t> self_index_; std::vector<int> sentprocs_; std::vector<std::vector<size_t>> sentpoints_; return this->pointsExchange(points, self_index_, sentprocs_, sentpoints_);};
+    void determineBorders(const std::vector<Vector3D> &points);
+    std::vector<Vector3D> determineBordersAndExchange(const std::vector<Vector3D> &points, std::vector<size_t> &self_index_, std::vector<int> &sentprocs_, std::vector<std::vector<size_t>> &sentpoints_);
+    std::vector<Vector3D> pointsExchange(const std::vector<Vector3D> &points, std::vector<size_t> &self_index_, std::vector<int> &sentprocs_, std::vector<std::vector<size_t>> &sentpoints_, std::vector<double> &radiuses) const;
+    // inline std::vector<Vector3D> pointsExchange(const std::vector<Vector3D> &points) const{std::vector<size_t> self_index_; std::vector<int> sentprocs_; std::vector<std::vector<size_t>> sentpoints_; return this->pointsExchange(points, self_index_, sentprocs_, sentpoints_);};
     void calculateBoundingBox();
     void buildHilbertOctTree();
 
@@ -62,7 +69,7 @@ private:
     hilbert_index_t myHilbertMin, myHilbertMax;
     std::vector<hilbert_index_t> range;
     
-    void pointsReceive(std::vector<Vector3D> &points, bool blocking) const;
+    void pointsReceive(std::vector<Vector3D> &points, std::vector<double> &radiuses, bool blocking) const;
     inline int getOwner(const Vector3D &point) const{return this->getCellOwner(this->xyz2d(point));};
 };
 

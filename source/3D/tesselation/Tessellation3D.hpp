@@ -54,7 +54,8 @@ public:
 // #endif // RICH_MPI
 
   #ifdef RICH_MPI
-  virtual void Build(vector<Vector3D> const& points, int hilbert_order) = 0;
+  virtual void BuildHilbert(vector<Vector3D> const& points) = 0;
+  virtual void Build(vector<Vector3D> const& points, int order) = 0;
   #endif // RICH_MPI
 
   /*! \brief Get Total number of mesh generating points

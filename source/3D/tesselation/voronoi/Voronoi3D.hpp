@@ -16,6 +16,8 @@
 #include <stack>
 #include <set>
 #include <array>
+#include "3D/hilbert/HilbertOrder3D.hpp"
+#include "3D/range/RangeAgent.h"
 #include "../Tessellation3D.hpp"
 #include <boost/container/flat_set.hpp>
 #include <boost/container/small_vector.hpp>
@@ -26,6 +28,8 @@
 #endif
 
 #define RICH_TESELLATION_FINISHED_TAG 505
+
+#define DEFAULT_HILBERT_ACCURACY 18
 
 typedef std::array<std::size_t, 4> b_array_4;
 typedef std::array<std::size_t, 3> b_array_3;
@@ -101,6 +105,7 @@ private:
   // TODO: ADDED BY MAOR:
   void BuildInitialize(size_t num_points);
   double GetMaxRadius(std::size_t index);
+  bool checkForRebalance();
 
   Delaunay3D del_;
   //vector<vector<std::size_t> > PointTetras_; // The tetras containing each point
@@ -126,7 +131,8 @@ private:
   std::array<Vector3D, 5> temp_points2_;
   std::vector<Face> box_faces_;
   std::vector<double> radiuses;
-  
+  HilbertAgent hilbertAgent;
+
 public:
 #ifdef RICH_MPI
   /*! \brief Update meta tessellation
@@ -177,7 +183,8 @@ public:
   void initialBoxBuild(std::vector<Face> &box, std::vector<Vector3D> &normals);
   void checkToMirror(const Vector3D &point, double radius, std::vector<Face> &box, std::vector<Vector3D> &normals, std::vector<Vector3D> &points);
 
-  void Build(vector<Vector3D> const& points, int hilbert_order) override;
+  void BuildHilbert(vector<Vector3D> const& points) override;
+  inline void Build(vector<Vector3D> const& points, int order) override{this->BuildHilbert(points);};
 
   // void Build(vector<Vector3D> const& points, Tessellation3D const& tproc) override;
 
