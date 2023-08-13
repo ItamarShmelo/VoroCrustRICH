@@ -74,7 +74,6 @@ DistributedOctTree<T>::DistributedOctTree(const MPI_Comm &comm, const OctTree<T>
 {
     MPI_Comm_rank(this->comm, &this->rank);
     MPI_Comm_size(this->comm, &this->size);
-    std::cout << "rank " << this->rank << " reached here (with " << tree->getSize() << " points)" << std::endl;
     this->buildTree(tree);
 }
 

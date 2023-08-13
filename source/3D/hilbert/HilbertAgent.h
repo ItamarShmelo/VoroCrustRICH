@@ -6,7 +6,6 @@
 #ifndef _RICH_3DINTERSECT_H
 #define _RICH_3DINTERSECT_H
 
-#include "utils/sort/sort.hpp"
 #include "utils/balance/balance.hpp"
 #include "hilbertTypes.h"
 #include "HilbertOrder3D.hpp"
