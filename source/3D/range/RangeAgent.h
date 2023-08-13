@@ -21,8 +21,8 @@
 #define TAG_RESPONSE 201
 #define TAG_FINISHED 202
 
-#define QUERY_AUTOFLUSH_NUM 5
-#define RECEIVE_AUTOFLUSH_NUM 10
+#define QUERY_AUTOFLUSH_NUM 20
+#define RECEIVE_AUTOFLUSH_NUM 5
 #define FINISH_AUTOFLUSH_NUM 20
 #define MAX_RECEIVE_IN_CYCLE 1000
 #define MAX_ANSWER_IN_CYCLE 1000
@@ -67,7 +67,7 @@ public:
     inline RangeAgent(const Vector3D &origin, const Vector3D &corner, int order, RangeFinder *rangeFinder): RangeAgent(MPI_COMM_WORLD, origin, corner, order, rangeFinder){};
     inline ~RangeAgent(){delete this->hilbertTree;};
 
-    void receiveQueries(QueryBatchInfo &batch, bool blocking);
+    void receiveQueries(QueryBatchInfo &batch);
     void answerQueries(bool finishAnswering);
     void sendQuery(const QueryInfo &query);
     QueryBatchInfo runBatch(std::queue<RangeQueryData> &queries);

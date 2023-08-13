@@ -1,24 +1,5 @@
 #include "HilbertAgent.h"
 
-namespace
-{
-    /**
-     * rounding up to the nearest hilbert corner in a specific axis.
-    */
-    inline coord_t getClosestCornerAbove(coord_t val, coord_t minCord, coord_t sideLength)
-    {
-        return ceil((val - minCord) / sideLength) * sideLength + minCord;
-    }
-
-    /**
-     * rounding down to the nearest hilbert corner in a specific axis.
-    */
-    inline coord_t getClosestCornerBelow(coord_t val, coord_t minCord, coord_t sideLength)
-    {
-        return floor((val - minCord) / sideLength) * sideLength + minCord;
-    }
-}
-
 HilbertAgent::HilbertAgent(const Vector3D &origin, const Vector3D &corner): ll(origin), ur(corner), dx(corner - origin)
 {
     MPI_Comm_rank(MPI_COMM_WORLD, &this->rank);
@@ -36,13 +17,15 @@ void HilbertAgent::setOrder(int order)
 
 hilbert_index_t HilbertAgent::xyz2d(const Vector3D &point) const
 {
-    // todo: re-implement
     return curve.Hilbert3D_xyz2d(Vector3D((point.x - this->ll.x) / this->dx.x, 
                                             (point.y - this->ll.y) / this->dx.y,
                                             (point.z - this->ll.z) / this->dx.z),
                                 this->order);
 }
 
+/**
+ * Currently doesn't work
+*/
 Vector3D HilbertAgent::d2xyz(hilbert_index_t d) const
 {
     Vector3D scaledPoint = curve.Hilbert3D_d2xyz(d, this->order);
@@ -110,6 +93,7 @@ void HilbertAgent::pointsReceive(std::vector<Vector3D> &points, std::vector<doub
             finished_ranks++;
         } else
         {
+            // treatment of invalid tag
             int count;
             MPI_Get_count(&status, MPI_BYTE, &count);
             std::vector<char> recv_buff(count);
@@ -142,6 +126,9 @@ void HilbertAgent::pointsReceive(std::vector<Vector3D> &points, std::vector<doub
     }
 }
 
+/**
+ * gets the point, and re-sorts the points (a global sorting, involving all the processes), according to the borders array. 
+*/
 std::vector<Vector3D> HilbertAgent::pointsExchange(const std::vector<Vector3D> &points, std::vector<size_t> &self_index_, std::vector<int> &sentprocs_, std::vector<std::vector<size_t>> &sentpoints_, std::vector<double> &radiuses) const
 {
     std::vector<Vector3D> new_points;
@@ -193,6 +180,32 @@ void HilbertAgent::determineBorders(const std::vector<Vector3D> &points)
     this->range = getBorders(indices);
 }
 
+
+/**
+ * Helper functions for HilbertAgent::getIntersectingCircle. 
+*/
+namespace
+{
+    /**
+     * rounding up to the nearest hilbert corner in a specific axis.
+    */
+    inline coord_t getClosestCornerAbove(coord_t val, coord_t minCord, coord_t sideLength)
+    {
+        return ceil((val - minCord) / sideLength) * sideLength + minCord;
+    }
+
+    /**
+     * rounding down to the nearest hilbert corner in a specific axis.
+    */
+    inline coord_t getClosestCornerBelow(coord_t val, coord_t minCord, coord_t sideLength)
+    {
+        return floor((val - minCord) / sideLength) * sideLength + minCord;
+    }
+}
+
+/**
+ * The old method for calculating intersecting circle. Inefficient for too-large hilbert accuracies.
+*/
 typename HilbertAgent::_set<size_t> HilbertAgent::getIntersectingCircle(const Vector3D &center, coord_t r) const
 {
     _set<size_t> hilbertCells;

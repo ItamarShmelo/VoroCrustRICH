@@ -46,16 +46,17 @@ public:
     std::pair<Vector3D, Vector3D> getBoundingBox() const{return std::make_pair(this->myll, this->myur);};
     hilbert_index_t xyz2d(const Vector3D &point) const;
     Vector3D d2xyz(hilbert_index_t d) const;
+
     inline int getCellOwner(hilbert_index_t d) const
     {
         return std::min<size_t>(std::upper_bound(this->range.begin(), this->range.end(), d) - this->range.begin(), this->size - 1);
     };
+
     inline hilbert_index_t getMyHilbertMin() const{return this->myHilbertMin;};
     inline hilbert_index_t getMyHilbertMax() const{return this->myHilbertMax;};
     void determineBorders(const std::vector<Vector3D> &points);
     std::vector<Vector3D> determineBordersAndExchange(const std::vector<Vector3D> &points, std::vector<size_t> &self_index_, std::vector<int> &sentprocs_, std::vector<std::vector<size_t>> &sentpoints_);
     std::vector<Vector3D> pointsExchange(const std::vector<Vector3D> &points, std::vector<size_t> &self_index_, std::vector<int> &sentprocs_, std::vector<std::vector<size_t>> &sentpoints_, std::vector<double> &radiuses) const;
-    // inline std::vector<Vector3D> pointsExchange(const std::vector<Vector3D> &points) const{std::vector<size_t> self_index_; std::vector<int> sentprocs_; std::vector<std::vector<size_t>> sentpoints_; return this->pointsExchange(points, self_index_, sentprocs_, sentpoints_);};
     void calculateBoundingBox();
     void buildHilbertOctTree();
     void setOrder(int order);
