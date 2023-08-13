@@ -1166,6 +1166,7 @@ void Voronoi3D::BuildHilbert(const std::vector<Vector3D> &points)
     this->hilbertAgent.determineBorders(points);
   }
   new_points = this->hilbertAgent.pointsExchange(points, this->self_index_, this->sentprocs_, this->sentpoints_, this->radiuses);
+  std::cout << "rank " << rank << ", points size is " << new_points.size() << std::endl;
   // hilbertAgent.calculateBoundingBox();
   //std::vector<Vector3D> new_points = hilbertAgent.pointsExchange(points, this->self_index_, this->sentprocs_, this->sentpoints_);
   /*

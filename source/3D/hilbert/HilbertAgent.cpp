@@ -190,24 +190,7 @@ void HilbertAgent::determineBorders(const std::vector<Vector3D> &points)
     {
         indices.push_back(this->xyz2d(point));
     }
-    BalanceJob<size_t> balance(indices);
-    this->range = balance.getBorders();
-    /*
-    
-    if(!indices.empty())
-    {
-        this->myHilbertMin = indices[0];
-        this->myHilbertMax = indices[indices.size() - 1];
-    }
-    else
-    {
-        this->myHilbertMin = this->myHilbertMax = 0;
-    }
-    if(this->myHilbertMax == static_cast<size_t>(this->hilbert_cells - 1))
-    {
-        this->myHilbertMax = this->hilbert_cells;
-    }
-    MPI_Allgather(&this->myHilbertMax, sizeof(hilbert_index_t), MPI_BYTE, &this->range[0], sizeof(hilbert_index_t), MPI_BYTE, MPI_COMM_WORLD);*/
+    this->range = getBorders(indices);
 }
 
 typename HilbertAgent::_set<size_t> HilbertAgent::getIntersectingCircle(const Vector3D &center, coord_t r) const

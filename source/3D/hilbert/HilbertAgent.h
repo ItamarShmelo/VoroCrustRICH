@@ -6,15 +6,15 @@
 #ifndef _RICH_3DINTERSECT_H
 #define _RICH_3DINTERSECT_H
 
-#include "utils/balance/balance.hpp"
-#include "hilbertTypes.h"
-#include "HilbertOrder3D.hpp"
 #include <iostream>
 #include <vector>
 #include <map>
 #include <set>
 #include <boost/container/flat_set.hpp>
 #include <mpi.h>
+#include "utils/balance/balance.hpp"
+#include "hilbertTypes.h"
+#include "HilbertOrder3D.hpp"
 
 #define POINT_SEND_TAG 115
 #define FINISH_TAG 116
