@@ -22,10 +22,10 @@
 #define TAG_FINISHED 202
 
 #define QUERY_AUTOFLUSH_NUM 5
-#define RECEIVE_AUTOFLUSH_NUM 5
+#define RECEIVE_AUTOFLUSH_NUM 10
+#define FINISH_AUTOFLUSH_NUM 20
 #define MAX_RECEIVE_IN_CYCLE 1000
 #define MAX_ANSWER_IN_CYCLE 1000
-#define SLEEP_PERIOD 50
 
 typedef struct RangeQueryData
 {
@@ -58,7 +58,7 @@ typedef struct QueryBatchInfo
 class RangeAgent
 {
     template<typename T>
-    using _set = std::unordered_set<T>;
+    using _set = boost::container::flat_set<T>;
 
 public:
     RangeAgent(MPI_Comm comm, const HilbertAgent &hilbertAgent, RangeFinder *rangeFinder);
@@ -77,7 +77,7 @@ public:
     inline void buildHilbertTree(const OctTree<Vector3D> *tree){this->hilbertTree = new DistributedOctTree(tree);};
 
 private:
-    MPI_Comm globalComm, requestsComm, answersComm, finishedComm;
+    MPI_Comm comm;
     int rank, size;
     int order;
     std::vector<MPI_Request> requests;

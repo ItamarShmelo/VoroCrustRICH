@@ -28,13 +28,6 @@ private:
         int rank;
 
         _T_Wrapper(const T &value, int rank): value(value), rank(rank){};
-        /*
-        bool operator==(const _T_Wrapper &other) const{return this->value == other.value;};
-        bool operator<(const _T_Wrapper &other) const{return this->value < other.value;};
-        bool operator<=(const _T_Wrapper &other) const{return this->value <= other.value;};
-        bool operator>(const _T_Wrapper &other) const{return this->value > other.value;};
-        bool operator>=(const _T_Wrapper &other) const{return this->value >= other.value;};
-        */
     };
 
     template<typename _Compare>
@@ -42,7 +35,7 @@ private:
     {
         _Compare compare;
         inline _T_Wrapper_Comp(const Compare &compare): compare(compare){};
-        inline bool operator()(const _T_Wrapper &lhs, const _T_Wrapper &rhs) const{return !this->compare(lhs.value, rhs.value);};
+        inline bool operator()(const _T_Wrapper &lhs, const _T_Wrapper &rhs) const{return (lhs.value != rhs.value) and !this->compare(lhs.value, rhs.value);};
     };
 
     using Heap = boost::heap::priority_queue<_T_Wrapper, boost::heap::compare<_T_Wrapper_Comp<Compare>>>;

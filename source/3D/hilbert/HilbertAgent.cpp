@@ -110,8 +110,14 @@ void HilbertAgent::pointsReceive(std::vector<Vector3D> &points, std::vector<doub
             finished_ranks++;
         } else
         {
+            int count;
+            MPI_Get_count(&status, MPI_BYTE, &count);
+            std::vector<char> recv_buff(count);
+            MPI_Recv(&recv_buff[0], count, MPI_BYTE, status.MPI_SOURCE, status.MPI_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            /*
             std::cerr << "Invalid tag arrived (tag " << status.MPI_TAG << ", source " << status.MPI_SOURCE << ", dest " << this->rank << ")" << std::endl;
             MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+            */
         }
         
         MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &received, &status);

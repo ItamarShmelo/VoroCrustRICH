@@ -42,7 +42,7 @@ public:
             }
         }
 
-        OctTreeNode(OctTreeNode *parent, int childNumber);
+        OctTreeNode(OctTreeNode *parent, int childNumber, const OctTree<T> *tree = nullptr);
         inline OctTreeNode(OctTreeNode &&other): isValue(other.isValue), value(other.value), boundingBox(other.boundingBox)
         {
             for(int i = 0; i < CHILDREN; i++)
@@ -66,8 +66,8 @@ public:
         int depth;
     
     private:
-        void fixHeightsRecursively();
-        void splitNode();
+        void fixHeightsRecursively(const OctTree<T> *tree = nullptr);
+        void splitNode(const OctTree<T> *tree = nullptr);
         const OctTreeNode *getChildContaining(const T &point) const{return this->children[this->getChildNumberContaining(point)];};
 
     };
@@ -94,7 +94,6 @@ private:
     };
 
     void rangeHelper(const OctTreeNode *node, const _Sphere<T> &sphere, std::vector<T> &result) const;
-
     OctTreeNode *root;
     size_t treeSize;
 
@@ -151,7 +150,7 @@ void OctTree<T>::deleteSubtree(OctTreeNode *node)
 }
 
 template<typename T>
-OctTree<T>::OctTreeNode::OctTreeNode(OctTreeNode *parent, int childNumber): isValue(false), parent(parent), depth(0)
+OctTree<T>::OctTreeNode::OctTreeNode(OctTreeNode *parent, int childNumber, const OctTree<T> *tree): isValue(false), parent(parent), depth(0)
 {
     assert(parent != nullptr);
 
@@ -175,7 +174,7 @@ OctTree<T>::OctTreeNode::OctTreeNode(OctTreeNode *parent, int childNumber): isVa
     {
         this->children[i] = nullptr;
     }
-    this->fixHeightsRecursively();
+    this->fixHeightsRecursively(tree);
 }
 
 template<typename T>
@@ -183,6 +182,7 @@ typename OctTree<T>::OctTreeNode *OctTree<T>::OctTreeNode::createChild(int child
 {
     assert(this->children[childNumber] == nullptr);
     this->children[childNumber] = new OctTreeNode(this, childNumber);
+    this->children[childNumber]->parent = this;
     return this->children[childNumber];
 }
 
@@ -249,11 +249,19 @@ void OctTree<T>::setBounds(const T &ll, const T &ur)
 {
     assert(this->getRoot() == nullptr);
     this->setRoot(new OctTreeNode(ll, ur));
+    this->getRoot()->parent = nullptr;
 }
 
 template<typename T>
-void OctTree<T>::OctTreeNode::fixHeightsRecursively()
+void OctTree<T>::OctTreeNode::fixHeightsRecursively(const OctTree<T> *tree)
 {
+    static int depth = 0;
+
+    if(tree != nullptr and tree->getRoot() != nullptr and tree->getRoot()->parent != nullptr)
+    {
+        std::cout << "should not print this line. parent of root is " << tree->getRoot()->parent->boundingBox.ll << ", " << tree->getRoot()->parent->boundingBox.ur << std::endl;
+        exit(EXIT_FAILURE);
+    }
     if(this->parent == nullptr)
     {
         this->depth = 0;
@@ -271,13 +279,28 @@ void OctTree<T>::OctTreeNode::fixHeightsRecursively()
     {
         this->height = 0;
     }
-    this->parent->fixHeightsRecursively();
+    depth++;
+    if(depth == 50)
+    {
+        tree->print();
+        std::cout << "Node: " << this->boundingBox.ll << ", " << this->boundingBox.ur << std::endl;
+        std::cout << "is its parent: " << (this == this->parent) << ", parent's is grandparents: " << (this->parent->parent == this->parent) << std::endl;
+        exit(EXIT_FAILURE);
+    }
+    if(this->parent == this)
+    {
+        std::cout << "should not print this!" << std::endl;
+        exit(EXIT_FAILURE);
+    }
+    this->parent->fixHeightsRecursively(tree);
+    depth--;
+
     this->parent->height = std::max<int>(this->parent->height, this->height + 1);
     this->depth = this->parent->depth + 1;
 }
 
 template<typename T>
-void OctTree<T>::OctTreeNode::splitNode()
+void OctTree<T>::OctTreeNode::splitNode(const OctTree<T> *tree)
 {
     assert(this->parent != nullptr);
     assert(this->isValue);
@@ -290,8 +313,15 @@ void OctTree<T>::OctTreeNode::splitNode()
             break;
         }
     }
+
+    // this node is the `i`th child of its parent
     
-    // this node is the `i`th child of its parent, replace it with a new (non-value) node, which will be our parent
+    if(this->parent->parent == nullptr)
+    {
+        std::cout << "splitting node " << this->boundingBox.ll << ", " << this->boundingBox.ur << "(" << i << "th child of " << this->parent->boundingBox.ll << ", " << this->parent->boundingBox.ur << ")" << std::endl;
+    }
+
+    // replace it with a new (non-value) node, which will be our parent
     this->parent->children[i] = nullptr;
     this->parent->createChild(i);
     
@@ -300,8 +330,7 @@ void OctTree<T>::OctTreeNode::splitNode()
     
     int myIndex = this->parent->getChildNumberContaining(this->value);
     this->parent->children[myIndex] = this; 
-
-    this->fixHeightsRecursively();
+    this->fixHeightsRecursively(tree);
 }
 
 #ifdef DEBUG_MODE
@@ -388,7 +417,7 @@ typename OctTree<T>::OctTreeNode *OctTree<T>::tryInsert(const T &point)
             {
                 return current;
             }
-            current->splitNode();
+            current->splitNode(this);
             current = current->parent;
             int childIndex = current->getChildNumberContaining(point);
             if(current->children[childIndex] == nullptr)
@@ -404,7 +433,7 @@ typename OctTree<T>::OctTreeNode *OctTree<T>::tryInsert(const T &point)
         {
             current->children[childIndex] = new OctTreeNode(point);
             current->children[childIndex]->parent = current;
-            current->children[childIndex]->fixHeightsRecursively();
+            current->children[childIndex]->fixHeightsRecursively(this);
             return current->children[childIndex];
         }
         current = current->children[childIndex];

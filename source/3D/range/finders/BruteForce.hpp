@@ -17,14 +17,18 @@ public:
         const Vector3D *_points = this->points.data();
         for(size_t i = 0; i < this->pointsSize; i++)
         {
-            __builtin_prefetch(&_points[i]);
+            //  __builtin_prefetch(&_points[i]);
             const Vector3D &point = _points[i];
-            double distanceSquared = (point.x - center.x) * (point.x - center.x) + (point.y - center.y) * (point.y - center.y) + (point.z - center.z) * (point.z - center.z);
-            if(distanceSquared <= radius * radius)
+            double dx = point.x - center.x;
+            double dy = point.y - center.y;
+            double dz = point.z - center.z;
+            dx *= dx;
+            dy *= dy;
+            dz *= dz;
+            if((dx + dy + dz) <= (radius * radius))
             {
                 result.push_back(i);
             }
-
         }
         return result;
     }

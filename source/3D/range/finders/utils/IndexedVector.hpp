@@ -1,6 +1,7 @@
 #ifndef _INDEXED_VECTOR_HPP
 #define _INDEXED_VECTOR_HPP
 
+#include <iostream>
 #include "3D/hilbert/hilbertTypes.h"
 
 #define ILLEGAL_IDX -1
@@ -36,6 +37,24 @@ typedef struct IndexedVector3D
     inline IndexedVector3D operator+(const IndexedVector3D &other) const{return IndexedVector3D(this->x + other.x, this->y + other.y, this->z + other.z, ILLEGAL_IDX);};
     inline IndexedVector3D operator*(coord_t scalar) const{return IndexedVector3D(this->x * scalar, this->y * scalar, this->z * scalar, ILLEGAL_IDX);};
     inline IndexedVector3D operator/(coord_t scalar) const{return this->operator*(1/scalar);};
+    friend std::ostream &operator<<(std::ostream &stream, const IndexedVector3D &vec)
+    {
+        stream << "(" << vec.x << ", " << vec.y << ", " << vec.z << ")";
+        return stream;
+    }
+
+    friend std::istream &operator>>(std::istream &stream, IndexedVector3D &point)
+    {
+        std::string str;
+        std::getline(stream, str, '(');
+        std::getline(stream, str, ',');
+        point.x = std::stod(str);
+        std::getline(stream, str, ',');
+        point.y = std::stod(str);
+        std::getline(stream, str, ')');
+        point.z = std::stod(str);
+        return stream;
+    }
 
 } IndexedVector3D;
 

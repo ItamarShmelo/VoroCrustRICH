@@ -1108,7 +1108,6 @@ bool Voronoi3D::checkForRebalance()
   return (round++ == 0);
 }
 
-/*
 template<typename T>
 void reportDuplications(const std::vector<T> &vector)
 {
@@ -1124,7 +1123,6 @@ void reportDuplications(const std::vector<T> &vector)
     }
   }
 }
-*/
 
 /**
  * \author Maor Mizrachi
@@ -1168,7 +1166,6 @@ void Voronoi3D::BuildHilbert(const std::vector<Vector3D> &points)
     this->hilbertAgent.determineBorders(points);
   }
   new_points = this->hilbertAgent.pointsExchange(points, this->self_index_, this->sentprocs_, this->sentpoints_, this->radiuses);
-
   // hilbertAgent.calculateBoundingBox();
   //std::vector<Vector3D> new_points = hilbertAgent.pointsExchange(points, this->self_index_, this->sentprocs_, this->sentpoints_);
   /*
@@ -1252,6 +1249,7 @@ void Voronoi3D::BuildHilbert(const std::vector<Vector3D> &points)
   
   OctTree<Vector3D> pointsTree(this->ll_, this->ur_, new_points);
   RangeAgent rangeAgent(this->hilbertAgent, &rangeFinder);
+  
   rangeAgent.buildHilbertTree(&pointsTree);
 
   #ifdef VORONOI_DEBUG

@@ -54,9 +54,11 @@ bool SphereBoxIntersection(const _BoundingBox<T> &box, const _Sphere<T> &sphere)
     for(int i = 0; i < sphere.dim; i++)
     {
         closestPoint[i] = (sphere.center[i] < box.ll[i])? box.ll[i] : ((sphere.center[i] > box.ur[i])? box.ur[i] : sphere.center[i]);
-        distance += (closestPoint[i] - sphere.center[i]) * (closestPoint[i] - sphere.center[i]);
+        double _distance = (closestPoint[i] - sphere.center[i]);
+        _distance *= _distance;
+        distance += _distance;
     }
-    return distance <= sphere.radius * sphere.radius;
+    return (distance <= (sphere.radius * sphere.radius));
 };
 
 #endif // _GEOMETRY_UTILS_RICH_HPP

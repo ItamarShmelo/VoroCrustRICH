@@ -1,13 +1,10 @@
 #include "RangeAgent.h"
 
 RangeAgent::RangeAgent(MPI_Comm comm, const HilbertAgent &hilbertAgent, RangeFinder *rangeFinder):
-        globalComm(comm), hilbertAgent(hilbertAgent), rangeFinder(rangeFinder), hilbertTree(nullptr), myCurrentRound(0), finishedForNextRound(0)
+        comm(comm), hilbertAgent(hilbertAgent), rangeFinder(rangeFinder), hilbertTree(nullptr), myCurrentRound(0), finishedForNextRound(0)
 {
-    MPI_Comm_rank(this->globalComm, &this->rank);
-    MPI_Comm_size(this->globalComm, &this->size);
-    MPI_Comm_dup(this->globalComm, &this->answersComm);
-    MPI_Comm_dup(this->globalComm, &this->requestsComm);
-    MPI_Comm_dup(this->globalComm, &this->finishedComm);
+    MPI_Comm_rank(this->comm, &this->rank);
+    MPI_Comm_size(this->comm, &this->size);
 }
 
 void RangeAgent::receiveQueries(QueryBatchInfo &batch, bool blocking)
@@ -26,11 +23,11 @@ void RangeAgent::receiveQueries(QueryBatchInfo &batch, bool blocking)
 
     if(blocking)
     {
-        MPI_Probe(MPI_ANY_SOURCE, /*TAG_RESPONSE*/ MPI_ANY_TAG, this->answersComm, &status);
+        MPI_Probe(MPI_ANY_SOURCE, TAG_RESPONSE, this->comm, &status);
     }
     else
     {
-        MPI_Iprobe(MPI_ANY_SOURCE, /*TAG_RESPONSE*/ MPI_ANY_TAG, this->answersComm, &receivedAnswer, &status);
+        MPI_Iprobe(MPI_ANY_SOURCE, TAG_RESPONSE, this->comm, &receivedAnswer, &status);
     }
 
     std::vector<char> buffer;
@@ -47,20 +44,20 @@ void RangeAgent::receiveQueries(QueryBatchInfo &batch, bool blocking)
             buffer.resize(count);
         }
 
-        MPI_Recv(&(*(buffer.begin())), count, MPI_BYTE, status.MPI_SOURCE, /*TAG_RESPONSE*/ MPI_ANY_TAG, this->answersComm, MPI_STATUS_IGNORE);
+        MPI_Recv(&(*(buffer.begin())), count, MPI_BYTE, status.MPI_SOURCE, TAG_RESPONSE, this->comm, MPI_STATUS_IGNORE);
         size_t id;
         long int length;
         int pos = 0;
-        MPI_Unpack(&(*(buffer.begin())), count, &pos, &id, 1, MPI_UNSIGNED_LONG, this->answersComm);
-        MPI_Unpack(&(*(buffer.begin())), count, &pos, &length, 1, MPI_LONG, this->answersComm);
+        MPI_Unpack(&(*(buffer.begin())), count, &pos, &id, 1, MPI_UNSIGNED_LONG, this->comm);
+        MPI_Unpack(&(*(buffer.begin())), count, &pos, &length, 1, MPI_LONG, this->comm);
         if(length > 0)
         {
             // std::cout << "id is " << id << std::endl;
             // insert the results to the points received by rank `status.MPI_SOURCE` and to the queries result
             queries[id].finalResults.resize(queries[id].finalResults.size() + length);
-            MPI_Unpack(&(*(buffer.begin())), count, &pos, &(*(queries[id].finalResults.end() - length)), length * sizeof(_3DPoint), MPI_BYTE, this->answersComm);
+            MPI_Unpack(&(*(buffer.begin())), count, &pos, &(*(queries[id].finalResults.end() - length)), length * sizeof(_3DPoint), MPI_BYTE, this->comm);
             pointsFromRanks[status.MPI_SOURCE].resize(pointsFromRanks[status.MPI_SOURCE].size() + length);
-            for(size_t i = 0; i < length; i++)
+            for(size_t i = 0; i < static_cast<size_t>(length); i++)
             {
                 _3DPoint &point = *(queries[id].finalResults.end() - length + i);
                 Vector3D vector(point.x, point.y, point.z);
@@ -76,7 +73,7 @@ void RangeAgent::receiveQueries(QueryBatchInfo &batch, bool blocking)
         {
             if(this->receivedUntilNow < this->shouldReceiveInTotal)
             {
-                MPI_Probe(MPI_ANY_SOURCE, /*TAG_RESPONSE*/ MPI_ANY_TAG, this->answersComm, &status);
+                MPI_Probe(MPI_ANY_SOURCE, TAG_RESPONSE, this->comm, &status);
             }
             else
             {
@@ -85,7 +82,7 @@ void RangeAgent::receiveQueries(QueryBatchInfo &batch, bool blocking)
         }
         else
         {
-            MPI_Iprobe(MPI_ANY_SOURCE, /*TAG_RESPONSE*/ MPI_ANY_TAG, this->answersComm, &receivedAnswer, &status);
+            MPI_Iprobe(MPI_ANY_SOURCE, TAG_RESPONSE, this->comm, &receivedAnswer, &status);
         }
     }
 }
@@ -127,12 +124,13 @@ void RangeAgent::answerQueries(bool finishAnswering)
     int arrivedNew = 0;
     int answered = 0;
 
-    MPI_Iprobe(MPI_ANY_SOURCE,  /*TAG_REQUEST*/ MPI_ANY_TAG, this->requestsComm, &arrivedNew, &status);
+    MPI_Iprobe(MPI_ANY_SOURCE, TAG_REQUEST, this->comm, &arrivedNew, &status);
 
+    // while arrived new messages, and we should answer until the end, or answer until a bound we haven't reached to
     while(arrivedNew != 0 and (finishAnswering or (!finishAnswering and answered < MAX_ANSWER_IN_CYCLE)))
     {
         SubQueryData query;
-        MPI_Recv(&query, sizeof(SubQueryData), MPI_BYTE, status.MPI_SOURCE,  /*TAG_REQUEST*/ MPI_ANY_TAG, this->requestsComm, MPI_STATUS_IGNORE);
+        MPI_Recv(&query, sizeof(SubQueryData), MPI_BYTE, status.MPI_SOURCE,  TAG_REQUEST, this->comm, MPI_STATUS_IGNORE);
         answered++;
         std::vector<Vector3D> result = this->getRangeResult(query, status.MPI_SOURCE);
         long int resultSize = static_cast<long int>(result.size());
@@ -143,20 +141,20 @@ void RangeAgent::answerQueries(bool finishAnswering)
         size_t msg_size = 2 * sizeof(size_t) + resultSize * sizeof(_3DPoint);
         to_send.resize(msg_size);
 
-        MPI_Pack(&query.parent_id, 1, MPI_UNSIGNED_LONG, &to_send[0], msg_size, &pos, this->requestsComm);
-        MPI_Pack(&resultSize, 1, MPI_LONG, &to_send[0], msg_size, &pos, this->requestsComm);
+        MPI_Pack(&query.parent_id, 1, MPI_UNSIGNED_LONG, &to_send[0], msg_size, &pos, this->comm);
+        MPI_Pack(&resultSize, 1, MPI_LONG, &to_send[0], msg_size, &pos, this->comm);
         if(resultSize > 0)
         {
             _3DPoint *points = reinterpret_cast<_3DPoint*>((&to_send[0]) + pos);
-            for(size_t i = 0; i < resultSize; i++)
+            for(size_t i = 0; i < static_cast<size_t>(resultSize); i++)
             {
                 points[i] = {result[i].x, result[i].y, result[i].z};
             }
         }
         this->requests.push_back(MPI_REQUEST_NULL);
-        MPI_Isend(&to_send[0], msg_size, MPI_BYTE, status.MPI_SOURCE, TAG_RESPONSE, this->answersComm, &this->requests[requests.size() - 1]);
+        MPI_Isend(&to_send[0], msg_size, MPI_BYTE, status.MPI_SOURCE, TAG_RESPONSE, this->comm, &this->requests[requests.size() - 1]);
 
-        MPI_Iprobe(MPI_ANY_SOURCE,  /*TAG_REQUEST*/ MPI_ANY_TAG, this->requestsComm, &arrivedNew, &status);
+        MPI_Iprobe(MPI_ANY_SOURCE,  TAG_REQUEST, this->comm, &arrivedNew, &status);
     }
 }
 
@@ -195,7 +193,7 @@ void RangeAgent::sendQuery(const QueryInfo &query)
         ++this->shouldReceiveInTotal;
         SubQueryData subQuery = {query.data, query.id};
         // this->requests.push_back(MPI_REQUEST_NULL);
-        MPI_Send(&subQuery, sizeof(SubQueryData), MPI_BYTE, node, TAG_REQUEST, this->requestsComm/*, &this->requests[this->requests.size() - 1]*/);
+        MPI_Send(&subQuery, sizeof(SubQueryData), MPI_BYTE, node, TAG_REQUEST, this->comm/*, &this->requests[this->requests.size() - 1]*/);
     }
 }
 
@@ -204,7 +202,7 @@ void RangeAgent::sendFinish(const int &dummy)
     for(int _rank = 0; _rank < this->size; _rank++)
     {
         this->requests.push_back(MPI_REQUEST_NULL);
-        MPI_Isend(&dummy, 1, MPI_BYTE, _rank, TAG_FINISHED, this->finishedComm, &this->requests[this->requests.size() - 1]);
+        MPI_Isend(&dummy, 1, MPI_BYTE, _rank, TAG_FINISHED, this->comm, &this->requests[this->requests.size() - 1]);
     }
 }
 
@@ -212,11 +210,11 @@ int RangeAgent::checkForFinishMessages() const
 {
     int arrived = 0;
     MPI_Status status;
-    MPI_Iprobe(MPI_ANY_SOURCE, TAG_FINISHED, this->finishedComm, &arrived, &status);
+    MPI_Iprobe(MPI_ANY_SOURCE, TAG_FINISHED, this->comm, &arrived, &status);
     if(arrived)
     {
         int dummy = 0;
-        MPI_Recv(&dummy, 1, MPI_BYTE, MPI_ANY_SOURCE, TAG_FINISHED, this->finishedComm, MPI_STATUS_IGNORE);
+        MPI_Recv(&dummy, 1, MPI_BYTE, MPI_ANY_SOURCE, TAG_FINISHED, this->comm, MPI_STATUS_IGNORE);
         return 1;
     }
     return 0;
@@ -265,7 +263,7 @@ QueryBatchInfo RangeAgent::runBatch(std::queue<RangeQueryData> &queries)
         {
             this->receiveQueries(queriesBatch, false);
         }
-        if(i % QUERY_AUTOFLUSH_NUM == 0)
+        if(i % FINISH_AUTOFLUSH_NUM == 0)
         {
             if(this->shouldReceiveInTotal <= this->receivedUntilNow and !sentFinished)
             {
