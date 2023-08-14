@@ -1237,12 +1237,15 @@ void Voronoi3D::BuildHilbert(const std::vector<Vector3D> &points)
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
+    bool firstCall = false;
+
     if(this->radiuses.size() < points.size())
     {
         this->CalculateInitialRadius(points.size());
+        firstCall = true;
     }
 
-    if(this->CheckForRebalance(points))
+    if(firstCall or this->CheckForRebalance(points))
     {
         // first, calculate (by heuristic) the order we should sort by
         OctTree<Vector3D> tree(this->ll_, this->ur_, points);
