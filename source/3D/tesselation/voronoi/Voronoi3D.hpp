@@ -28,8 +28,8 @@
 #endif
 
 #define RICH_TESELLATION_FINISHED_TAG 505
-
 #define DEFAULT_HILBERT_ACCURACY 18
+#define BALANCE_FACTOR 1.01
 
 typedef std::array<std::size_t, 4> b_array_4;
 typedef std::array<std::size_t, 3> b_array_3;
@@ -102,10 +102,16 @@ private:
 					vector<vector<size_t> > &past_duplicate);
   void BuildVoronoi(std::vector<size_t> const& order);
 
-  // TODO: ADDED BY MAOR:
-  void BuildInitialize(size_t num_points);
   double GetMaxRadius(std::size_t index);
-  bool checkForRebalance();
+
+  #ifdef RICH_MPI
+  void CalculateInitialRadius(size_t pointsSize);
+  void PrepareToBuildHilbert(const std::vector<Vector3D> &points);
+  void BuildInitialize(size_t num_points);
+  void InitialBoxBuild(std::vector<Face> &box, std::vector<Vector3D> &normals);
+  bool CheckForRebalance(const std::vector<Vector3D> &points) const;
+  void CheckToMirror(const Vector3D &point, double radius, std::vector<Face> &box, std::vector<Vector3D> &normals, std::vector<Vector3D> &points);
+  #endif // RICH_MPI
 
   Delaunay3D del_;
   //vector<vector<std::size_t> > PointTetras_; // The tetras containing each point
@@ -132,6 +138,7 @@ private:
   std::vector<Face> box_faces_;
   std::vector<double> radiuses;
   HilbertAgent hilbertAgent;
+  double initialRadius;
 
 public:
 #ifdef RICH_MPI
@@ -180,8 +187,6 @@ public:
     \param filename Output file name
    */
   void output_buildextra(std::string const& filename)const;
-  void initialBoxBuild(std::vector<Face> &box, std::vector<Vector3D> &normals);
-  void checkToMirror(const Vector3D &point, double radius, std::vector<Face> &box, std::vector<Vector3D> &normals, std::vector<Vector3D> &points);
 
   void BuildHilbert(vector<Vector3D> const& points) override;
   inline void Build(vector<Vector3D> const& points, int order) override{this->BuildHilbert(points);};
