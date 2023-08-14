@@ -9,8 +9,8 @@ HilbertAgent::HilbertAgent(const Vector3D &origin, const Vector3D &corner): ll(o
 
 void HilbertAgent::setOrder(int order)
 {
-    this->order = order;
-    this->hilbert_cells = pow(pow(2, order), 3);
+    this->order = std::min<int>(order, MAX_HILBERT_ORDER);
+    this->hilbert_cells = pow(this->order * 3);
     this->pointsPerRank = hilbert_cells / this->size;
     this->sidesLengths = this->dx / pow(2, this->order);
 }

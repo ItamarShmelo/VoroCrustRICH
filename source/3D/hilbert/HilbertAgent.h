@@ -22,6 +22,8 @@
 
 #define AVERAGE_INTERSECT 128
 
+#define MAX_HILBERT_ORDER 12
+
 struct _Hilbert3DPoint
 {
     coord_t x, y, z;
