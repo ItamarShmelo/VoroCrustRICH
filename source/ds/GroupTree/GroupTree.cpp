@@ -37,15 +37,16 @@ typename GroupTree<T, N>::Node *GroupTree<T, N>::fastBuildHelper(const RandomAcc
         node = new Node(*mid);
         Node *left = this->fastBuildHelper(first, mid);
         node->left = left;
+        this->updateNodeInfo(left);
         Node *right = this->fastBuildHelper(mid + 1, last);
         node->right = right;
+        this->updateNodeInfo(right);
     }
     this->treeSize += node->numValues;
     
     if(left != nullptr) left->parent = node;
     if(right != nullptr) right->parent = node;
 
-    this->updateNodeInfo(node);
     return node;
 }
 
@@ -175,9 +176,8 @@ void GroupTree<T, N>::updateNodeInfo(Node *node)
     }
     node->depth = node->parent->depth + 1;
     node->parent->height = std::max(node->parent->height, node->height + 1);
-
-    node->parent->minInSubtree = std::min(node->parent->minInSubtree, node->minInSubtree, this->compare);
-    node->parent->maxInSubtree = std::max(node->parent->maxInSubtree, node->maxInSubtree, this->compare);
+    node->parent->minInSubtree = std::min(node->minInSubtree, node->parent->minInSubtree, this->compare);
+    node->parent->maxInSubtree = std::max(node->maxInSubtree, node->parent->maxInSubtree, this->compare);
 }
 
 template<typename T, int N>

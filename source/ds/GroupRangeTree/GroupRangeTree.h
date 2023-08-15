@@ -51,7 +51,7 @@ public:
     std::vector<T> circularRange(const T &center, typename T::coord_type radius) const; 
 
     template<typename RandomAccessIterator>
-    inline void build(RandomAccessIterator first, RandomAccessIterator last){assert(this->treeSize == 0); std::sort(first, last, this->compare); this->setRoot(this->fastBuildHelper(first, last));};
+    inline void build(RandomAccessIterator first, RandomAccessIterator last){assert(this->treeSize == 0); std::sort(first, last, this->compare); this->setRoot(this->fastBuildHelper(first, last)); this->updateNodeInfo(this->getRoot());};
     template<typename Container>
     inline void build(Container &&container){this->build(container.begin(), container.end());};
     template<typename Container>

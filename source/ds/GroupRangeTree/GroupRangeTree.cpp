@@ -1,3 +1,4 @@
+#include <iostream> // todo: remove
 #include "GroupRangeTree.h"
 
 template<typename T, int N>
@@ -14,7 +15,7 @@ void GroupRangeTree<T, N>::recreateSubtree(GroupRangeNode *node)
     delete node->subtree;
     node->subtree = new GroupRangeTree<T, N>(this->currentDim + 1, this->dim);
     node->subtree->build(this->getAllDecendants(node));
-
+    
     // rebuild also my children:
     this->recreateSubtree(dynamic_cast<GroupRangeNode*>(node->left));
     this->recreateSubtree(dynamic_cast<GroupRangeNode*>(node->right));
@@ -60,13 +61,15 @@ typename GroupRangeTree<T, N>::GroupRangeNode *GroupRangeTree<T, N>::fastBuildHe
     }
     this->treeSize += node->numValues;
     
-    if(node->left != nullptr) node->left->parent = node;
-    if(node->right != nullptr) node->right->parent = node;
-
-    if(node->left == nullptr and node->right == nullptr)
+    if(node->left != nullptr)
     {
-        // a leaf, run recursive update from it
-        this->recursiveUpdateNodeInfo(node);
+        node->left->parent = node;
+        this->updateNodeInfo(node->left);
+    }
+    if(node->right != nullptr)
+    {
+        node->right->parent = node;
+        this->updateNodeInfo(node->right);
     }
     return node;
 }
@@ -218,12 +221,18 @@ typename GroupRangeTree<T, N>::GroupRangeNode *GroupRangeTree<T, N>::tryInsert(c
 template<typename T, int N>
 void GroupRangeTree<T, N>::rangeHelper(const std::vector<std::pair<typename T::coord_type, typename T::coord_type>> &range, const GroupRangeNode *node, int coord, std::vector<T> &result) const
 {
+    static int iter = 0;
+    iter++;
+
     if(node == nullptr or coord >= this->dim)
     {
+        iter--;
         return;
     }
-    if(node->minInSubtree[coord] > range[coord].second or node->maxInSubtree[coord] < range[coord].first)
+    if((node->minInSubtree[coord] > range[coord].second) or (node->maxInSubtree[coord] < range[coord].first))
     {
+        //std::cout << "here, " << iter << " iterations (coordinate is " << coord << ", minInSubtree is " << node->minInSubtree[coord] << ", requested upper bound is " << range[coord].second << ", maxInSubtree is " << node->maxInSubtree[coord] << ", and requested lower bound is " << range[coord].first << ")" << std::endl;
+        iter--;
         return;
     }
     if(coord == this->dim - 1)
@@ -261,6 +270,7 @@ void GroupRangeTree<T, N>::rangeHelper(const std::vector<std::pair<typename T::c
             this->rangeHelper(range, dynamic_cast<const GroupRangeNode*>(node->left), coord, result);
         }
     }
+    iter--;
 }
 
 template<typename T, int N>
@@ -279,7 +289,7 @@ std::vector<T> GroupRangeTree<T, N>::circularRange(const T &center, typename T::
         {
             distanceSquared += (possible_value[i] - center[i]) * (possible_value[i] - center[i]);
         }
-        if(distanceSquared <= radius * radius)
+        if(distanceSquared <= (radius * radius))
         {
             result.push_back(possible_value);
         }
