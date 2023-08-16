@@ -110,6 +110,7 @@ void RangeAgent::answerQueries(bool finishAnswering)
         SubQueryData query;
         MPI_Recv(&query, sizeof(SubQueryData), MPI_BYTE, status.MPI_SOURCE,  TAG_REQUEST, this->comm, MPI_STATUS_IGNORE);
         answered++;
+        // calculate the result
         std::vector<Vector3D> result = this->getRangeResult(query, status.MPI_SOURCE);
         long int resultSize = static_cast<long int>(result.size());
 
@@ -136,6 +137,9 @@ void RangeAgent::answerQueries(bool finishAnswering)
     }
 }
 
+/**
+ * gets a center and a radius, and returns all the ranks which the sphere with cener `center` and radius `radius`, intersects with their areas.
+*/
 typename RangeAgent::_set<int> RangeAgent::getIntersectingRanks(const Vector3D &center, coord_t radius) const
 {
     _set<int> possibleNodes;
@@ -169,14 +173,18 @@ void RangeAgent::sendQuery(const QueryInfo &query)
             continue; // unnecessary to send
         }
         ++this->shouldReceiveInTotal;
-        SubQueryData subQuery = {query.data, query.id};
-        // this->requests.push_back(MPI_REQUEST_NULL);
-        MPI_Send(&subQuery, sizeof(SubQueryData), MPI_BYTE, node, TAG_REQUEST, this->comm/*, &this->requests[this->requests.size() - 1]*/);
+        this->buffers.push_back(std::vector<char>(sizeof(SubQueryData)));
+        SubQueryData &subQuery = *reinterpret_cast<SubQueryData*>(&this->buffers[this->buffers.size() - 1][0]);
+        subQuery.data = query.data;
+        subQuery.parent_id = query.id;
+        this->requests.push_back(MPI_REQUEST_NULL);
+        MPI_Isend(&subQuery, sizeof(SubQueryData), MPI_BYTE, node, TAG_REQUEST, this->comm, &this->requests[this->requests.size() - 1]);
     }
 }
 
-void RangeAgent::sendFinish(const int &dummy)
+void RangeAgent::sendFinish()
 {
+    int dummy;
     for(int _rank = 0; _rank < this->size; _rank++)
     {
         this->requests.push_back(MPI_REQUEST_NULL);
@@ -204,18 +212,36 @@ QueryBatchInfo RangeAgent::runBatch(std::queue<RangeQueryData> &queries)
     this->receivedUntilNow = 0; // reset the receive counter
     this->shouldReceiveInTotal = 0; // reset the should-be-received counter
     this->buffers.clear();
+    this->buffers.reserve(3 * queries.size()); // heuristic
     this->requests.clear();
     QueryBatchInfo queriesBatch;
     std::vector<QueryInfo> &queriesInfo = queriesBatch.queriesAnswers;
 
+    int finishedReceived = 0;
+    bool sentFinished = false;
     size_t i = 0;
-    while(!queries.empty())
+    while((finishedReceived < this->size) or (!queries.empty()))
     {
-        RangeQueryData queryData = queries.front();
-        queries.pop();
-        queriesInfo.push_back({queryData, i, std::vector<_3DPoint>()});
-        QueryInfo &query = queriesInfo[queriesInfo.size() - 1];
-        this->sendQuery(query);
+        if(!queries.empty())
+        {
+            RangeQueryData queryData = queries.front();
+            queries.pop();
+            queriesInfo.push_back({queryData, i, std::vector<_3DPoint>()});
+            QueryInfo &query = queriesInfo[queriesInfo.size() - 1];
+            this->sendQuery(query);
+        }
+        else
+        {
+            if(i % FINISH_AUTOFLUSH_NUM == 0)
+            {
+                if((this->shouldReceiveInTotal <= this->receivedUntilNow) and !sentFinished)
+                {
+                    sentFinished = true;
+                    this->sendFinish();
+                }
+                finishedReceived += this->checkForFinishMessages();
+            }
+        }
         if(i % QUERY_AUTOFLUSH_NUM == 0)
         {
             this->answerQueries(false);
@@ -226,33 +252,6 @@ QueryBatchInfo RangeAgent::runBatch(std::queue<RangeQueryData> &queries)
         }
         ++i;
     }
-    int finishedReceived = 0;
-    bool sentFinished = false;
-
-    int dummy = 0;
-    i = 0;
-    while(finishedReceived < this->size) 
-    {
-        if(i % QUERY_AUTOFLUSH_NUM == 0)
-        {
-            this->answerQueries(false);
-        }
-        if(i % RECEIVE_AUTOFLUSH_NUM == 0)
-        {
-            this->receiveQueries(queriesBatch);
-        }
-        if(i % FINISH_AUTOFLUSH_NUM == 0)
-        {
-            if(this->shouldReceiveInTotal <= this->receivedUntilNow and !sentFinished)
-            {
-                sentFinished = true;
-                this->sendFinish(dummy);
-            }
-            finishedReceived += this->checkForFinishMessages();
-        }
-        i++;
-    }
-    
     if(this->requests.size() > 0)
     {
         MPI_Waitall(this->requests.size(), &(*(this->requests.begin())), MPI_STATUSES_IGNORE); // make sure any query was indeed received

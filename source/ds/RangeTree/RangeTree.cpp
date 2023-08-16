@@ -33,7 +33,7 @@ typename RangeTree<T>::RangeNode *RangeTree<T>::buildHelper(const RandomAccessIt
 }
 
 template<typename T>
-void RangeTree<T>::rangeHelper(const std::vector<std::pair<typename T::coord_type, typename T::coord_type>> &range, const RangeNode *node, int coord, std::vector<T> &result) const
+void RangeTree<T>::rangeHelper(const std::vector<std::pair<typename T::coord_type, typename T::coord_type>> &range, const typename BinaryTree<T>::Node *node, int coord, std::vector<T> &result) const
 {
     if(node == nullptr or coord >= this->dim)
     {
@@ -46,20 +46,20 @@ void RangeTree<T>::rangeHelper(const std::vector<std::pair<typename T::coord_typ
     if(coord == this->dim - 1)
     {
         // search over the tree to find the maching points
-        this->rangeHelper(range, dynamic_cast<const RangeNode*>(node->left), coord, result);
+        this->rangeHelper(range, node->left, coord, result);
         if(node->value[coord] >= range[coord].first and node->value[coord] <= range[coord].second)
         {
             result.push_back(node->value);
         }
-        this->rangeHelper(range, dynamic_cast<const RangeNode*>(node->right), coord, result);
+        this->rangeHelper(range, node->right, coord, result);
     }
     else
     {
         if(node->minInSubtree[coord] >= range[coord].first and node->maxInSubtree[coord] <= range[coord].second)
         {
             // the whole subtree matches this coordinate! move on to the next one
-            assert(node->subtree != nullptr); // if the subtree was nullptr, then coord was dim-1.
-            node->subtree->rangeHelper(range, node->subtree->getRoot(), coord + 1, result);
+            assert(dynamic_cast<const RangeNode*>(node)->subtree != nullptr); // if the subtree was nullptr, then coord was dim-1.
+            dynamic_cast<const RangeNode*>(node)->subtree->rangeHelper(range, dynamic_cast<const RangeNode*>(node)->subtree->getRoot(), coord + 1, result);
         }
         else
         {
@@ -67,14 +67,14 @@ void RangeTree<T>::rangeHelper(const std::vector<std::pair<typename T::coord_typ
             int i;
             for(i = coord; i < this->dim; i++) if(node->value[i] < range[i].first or node->value[i] > range[i].second) break;
             if(i == this->dim) result.push_back(node->value);
-            this->rangeHelper(range, dynamic_cast<const RangeNode*>(node->right), coord, result);
-            this->rangeHelper(range, dynamic_cast<const RangeNode*>(node->left), coord, result);
+            this->rangeHelper(range, node->right, coord, result);
+            this->rangeHelper(range, node->left, coord, result);
         }
     }
 }
 
 template<typename T>
-void RangeTree<T>::circularRangeHelper(const T &center, typename T::coord_type radius, const RangeNode *node, int coord, std::vector<T> &result) const
+void RangeTree<T>::circularRangeHelper(const T &center, typename T::coord_type radius, const typename BinaryTree<T>::Node *node, int coord, std::vector<T> &result) const
 {
     if(node == nullptr or coord >= this->dim)
     {
@@ -102,11 +102,11 @@ void RangeTree<T>::circularRangeHelper(const T &center, typename T::coord_type r
         }
         if(node->minInSubtree[coord] <= cornerMax)
         {
-            this->circularRangeHelper(center, radius, dynamic_cast<const RangeNode*>(node->left), coord, result);
+            this->circularRangeHelper(center, radius, node->left, coord, result);
         }
         if(node->maxInSubtree[coord] >= cornerMin)
         {
-            this->circularRangeHelper(center, radius, dynamic_cast<const RangeNode*>(node->right), coord, result);
+            this->circularRangeHelper(center, radius, node->right, coord, result);
         }
     }
     else
@@ -114,8 +114,8 @@ void RangeTree<T>::circularRangeHelper(const T &center, typename T::coord_type r
         if(node->minInSubtree[coord] >= cornerMin and node->maxInSubtree[coord] <= cornerMax)
         {
             // the whole subtree matches this coordinate! move on to the next one
-            assert(node->subtree != nullptr); // if the subtree was nullptr, then coord was dim-1.
-            node->subtree->circularRangeHelper(center, radius, node->subtree->getRoot(), coord + 1, result);
+            assert(dynamic_cast<const RangeNode*>(node)->subtree != nullptr); // if the subtree was nullptr, then coord was dim-1.
+            dynamic_cast<const RangeNode*>(node)->subtree->circularRangeHelper(center, radius, dynamic_cast<const RangeNode*>(node)->subtree->getRoot(), coord + 1, result);
         }
         else
         {
@@ -124,12 +124,12 @@ void RangeTree<T>::circularRangeHelper(const T &center, typename T::coord_type r
             {
                 distanceSquared += ((node->value[i] - center[i]) * (node->value[i] - center[i]));
             }
-            if(distanceSquared <= radius * radius)
+            if(distanceSquared <= (radius * radius))
             {
                 result.push_back(node->value);
             }
-            this->circularRangeHelper(center, radius, dynamic_cast<const RangeNode*>(node->right), coord, result);
-            this->circularRangeHelper(center, radius, dynamic_cast<const RangeNode*>(node->left), coord, result);
+            this->circularRangeHelper(center, radius, node->right, coord, result);
+            this->circularRangeHelper(center, radius, node->left, coord, result);
         }
     }
 }

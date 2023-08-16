@@ -8,6 +8,8 @@
 #include "utils/IndexedVector.hpp"
 #include "RangeFinder.hpp"
 
+#define DIMENSIONS 3
+
 template<int N>
 class GroupRangeTreeFinder : public RangeFinder
 {
@@ -45,10 +47,8 @@ GroupRangeTreeFinder<N>::GroupRangeTreeFinder(RandomAccessIterator first, Random
         this->myPoints.push_back(vec);
         index++;
     }
-    std::cout << "building group-range tree" << std::endl;
-    this->groupRangeTree = new GroupRangeTree<IndexedVector3D, N>(3);
+    this->groupRangeTree = new GroupRangeTree<IndexedVector3D, N>(DIMENSIONS);
     this->groupRangeTree->build(data.begin(), data.end());
-    std::cout << "finished building group-range tree" << std::endl;
 }
 
 template<int N>

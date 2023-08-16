@@ -21,7 +21,7 @@
 #define TAG_RESPONSE 201
 #define TAG_FINISHED 202
 
-#define QUERY_AUTOFLUSH_NUM 20
+#define QUERY_AUTOFLUSH_NUM 50
 #define RECEIVE_AUTOFLUSH_NUM 5
 #define FINISH_AUTOFLUSH_NUM 20
 #define MAX_RECEIVE_IN_CYCLE 1000
@@ -71,7 +71,6 @@ public:
     void answerQueries(bool finishAnswering);
     void sendQuery(const QueryInfo &query);
     QueryBatchInfo runBatch(std::queue<RangeQueryData> &queries);
-    void createArtificialQueries(coord_t radius);
 
     inline size_t getNumPoints(){return this->rangeFinder->size();};
     inline void buildHilbertTree(const OctTree<Vector3D> *tree){this->hilbertTree = new DistributedOctTree(tree);};
@@ -97,7 +96,7 @@ private:
     
     std::vector<Vector3D> getRangeResult(const SubQueryData &query, int node);
     _set<int> getIntersectingRanks(const Vector3D &center, coord_t radius) const;
-    void sendFinish(const int &dummy);
+    void sendFinish();
     int checkForFinishMessages() const;
 };
 

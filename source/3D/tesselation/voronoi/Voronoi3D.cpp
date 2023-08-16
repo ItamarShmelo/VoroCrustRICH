@@ -1145,7 +1145,7 @@ void Voronoi3D::PrepareToBuildHilbert(const std::vector<Vector3D> &points)
     //SmartBruteForceFinder rangeFinder(&hilbertAgent, this->del_.points_.begin(), this->del_.points_.begin() + this->Norg_);
     //HashBruteForceFinder rangeFinder(&hilbertAgent, this->del_.points_.begin(), this->del_.points_.begin() + this->Norg_);
     OctTreeFinder rangeFinder(this->del_.points_.begin(), this->del_.points_.begin() + this->Norg_, this->ll_, this->ur_);
-    //GroupRangeTreeFinder<4> rangeFinder(this->del_.points_.begin(), this->del_.points_.begin() + this->Norg_);
+    //GroupRangeTreeFinder<256> rangeFinder(this->del_.points_.begin(), this->del_.points_.begin() + this->Norg_);
     
     OctTree<Vector3D> pointsTree(this->ll_, this->ur_, points);
     RangeAgent rangeAgent(this->hilbertAgent, &rangeFinder);
@@ -1219,10 +1219,10 @@ void Voronoi3D::CalculateInitialRadius(size_t pointsSize)
     this->radiuses.resize(pointsSize);
     if(this->initialRadius <= __DBL_EPSILON__)
     {
-    double volume = (this->ur_[0] - this->ll_[0]) * (this->ur_[1] - this->ll_[1]) * (this->ur_[2] - this->ll_[2]);
-    size_t N;
-    MPI_Allreduce(&pointsSize, &N, 1, MPI_UNSIGNED_LONG, MPI_SUM, MPI_COMM_WORLD);
-    this->initialRadius = 4 * std::pow(volume / N, 0.333333f); // heuristic
+      double volume = (this->ur_[0] - this->ll_[0]) * (this->ur_[1] - this->ll_[1]) * (this->ur_[2] - this->ll_[2]);
+      size_t N;
+      MPI_Allreduce(&pointsSize, &N, 1, MPI_UNSIGNED_LONG, MPI_SUM, MPI_COMM_WORLD);
+      this->initialRadius = std::pow(volume / N, 0.333333f); // heuristic
     } 
     std::fill(this->radiuses.begin(), this->radiuses.end(), this->initialRadius);
 }

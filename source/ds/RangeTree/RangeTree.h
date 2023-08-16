@@ -55,8 +55,8 @@ private:
     template<typename RandomAccessIterator>
     RangeNode *buildHelper(const RandomAccessIterator &first, const RandomAccessIterator &last);
 
-    void rangeHelper(const std::vector<std::pair<typename T::coord_type, typename T::coord_type>> &range, const RangeNode *node, int coord, std::vector<T> &result) const;
-    void circularRangeHelper(const T &center, typename T::coord_type radius, const RangeNode *node, int coord, std::vector<T> &result) const;
+    void rangeHelper(const std::vector<std::pair<typename T::coord_type, typename T::coord_type>> &range, const typename BinaryTree<T>::Node *node, int coord, std::vector<T> &result) const;
+    void circularRangeHelper(const T &center, typename T::coord_type radius, const typename BinaryTree<T>::Node *node, int coord, std::vector<T> &result) const;
 };
 
 #endif // _RICH_RANGETREE_H_

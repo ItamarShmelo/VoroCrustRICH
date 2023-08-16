@@ -219,43 +219,37 @@ typename GroupRangeTree<T, N>::GroupRangeNode *GroupRangeTree<T, N>::tryInsert(c
 }
 
 template<typename T, int N>
-void GroupRangeTree<T, N>::rangeHelper(const std::vector<std::pair<typename T::coord_type, typename T::coord_type>> &range, const GroupRangeNode *node, int coord, std::vector<T> &result) const
+void GroupRangeTree<T, N>::rangeHelper(const std::vector<std::pair<typename T::coord_type, typename T::coord_type>> &range, const typename GroupTree<T, N>::Node *node, int coord, std::vector<T> &result) const
 {
-    static int iter = 0;
-    iter++;
-
     if(node == nullptr or coord >= this->dim)
     {
-        iter--;
         return;
     }
     if((node->minInSubtree[coord] > range[coord].second) or (node->maxInSubtree[coord] < range[coord].first))
     {
-        //std::cout << "here, " << iter << " iterations (coordinate is " << coord << ", minInSubtree is " << node->minInSubtree[coord] << ", requested upper bound is " << range[coord].second << ", maxInSubtree is " << node->maxInSubtree[coord] << ", and requested lower bound is " << range[coord].first << ")" << std::endl;
-        iter--;
         return;
     }
     if(coord == this->dim - 1)
     {
         // search over the tree to find the maching points
-        this->rangeHelper(range, dynamic_cast<const GroupRangeNode*>(node->left), coord, result);
+        this->rangeHelper(range, node->left, coord, result);
         for(int i = 0; i < node->numValues; i++)
         {
             const T &value = node->values[i];
-            if(value[coord] >= range[coord].first and value[coord] <= range[coord].second)
+            if((value[coord] >= range[coord].first) and (value[coord] <= range[coord].second))
             {
                 result.push_back(value);
             }
         }
-        this->rangeHelper(range, dynamic_cast<const GroupRangeNode*>(node->right), coord, result);
+        this->rangeHelper(range, node->right, coord, result);
     }
     else
     {
         if(node->minInSubtree[coord] >= range[coord].first and node->maxInSubtree[coord] <= range[coord].second)
         {
             // the whole subtree matches this coordinate! move on to the next one
-            assert(node->subtree != nullptr); // if the subtree was nullptr, then coord was dim-1.
-            node->subtree->rangeHelper(range, node->subtree->getRoot(), coord + 1, result);
+            assert(dynamic_cast<const GroupRangeNode*>(node)->subtree != nullptr); // if the subtree was nullptr, then coord was dim-1.
+            dynamic_cast<const GroupRangeNode*>(node)->subtree->rangeHelper(range, dynamic_cast<const GroupRangeNode*>(node)->subtree->getRoot(), coord + 1, result);
         }
         else
         {
@@ -266,11 +260,10 @@ void GroupRangeTree<T, N>::rangeHelper(const std::vector<std::pair<typename T::c
                 for(j = coord; j < this->dim; j++) if(value[j] < range[j].first or value[j] > range[j].second) break;
                 if(j == this->dim) result.push_back(value);
             }
-            this->rangeHelper(range, dynamic_cast<const GroupRangeNode*>(node->right), coord, result);
-            this->rangeHelper(range, dynamic_cast<const GroupRangeNode*>(node->left), coord, result);
+            this->rangeHelper(range, node->right, coord, result);
+            this->rangeHelper(range, node->left, coord, result);
         }
     }
-    iter--;
 }
 
 template<typename T, int N>

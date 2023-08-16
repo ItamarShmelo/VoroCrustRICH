@@ -3,6 +3,8 @@
 
 typedef double coord_t;
 
+#define DIM 3
+
 template<typename T>
 class _BoundingBox
 {
@@ -38,9 +40,10 @@ public:
     inline bool contains(const T &point) const
     {
         coord_t distance = 0;
-        for(int i = 0; i < this->dim; i++)
+        for(int i = 0; i < DIM /*this->dim*/; i++)
         {
-            distance += (point[i] - this->center[i]) * (point[i] - this->center[i]);
+            double _distance = (point[i] - this->center[i]);
+            distance += _distance * _distance;
         }
         return distance <= (this->radius * this->radius);
     }
@@ -51,7 +54,7 @@ bool SphereBoxIntersection(const _BoundingBox<T> &box, const _Sphere<T> &sphere)
 {
     T closestPoint;
     coord_t distance = 0;
-    for(int i = 0; i < sphere.dim; i++)
+    for(int i = 0; i < DIM /*sphere.dim*/; i++)
     {
         closestPoint[i] = (sphere.center[i] < box.ll[i])? box.ll[i] : ((sphere.center[i] > box.ur[i])? box.ur[i] : sphere.center[i]);
         double _distance = (closestPoint[i] - sphere.center[i]);
