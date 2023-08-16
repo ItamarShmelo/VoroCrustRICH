@@ -1112,10 +1112,16 @@ void Voronoi3D::InitialBoxBuild(std::vector<Face> &box, std::vector<Vector3D> &n
 
 bool Voronoi3D::CheckForRebalance(const std::vector<Vector3D> &points) const
 {
+        int size;
+        MPI_Comm_size(MPI_COMM_WORLD, &size);
         size_t mySize = points.size();
         size_t N;
         MPI_Allreduce(&mySize, &N, 1, MPI_UNSIGNED_LONG, MPI_SUM, MPI_COMM_WORLD);
-        return points.size() >= (BALANCE_FACTOR * N);
+        size_t ideal = N / size;
+        int I_say = (mySize >= (BALANCE_FACTOR * static_cast<double>(ideal)))? 1 : 0; // if I say 'rebalance' or not
+        int rebalance = 0;
+        MPI_Allreduce(&I_say, &rebalance, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+        return (rebalance > 0);
 }
 
 /**
