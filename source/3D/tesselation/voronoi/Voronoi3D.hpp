@@ -105,6 +105,7 @@ private:
   double GetMaxRadius(std::size_t index);
 
   #ifdef RICH_MPI
+  void Build(std::vector<Vector3D> const &points, Tessellation3D const &tproc); // old implementation
   void CalculateInitialRadius(size_t pointsSize);
   void PrepareToBuildHilbert(const std::vector<Vector3D> &points);
   void BuildInitialize(size_t num_points);
@@ -127,9 +128,11 @@ private:
   vector<Vector3D> CM_,Face_CM_;
   vector<double> volume_; // volumes of each one of the tetrahedra
   vector<double> area_; // surface area of each one of the tetrahedra
-  vector<vector<std::size_t> > duplicated_points_;
-  vector<int> sentprocs_, duplicatedprocs_;
-  vector<vector<std::size_t> > sentpoints_, Nghost_;
+  vector<int> sentprocs_;
+  vector<vector<std::size_t>> sentpoints_; // if rank `i` is inside index `j` in `sentprocs_`, then the points in sentpoints_[j] are the points I sent to rank `i` in the initial points exchange in build
+  vector<int> duplicatedprocs_; 
+  vector<vector<std::size_t> > duplicated_points_;  // if rank `i` is inside index `j` in `duplicatedprocs_`, then Nghost_[j] includes all the points in `i`'s delaunay, which are actually mine
+  vector<vector<std::size_t>> Nghost_; // if rank `i` is inside index `j` in `duplicatedprocs_`, then Nghost_[j] includes all the points in my delaunay, which are belongs, originally, to i
   vector<std::size_t> self_index_; // indexes of the points which are truely mine (inside the points list)
   Voronoi3D();
   Voronoi3D(Voronoi3D const &other);

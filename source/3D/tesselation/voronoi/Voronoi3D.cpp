@@ -21,6 +21,7 @@
 #include "3D/range/finders/HashBruteForce.hpp"
 #include "3D/range/finders/GroupRangeTree.hpp"
 #include "misc/int2str.hpp"
+#include "utils/exchange/exchange.hpp"
 #include <boost/multiprecision/cpp_dec_float.hpp>
 #include <boost/container/static_vector.hpp>
 #include <omp.h>
@@ -817,7 +818,7 @@ void Voronoi3D::CalcRigidCM(std::size_t face_index)
 }
 
 vector<Vector3D> Voronoi3D::CreateBoundaryPoints(vector<std::pair<std::size_t, std::size_t>> const &to_duplicate,
-                                                                                                 vector<vector<size_t>> &past_duplicate)
+                                                 vector<vector<size_t>> &past_duplicate)
 {
     size_t Ncheck = to_duplicate.size();
     vector<std::pair<std::size_t, std::size_t>> to_add;
@@ -845,7 +846,7 @@ vector<Vector3D> Voronoi3D::CreateBoundaryPoints(vector<std::pair<std::size_t, s
 
 #ifdef RICH_MPI
 vector<Vector3D> Voronoi3D::CreateBoundaryPointsMPI(vector<std::pair<std::size_t, std::size_t>> const &to_duplicate,
-                                                                                                        Tessellation3D const &tproc, vector<vector<size_t>> &self_duplicate)
+                                                    Tessellation3D const &tproc, vector<vector<size_t>> &self_duplicate)
 {
     vector<vector<size_t>> to_send;
 
@@ -981,6 +982,260 @@ vector<vector<std::size_t>> const &Voronoi3D::GetGhostIndeces(void) const
     return Nghost_;
 }
 
+#ifdef RICH_MPI
+void Voronoi3D::Build(vector<Vector3D> const &points, Tessellation3D const &tproc)
+{
+  //assert(points.size() > 0);
+  // Clear data
+  PointTetras_.clear();
+  R_.clear();
+  R_.reserve(points.size() * 11);
+  tetra_centers_.clear();
+  tetra_centers_.reserve(points.size() * 11);
+  del_.Clean();
+  // Voronoi Data
+  FacesInCell_.clear();
+  PointsInFace_.clear();
+  FaceNeighbors_.clear();
+  CM_.clear();
+  Face_CM_.clear();
+  volume_.clear();
+  area_.clear();
+  Nghost_.clear();
+  duplicatedprocs_.clear();
+  duplicated_points_.clear();
+
+  int rank = 0;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  vector<Vector3D> new_points = UpdateMPIPoints(tproc, rank, points, self_index_, sentprocs_, sentpoints_);
+  Norg_ = new_points.size();
+  /*	if (Norg_ == 0)
+	{
+	std::cout << "Zero Norg in rank " << rank << std::endl;
+	std::cout << "Rank CM " << tproc.GetCellCM(static_cast<size_t>(rank)).x << ","
+	<< tproc.GetCellCM(static_cast<size_t>(rank)).y << "," << tproc.GetCellCM(static_cast<size_t>(rank)).z << std::endl;
+	std::cout << "Rank point " << tproc.GetMeshPoint(static_cast<size_t>(rank)).x << ","
+	<< tproc.GetMeshPoint(static_cast<size_t>(rank)).y << "," << tproc.GetMeshPoint(static_cast<size_t>(rank)).z << std::endl;
+	std::cout << "Rank R " << tproc.GetWidth(static_cast<size_t>(rank)) << std::endl;
+	}
+	assert(Norg_ > 0);*/
+  std::pair<Vector3D, Vector3D> bounding_box = GetBoundingBox(tproc, rank);
+
+#ifdef timing
+  MPI_Barrier(MPI_COMM_WORLD);
+  double t0 = MPI_Wtime();
+#endif
+  std::vector<size_t> order = HilbertOrder3D(new_points);
+
+#ifdef vdebug
+  std::vector<Vector3D> bbox;
+  bbox.push_back(bounding_box.first);
+  bbox.push_back(bounding_box.second);
+  write_vecst(order, "order_" + int2str(rank) + ".bin");
+  write_vec3d(new_points, "points0_" + int2str(rank) + ".bin");
+  write_vec3d(bbox, "bb_" + int2str(rank) + ".bin");
+#endif
+
+  del_.Build(new_points, bounding_box.second, bounding_box.first, order);
+
+#ifdef timing
+  MPI_Barrier(MPI_COMM_WORLD);
+  double t1 = MPI_Wtime();
+  if (rank == 0)
+    std::cout << "First build time " << t1 - t0 << std::endl;
+#endif
+
+  R_.resize(del_.tetras_.size());
+  std::fill(R_.begin(), R_.end(), -1);
+  tetra_centers_.resize(R_.size());
+  bigtet_ = SetPointTetras(PointTetras_, Norg_, del_.tetras_, del_.empty_tetras_);
+
+  vector<vector<size_t>> self_duplicate;
+  vector<std::pair<std::size_t, std::size_t>> ghost_index;
+  MPIFirstIntersections(tproc, ghost_index);
+
+#ifdef timing
+  MPI_Barrier(MPI_COMM_WORLD);
+  t0 = MPI_Wtime();
+  if (rank == 0)
+    std::cout << "First ghost time " << t0 - t1 << std::endl;
+#endif
+
+  vector<Vector3D> extra_points = CreateBoundaryPointsMPI(ghost_index, tproc, self_duplicate);
+
+#ifdef vdebug
+  write_vec3d(extra_points, "points1_" + int2str(rank) + ".bin");
+#endif
+
+  try
+  {
+    del_.BuildExtra(extra_points);
+  }
+  catch (UniversalError &eo)
+  {
+    std::cout << "Error in first extra rank " << rank << std::endl;
+    string fname("extra_" + int2str(rank) + ".bin");
+    output_buildextra(fname);
+    tproc.output("vproc_" + int2str(rank) + ".bin");
+    throw;
+  }
+
+#ifdef timing
+  MPI_Barrier(MPI_COMM_WORLD);
+  t1 = MPI_Wtime();
+  if (rank == 0)
+    std::cout << "First ghost build time " << t1 - t0 << std::endl;
+#endif
+
+  R_.resize(del_.tetras_.size());
+  std::fill(R_.begin(), R_.end(), -1);
+  tetra_centers_.resize(R_.size());
+  bigtet_ = SetPointTetras(PointTetras_, Norg_, del_.tetras_, del_.empty_tetras_);
+  vector<unsigned char> checked_clear(Norg_, 0);
+  ghost_index = FindIntersections(tproc, 1, checked_clear); // intersecting tproc face, point index
+
+#ifdef timing
+  MPI_Barrier(MPI_COMM_WORLD);
+  t0 = MPI_Wtime();
+  if (rank == 0)
+    std::cout << "Second ghost time " << t0 - t1 << std::endl;
+#endif
+
+  extra_points = CreateBoundaryPointsMPI(ghost_index, tproc, self_duplicate);
+
+#ifdef vdebug
+  write_vec3d(extra_points, "points2_" + int2str(rank) + ".bin");
+#endif
+
+  try
+  {
+    del_.BuildExtra(extra_points);
+  }
+  catch (UniversalError &eo)
+  {
+    std::cout << "Error in second extra rank " << rank << std::endl;
+    string fname("extra_" + int2str(rank) + ".bin");
+    output_buildextra(fname);
+    tproc.output("vproc_" + int2str(rank) + ".bin");
+    throw;
+  }
+
+#ifdef timing
+  MPI_Barrier(MPI_COMM_WORLD);
+  t1 = MPI_Wtime();
+  if (rank == 0)
+    std::cout << "Second ghost build time " << t1 - t0 << std::endl;
+#endif
+
+  R_.resize(del_.tetras_.size());
+  std::fill(R_.begin(), R_.end(), -1);
+  tetra_centers_.resize(R_.size());
+  bigtet_ = SetPointTetras(PointTetras_, Norg_, del_.tetras_, del_.empty_tetras_);
+
+  ghost_index = FindIntersections(tproc, 2, checked_clear);
+
+#ifdef timing
+  MPI_Barrier(MPI_COMM_WORLD);
+  t0 = MPI_Wtime();
+  if (rank == 0)
+    std::cout << "Third ghost time " << t0 - t1 << std::endl;
+#endif
+
+  extra_points = CreateBoundaryPointsMPI(ghost_index, tproc, self_duplicate);
+
+#ifdef vdebug
+  write_vec3d(extra_points, "points3_" + int2str(rank) + ".bin");
+#endif
+
+  try
+  {
+    del_.BuildExtra(extra_points);
+  }
+  catch (UniversalError &eo)
+  {
+    std::cout << "Error in third extra rank " << rank << std::endl;
+    string fname("extra_" + int2str(rank) + ".bin");
+    output_buildextra(fname);
+    tproc.output("vproc_" + int2str(rank) + ".bin");
+    throw;
+  }
+
+#ifdef timing
+  MPI_Barrier(MPI_COMM_WORLD);
+  t1 = MPI_Wtime();
+  if (rank == 0)
+    std::cout << "Third ghost build time " << t1 - t0 << std::endl;
+#endif
+
+  R_.resize(del_.tetras_.size());
+  std::fill(R_.begin(), R_.end(), -1);
+  tetra_centers_.resize(R_.size());
+  bigtet_ = SetPointTetras(PointTetras_, Norg_, del_.tetras_, del_.empty_tetras_);
+
+  ghost_index = FindIntersections(tproc, 3, checked_clear);
+
+#ifdef timing
+  MPI_Barrier(MPI_COMM_WORLD);
+  t0 = MPI_Wtime();
+  if (rank == 0)
+    std::cout << "Fourth ghost time " << t0 - t1 << std::endl;
+#endif
+
+  extra_points = CreateBoundaryPointsMPI(ghost_index, tproc, self_duplicate);
+
+#ifdef vdebug
+  write_vec3d(extra_points, "points4_" + int2str(rank) + ".bin");
+#endif
+
+  try
+  {
+    del_.BuildExtra(extra_points);
+  }
+  catch (UniversalError &eo)
+  {
+    std::cout << "Error in fourth extra rank " << rank << std::endl;
+    string fname("extra_" + int2str(rank) + ".bin");
+    output_buildextra(fname);
+    tproc.output("vproc_" + int2str(rank) + ".bin");
+    throw;
+  }
+
+#ifdef timing
+  MPI_Barrier(MPI_COMM_WORLD);
+  t1 = MPI_Wtime();
+  if (rank == 0)
+    std::cout << "Fourth ghost build time " << t1 - t0 << std::endl;
+#endif
+  bigtet_ = SetPointTetras(PointTetras_, Norg_, del_.tetras_, del_.empty_tetras_);
+  std::vector<std::pair<size_t, size_t>>().swap(ghost_index);
+  std::vector<Vector3D>().swap(extra_points);
+
+  R_.resize(del_.tetras_.size());
+  std::fill(R_.begin(), R_.end(), -1);
+  tetra_centers_.resize(R_.size());
+
+  CM_.resize(del_.points_.size());
+  volume_.resize(Norg_);
+
+  // Create Voronoi
+  BuildVoronoi(order);
+
+  std::vector<double>().swap(R_);
+  std::vector<tetra_vec>().swap(PointTetras_);
+
+  CalcAllCM();
+  for (std::size_t i = 0; i < FaceNeighbors_.size(); ++i)
+    if (BoundaryFace(i))
+      CalcRigidCM(i);
+  // communicate the ghost CM
+  vector<vector<Vector3D>> incoming = MPI_exchange_data(duplicatedprocs_, duplicated_points_, CM_);
+  // Add the recieved CM
+  for (size_t i = 0; i < incoming.size(); ++i)
+    for (size_t j = 0; j < incoming.at(i).size(); ++j)
+      CM_[Nghost_.at(i).at(j)] = incoming[i][j];
+}
+#endif
+
 /**
  * gets a point index, and returns the maximal radius of the tetrahedra containing that point.
  * @param index the index of the point (within the points list)
@@ -1103,6 +1358,7 @@ void Voronoi3D::InitialBoxBuild(std::vector<Face> &box, std::vector<Vector3D> &n
     size_t Nfaces = box.size();
     normals.resize(Nfaces);
 
+    // calculates the normals for each one of the box's faces
     for (size_t i = 0; i < Nfaces; ++i)
     {
         normals[i] = CrossProduct(box[i].vertices[1] - box[i].vertices[0], box[i].vertices[2] - box[i].vertices[0]);
@@ -1112,16 +1368,16 @@ void Voronoi3D::InitialBoxBuild(std::vector<Face> &box, std::vector<Vector3D> &n
 
 bool Voronoi3D::CheckForRebalance(const std::vector<Vector3D> &points) const
 {
-        int size;
-        MPI_Comm_size(MPI_COMM_WORLD, &size);
-        size_t mySize = points.size();
-        size_t N;
-        MPI_Allreduce(&mySize, &N, 1, MPI_UNSIGNED_LONG, MPI_SUM, MPI_COMM_WORLD);
-        size_t ideal = N / size;
-        int I_say = (mySize >= (BALANCE_FACTOR * static_cast<double>(ideal)))? 1 : 0; // if I say 'rebalance' or not
-        int rebalance = 0;
-        MPI_Allreduce(&I_say, &rebalance, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
-        return (rebalance > 0);
+    int size;
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    size_t mySize = points.size();
+    size_t N;
+    MPI_Allreduce(&mySize, &N, 1, MPI_UNSIGNED_LONG, MPI_SUM, MPI_COMM_WORLD);
+    size_t ideal = N / size;
+    int I_say = (mySize >= (BALANCE_FACTOR * static_cast<double>(ideal)))? 1 : 0; // if I say 'rebalance' or not
+    int rebalance = 0;
+    MPI_Allreduce(&I_say, &rebalance, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+    return (rebalance > 0);
 }
 
 /**
@@ -1184,6 +1440,31 @@ void Voronoi3D::PrepareToBuildHilbert(const std::vector<Vector3D> &points)
 
         std::vector<Vector3D> &newPoints = batchInfo.newPoints;
 
+        for(int _rank = 0; _rank < size; _rank++)
+        {
+          std::vector<size_t> &receivedFromRank = rangeAgent.getRecvPoints()[_rank];
+          if(receivedFromRank.empty())
+          {
+            continue;
+          }
+          size_t rankIdx = std::find(this->duplicatedprocs_.begin(), this->duplicatedprocs_.end(), _rank) - this->duplicatedprocs_.begin();
+          if(rankIdx == this->duplicatedprocs_.size())
+          {
+            // new rank in this->duplicatedprocs_, initialize it
+            this->duplicatedprocs_.push_back(_rank);
+            this->duplicated_points_.emplace_back(std::vector<size_t>());
+            this->Nghost_.emplace_back(std::vector<size_t>());
+          }
+          for(const size_t &RelativePointIdx : receivedFromRank)
+          {
+            // batchInfo.pointsFromRanks[_rank][i] holds an index of point, but this point will be added to my delaunay, so
+            // its index there will be this->del_.points_.size() + batchInfo.pointsFromRanks[_rank][i]
+
+            //this->duplicated_points_[rankIdx].push_back(this->del_.points_.size() + RelativePointIdx);
+            this->Nghost_[rankIdx].push_back(this->del_.points_.size() + RelativePointIdx);
+          }
+        }
+
         for(const Vector3D &point : mirroedPoints)
         {
             if(std::find(allMirrored.begin(), allMirrored.end(), point) == allMirrored.end())
@@ -1192,7 +1473,7 @@ void Voronoi3D::PrepareToBuildHilbert(const std::vector<Vector3D> &points)
                 newPoints.push_back(point);
             }
         }
-    
+
         // performs internal tesselation:
         this->del_.BuildExtra(newPoints);
 
@@ -1218,6 +1499,27 @@ void Voronoi3D::PrepareToBuildHilbert(const std::vector<Vector3D> &points)
             }
         }
     }
+
+    const std::vector<RangeAgent::_set<size_t>> &sentPoints = rangeAgent.getSentPoints();
+    const std::vector<int> &sentProc = rangeAgent.getSentProc();
+
+    for(size_t i = 0; i < sentProc.size(); i++)
+    {
+      int _rank = sentProc[i];
+      size_t rankIdx = std::find(this->duplicatedprocs_.begin(), this->duplicatedprocs_.end(), _rank) - this->duplicatedprocs_.begin();
+      if(rankIdx == this->duplicatedprocs_.size())
+      {
+        // new rank in this->duplicatedprocs_, initialize it
+        this->duplicatedprocs_.push_back(_rank);
+        this->duplicated_points_.emplace_back(std::vector<size_t>());
+        this->Nghost_.emplace_back(std::vector<size_t>());
+      }
+      for(const size_t &pointIdx : sentPoints[i])
+      {
+        this->duplicated_points_[rankIdx].push_back(pointIdx);
+        // this->Nghost_[rankIdx].push_back(pointIdx);
+      }
+    }
 }
 
 void Voronoi3D::CalculateInitialRadius(size_t pointsSize)
@@ -1228,7 +1530,7 @@ void Voronoi3D::CalculateInitialRadius(size_t pointsSize)
       double volume = (this->ur_[0] - this->ll_[0]) * (this->ur_[1] - this->ll_[1]) * (this->ur_[2] - this->ll_[2]);
       size_t N;
       MPI_Allreduce(&pointsSize, &N, 1, MPI_UNSIGNED_LONG, MPI_SUM, MPI_COMM_WORLD);
-      this->initialRadius = std::pow(volume / N, 0.333333f); // heuristic
+      this->initialRadius = 0.25 * std::pow(volume / N, 0.333333f); // heuristic
     } 
     std::fill(this->radiuses.begin(), this->radiuses.end(), this->initialRadius);
 }
@@ -1264,6 +1566,7 @@ void Voronoi3D::BuildHilbert(const std::vector<Vector3D> &points)
     }
     std::vector<Vector3D> new_points = this->hilbertAgent.pointsExchange(points, this->self_index_, this->sentprocs_, this->sentpoints_, this->radiuses);
     // hilbertAgent.calculateBoundingBox();
+    // std::cout << "rank " << rank << ", I have " << new_points.size() << " points" << std::endl;
     this->BuildInitialize(new_points.size());
 
     std::vector<size_t> order;
@@ -1310,7 +1613,6 @@ void Voronoi3D::BuildHilbert(const std::vector<Vector3D> &points)
         // Create Voronoi
         BuildVoronoi(order);
     }
-
     std::vector<double>().swap(R_);
     std::vector<tetra_vec>().swap(PointTetras_);
 
@@ -1318,7 +1620,10 @@ void Voronoi3D::BuildHilbert(const std::vector<Vector3D> &points)
     for (std::size_t i = 0; i < FaceNeighbors_.size(); ++i)
         if (BoundaryFace(i))
             CalcRigidCM(i);
+
     // communicate the ghost CM
+
+    // vector<vector<Vector3D>> incoming = MPI_Exchange_serializable(CM_, duplicatedprocs_, duplicated_points_);
     vector<vector<Vector3D>> incoming = MPI_exchange_data(duplicatedprocs_, duplicated_points_, CM_);
     // Add the recieved CM
     for (size_t i = 0; i < incoming.size(); ++i)
@@ -1958,7 +2263,7 @@ std::size_t Voronoi3D::GetFirstPointToCheck(void) const
 
 #ifdef RICH_MPI
 vector<std::pair<std::size_t, std::size_t>> Voronoi3D::FindIntersections(Tessellation3D const &tproc, size_t mode,
-                                                                                                                                                 vector<unsigned char> &checked_clear)
+                                                                         vector<unsigned char> &checked_clear)
 {
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -1976,9 +2281,9 @@ vector<std::pair<std::size_t, std::size_t>> Voronoi3D::FindIntersections(Tessell
         std::vector<Face> cell_faces(faces.size());
         for (size_t i = 0; i < cell_faces.size(); ++i)
             cell_faces[i] = Face(VectorValues(tproc.GetFacePoints(),
-                                                                                tproc.GetPointsInFace(faces[i])),
-                                                     tproc.GetFaceNeighbors(faces[i]).first,
-                                                     tproc.GetFaceNeighbors(faces[i]).second);
+                                              tproc.GetPointsInFace(faces[i])),
+                                              tproc.GetFaceNeighbors(faces[i]).first,
+                                              tproc.GetFaceNeighbors(faces[i]).second);
         // Search for intersections
         for (size_t i = 0; i < Norg_; ++i)
         {
@@ -2007,7 +2312,7 @@ vector<std::pair<std::size_t, std::size_t>> Voronoi3D::FindIntersections(Tessell
                 continue;
             GetPastDuplicate(i, past_duplicate, sorted_to_duplicate, duplicatedprocs);
             FindIntersectionsRecursive(intersecting_faces, tproc, static_cast<std::size_t>(rank), i, sphere,
-                                                                 mode, visited, intersection_check, skipped, vtemp, past_duplicate);
+                                       mode, visited, intersection_check, skipped, vtemp, past_duplicate);
             for (std::size_t j = 0; j < intersecting_faces.size(); ++j)
                 res.push_back(std::pair<std::size_t, std::size_t>(intersecting_faces[j], i));
             if (intersecting_faces.empty())

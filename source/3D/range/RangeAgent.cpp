@@ -1,10 +1,11 @@
 #include "RangeAgent.h"
 
 RangeAgent::RangeAgent(MPI_Comm comm, const HilbertAgent &hilbertAgent, RangeFinder *rangeFinder):
-        comm(comm), hilbertAgent(hilbertAgent), rangeFinder(rangeFinder), hilbertTree(nullptr), myCurrentRound(0), finishedForNextRound(0)
+        comm(comm), hilbertAgent(hilbertAgent), rangeFinder(rangeFinder), hilbertTree(nullptr)
 {
     MPI_Comm_rank(this->comm, &this->rank);
     MPI_Comm_size(this->comm, &this->size);
+    this->sentPoints = std::vector<_set<size_t>>(this->size);
 }
 
 void RangeAgent::receiveQueries(QueryBatchInfo &batch)
@@ -18,9 +19,6 @@ void RangeAgent::receiveQueries(QueryBatchInfo &batch)
     int received = 0;
 
     std::vector<QueryInfo> &queries = batch.queriesAnswers;
-    std::vector<std::vector<Vector3D>> &pointsFromRanks = batch.pointsFromRanks;
-    pointsFromRanks.resize(this->size);
-
     MPI_Iprobe(MPI_ANY_SOURCE, TAG_RESPONSE, this->comm, &receivedAnswer, &status);
 
     std::vector<char> buffer;
@@ -48,13 +46,15 @@ void RangeAgent::receiveQueries(QueryBatchInfo &batch)
             // insert the results to the points received by rank `status.MPI_SOURCE` and to the queries result
             queries[id].finalResults.resize(queries[id].finalResults.size() + length);
             MPI_Unpack(&(*(buffer.begin())), count, &pos, &(*(queries[id].finalResults.end() - length)), length * sizeof(_3DPoint), MPI_BYTE, this->comm);
-            pointsFromRanks[status.MPI_SOURCE].resize(pointsFromRanks[status.MPI_SOURCE].size() + length);
+            std::vector<size_t> &rankRecvPoints = this->recvPoints[status.MPI_SOURCE];
+            rankRecvPoints.reserve(rankRecvPoints.size() + length);
+            batch.newPoints.reserve(batch.newPoints.size() + length);
             for(size_t i = 0; i < static_cast<size_t>(length); i++)
             {
+                rankRecvPoints.push_back(batch.newPoints.size());
                 _3DPoint &point = *(queries[id].finalResults.end() - length + i);
                 Vector3D vector(point.x, point.y, point.z);
-                pointsFromRanks[status.MPI_SOURCE].push_back(vector);
-                batch.newPoints.push_back(vector);
+                batch.newPoints.emplace_back(vector);
             }
         }
         else
@@ -68,29 +68,30 @@ void RangeAgent::receiveQueries(QueryBatchInfo &batch)
 /**
  * gets a query, and who requests it, and returns the answer that should be sent.
 */
-std::vector<Vector3D> RangeAgent::getRangeResult(const SubQueryData &query, int node)
+std::vector<Vector3D> RangeAgent::getRangeResult(const SubQueryData &query, int rank)
 {
-    // get what is the right index of `node` inside the sentProcessors vector. If it isn't there, create it
     std::vector<Vector3D> result;
-    size_t rankIndex = std::find(this->sentProcessorsRanks.begin(), this->sentProcessorsRanks.end(), node) - this->sentProcessorsRanks.begin();
-    if(rankIndex == this->sentProcessorsRanks.size())
-    {
-        // rank is not inside the sentProcessors rank, add it
-        this->sentProcessorsRanks.push_back(node);
-        this->sentPoints.push_back(_set<size_t>());
-    }
-
     // get the real results, and filter it (do not send points you sent before)
     std::vector<size_t> nonFilteredResult = this->rangeFinder->range(Vector3D(query.data.center.x, query.data.center.y, query.data.center.z), query.data.radius);
-    for(const size_t &pointIdx : nonFilteredResult)
+    if(!nonFilteredResult.empty())
     {
-        // check if the point wasn't already sent to node, only after that, add it to the result
-        //if(std::find(this->sentPoints[rankIndex].begin(), this->sentPoints[rankIndex].end(), pointIdx) == this->sentPoints[rankIndex].end())
-        if(this->sentPoints[rankIndex].find(pointIdx) == this->sentPoints[rankIndex].end())
+        // get what is the right index of `node` inside the sentProcessors vector. If it isn't there, create it
+        size_t rankIndex = std::find(this->sentProcessorsRanks.begin(), this->sentProcessorsRanks.end(), rank) - this->sentProcessorsRanks.begin();
+        if(rankIndex == this->sentProcessorsRanks.size())
         {
-            // point haven't been sent, send it
-            result.push_back(this->rangeFinder->getPoint(pointIdx));
-            this->sentPoints[rankIndex].insert(pointIdx);
+            // rank is not inside the sentProcessors rank, add it
+            this->sentProcessorsRanks.push_back(rank);
+        }
+        for(const size_t &pointIdx : nonFilteredResult)
+        {
+            // check if the point wasn't already sent to node, only after that, add it to the result
+            //if(std::find(this->sentPoints[rankIndex].begin(), this->sentPoints[rankIndex].end(), pointIdx) == this->sentPoints[rankIndex].end())
+            if(this->sentPoints[rankIndex].find(pointIdx) == this->sentPoints[rankIndex].end())
+            {
+                // point haven't been sent, send it
+                result.push_back(this->rangeFinder->getPoint(pointIdx));
+                this->sentPoints[rankIndex].insert(pointIdx);
+            }
         }
     }
     return result;
@@ -211,6 +212,7 @@ QueryBatchInfo RangeAgent::runBatch(std::queue<RangeQueryData> &queries)
 {
     this->receivedUntilNow = 0; // reset the receive counter
     this->shouldReceiveInTotal = 0; // reset the should-be-received counter
+    this->recvPoints = std::vector<std::vector<size_t>>(this->size);
     this->buffers.clear();
     this->buffers.reserve(3 * queries.size()); // heuristic
     this->requests.clear();

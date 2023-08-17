@@ -50,17 +50,16 @@ typedef struct QueryInfo
 typedef struct QueryBatchInfo
 {
     std::vector<QueryInfo> queriesAnswers;
-    std::vector<std::vector<Vector3D>> pointsFromRanks;
     std::vector<Vector3D> newPoints;
 } QueryBatchInfo;
 
 
 class RangeAgent
 {
+public:
     template<typename T>
     using _set = boost::container::flat_set<T>;
 
-public:
     RangeAgent(MPI_Comm comm, const HilbertAgent &hilbertAgent, RangeFinder *rangeFinder);
     inline RangeAgent(const HilbertAgent &hilbertAgent, RangeFinder *rangeFinder): RangeAgent(MPI_COMM_WORLD, hilbertAgent, rangeFinder){};
     inline RangeAgent(MPI_Comm comm, const Vector3D &origin, const Vector3D &corner, int order, RangeFinder *rangeFinder): RangeAgent(comm, HilbertAgent(origin, corner, order), rangeFinder){};
@@ -75,6 +74,10 @@ public:
     inline size_t getNumPoints(){return this->rangeFinder->size();};
     inline void buildHilbertTree(const OctTree<Vector3D> *tree){this->hilbertTree = new DistributedOctTree(tree);};
 
+    std::vector<_set<size_t>> &getSentPoints(){return this->sentPoints;};
+    std::vector<std::vector<size_t>> &getRecvPoints(){return this->recvPoints;};
+    std::vector<int> &getSentProc(){return this->sentProcessorsRanks;};
+
 private:
     MPI_Comm comm;
     int rank, size;
@@ -86,15 +89,12 @@ private:
     HilbertAgent hilbertAgent;
     RangeFinder *rangeFinder;
     DistributedOctTree<Vector3D> *hilbertTree;
-    int myCurrentRound;
-    int finishedForNextRound;
 
     std::vector<int> sentProcessorsRanks;
     std::vector<_set<size_t>> sentPoints; 
-    std::vector<int> recvProcessorsRank;
     std::vector<std::vector<size_t>> recvPoints; 
     
-    std::vector<Vector3D> getRangeResult(const SubQueryData &query, int node);
+    std::vector<Vector3D> getRangeResult(const SubQueryData &query, int rank);
     _set<int> getIntersectingRanks(const Vector3D &center, coord_t radius) const;
     void sendFinish();
     int checkForFinishMessages() const;

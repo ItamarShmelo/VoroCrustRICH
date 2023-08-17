@@ -431,17 +431,17 @@ vector<std::size_t> HilbertOrder3D(vector<Vector3D> const& cor)
 	}
 	else
 	{
-		for (std::size_t ii = 0; ii < vEqualIndices.size(); ++ii)
+		for (const std::vector<size_t> &equalList : vEqualIndices)
 		{
-			vector<Vector3D> vPointsInner(vEqualIndices[ii].size() );
-			vector<std::size_t> vIndInner(vEqualIndices[ii].size());
-			vector<std::size_t> vIndSortInner(vEqualIndices[ii].size());
-			vector<std::size_t> vIndSortInner_cpy(vEqualIndices[ii].size());
+			vector<Vector3D> vPointsInner(equalList.size() );
+			vector<std::size_t> vIndInner(equalList.size());
+			vector<std::size_t> vIndSortInner(equalList.size());
+			vector<std::size_t> vIndSortInner_cpy(equalList.size());
 
 			// Store the points with the equal indices
-			for (std::size_t jj = 0; jj < vEqualIndices[ii].size() ; ++jj)
+			for (std::size_t jj = 0; jj < equalList.size() ; ++jj)
 			{
-				vIndInner[jj] = vIndSort[vEqualIndices[ii][jj]];
+				vIndInner[jj] = vIndSort[equalList[jj]];
 				vPointsInner[jj] = cor[vIndInner[jj]];
 				vIndSortInner_cpy[jj] = vIndSort[vIndInner[jj]];
 			}
