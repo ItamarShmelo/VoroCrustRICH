@@ -103,13 +103,13 @@ private:
   void BuildVoronoi(std::vector<size_t> const& order);
 
   double GetMaxRadius(std::size_t index);
+  void InitialBoxBuild(std::vector<Face> &box, std::vector<Vector3D> &normals);
 
   #ifdef RICH_MPI
   void Build(std::vector<Vector3D> const &points, Tessellation3D const &tproc); // old implementation
   void CalculateInitialRadius(size_t pointsSize);
   void PrepareToBuildHilbert(const std::vector<Vector3D> &points);
   void BuildInitialize(size_t num_points);
-  void InitialBoxBuild(std::vector<Face> &box, std::vector<Vector3D> &normals);
   bool CheckForRebalance(const std::vector<Vector3D> &points) const;
   void CheckToMirror(const Vector3D &point, double radius, std::vector<Face> &box, std::vector<Vector3D> &normals, std::vector<Vector3D> &points);
   #endif // RICH_MPI
@@ -125,7 +125,7 @@ private:
   std::vector<point_vec > PointsInFace_; // Right hand with regard to first neighbor
   //vector<vector<std::size_t> > PointsInFace_; // Right hand with regard to first neighbor
   vector<std::pair<std::size_t, std::size_t> > FaceNeighbors_;
-  vector<Vector3D> CM_,Face_CM_;
+  vector<Vector3D> CM_, Face_CM_; // center of masses
   vector<double> volume_; // volumes of each one of the tetrahedra
   vector<double> area_; // surface area of each one of the tetrahedra
   vector<int> sentprocs_;
@@ -139,10 +139,12 @@ private:
   std::array<Vector3D, 4> temp_points_;
   std::array<Vector3D, 5> temp_points2_;
   std::vector<Face> box_faces_;
+  #ifdef RICH_MPI
   std::vector<double> radiuses;
   HilbertAgent hilbertAgent;
   double initialRadius;
-
+  #endif // RICH_MPI
+  
 public:
 #ifdef RICH_MPI
   /*! \brief Update meta tessellation

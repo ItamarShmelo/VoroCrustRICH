@@ -1,6 +1,8 @@
 #ifndef _RICH_RANGE_AGENT_H_
 #define _RICH_RANGE_AGENT_H_
 
+#ifdef RICH_MPI
+
 #include <iostream> // todo remove
 #include <algorithm>
 #include <cmath>
@@ -74,7 +76,7 @@ public:
     inline size_t getNumPoints(){return this->rangeFinder->size();};
     inline void buildHilbertTree(const OctTree<Vector3D> *tree){this->hilbertTree = new DistributedOctTree(tree);};
 
-    std::vector<_set<size_t>> &getSentPoints(){return this->sentPoints;};
+    std::vector<std::vector<size_t>> &getSentPoints(){return this->sentPoints;};
     std::vector<std::vector<size_t>> &getRecvPoints(){return this->recvPoints;};
     std::vector<int> &getSentProc(){return this->sentProcessorsRanks;};
 
@@ -91,7 +93,8 @@ private:
     DistributedOctTree<Vector3D> *hilbertTree;
 
     std::vector<int> sentProcessorsRanks;
-    std::vector<_set<size_t>> sentPoints; 
+    std::vector<std::vector<size_t>> sentPoints; 
+    std::vector<_set<size_t>> sentPointsSet; 
     std::vector<std::vector<size_t>> recvPoints; 
     
     std::vector<Vector3D> getRangeResult(const SubQueryData &query, int rank);
@@ -99,5 +102,7 @@ private:
     void sendFinish();
     int checkForFinishMessages() const;
 };
+
+#endif // RICH_MPI
 
 #endif // _RICH_RANGE_AGENT_H_
