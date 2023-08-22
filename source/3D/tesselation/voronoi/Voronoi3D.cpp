@@ -14,14 +14,12 @@
 #include <boost/container/flat_map.hpp>
 #include <boost/container/flat_set.hpp>
 #include "3D/GeometryCommon/Intersections.hpp"
-#ifdef RICH_MPI
 #include "3D/range/finders/BruteForce.hpp"
 #include "3D/range/finders/RangeTree.hpp"
 #include "3D/range/finders/OctTree.hpp"
 #include "3D/range/finders/SmartBruteForce.hpp"
 #include "3D/range/finders/HashBruteForce.hpp"
 #include "3D/range/finders/GroupRangeTree.hpp"
-#endif // RICH_MPI
 #include "misc/int2str.hpp"
 #include <boost/multiprecision/cpp_dec_float.hpp>
 #include <boost/container/static_vector.hpp>
@@ -735,17 +733,12 @@ Voronoi3D::Voronoi3D() : ll_(Vector3D()), ur_(Vector3D()), Norg_(0), bigtet_(0),
                         sentprocs_(vector<int>()), duplicatedprocs_(vector<int>()), sentpoints_(vector<vector<std::size_t>>()), Nghost_(vector<vector<std::size_t>>()),
                         self_index_(vector<std::size_t>()), temp_points_(std::array<Vector3D, 4>()), temp_points2_(std::array<Vector3D, 5>())
                         #ifdef RICH_MPI
-<<<<<<< HEAD
                         , hilbertAgent(HilbertAgent(this->ll_, this->ur_, DEFAULT_HILBERT_ACCURACY)), initialRadius(0.0), firstCall(true)
-=======
-                        ,hilbertAgent(HilbertAgent(this->ll_, this->ur_, DEFAULT_HILBERT_ACCURACY)), initialRadius(0.0)
->>>>>>> 342f02048afef504c85b1f72ffc45f1cefee8c24
                         #endif // RICH_MPI
 {
 }
 
 Voronoi3D::Voronoi3D(std::vector<Face> const& box_faces) : Norg_(0), bigtet_(0), set_temp_(std::set<int>()), stack_temp_(std::stack<int>()),
-<<<<<<< HEAD
                                                         del_(Delaunay3D()), PointTetras_(vector<tetra_vec>()), R_(vector<double>()), tetra_centers_(vector<Vector3D>()),
                                                         FacesInCell_(vector<face_vec>()),
                                                         PointsInFace_(vector<point_vec>()),
@@ -757,19 +750,6 @@ Voronoi3D::Voronoi3D(std::vector<Face> const& box_faces) : Norg_(0), bigtet_(0),
                                                         #ifdef RICH_MPI
                                                         , hilbertAgent(HilbertAgent(this->ll_, this->ur_, DEFAULT_HILBERT_ACCURACY)), initialRadius(0.0), firstCall(true)
                                                         #endif // RICH_MPI
-=======
-                                                          del_(Delaunay3D()), PointTetras_(vector<tetra_vec>()), R_(vector<double>()), tetra_centers_(vector<Vector3D>()),
-                                                          FacesInCell_(vector<face_vec>()),
-                                                          PointsInFace_(vector<point_vec>()),
-                                                          FaceNeighbors_(vector<std::pair<std::size_t, std::size_t>>()),
-                                                          CM_(vector<Vector3D>()), Face_CM_(vector<Vector3D>()),
-                                                          volume_(vector<double>()), area_(vector<double>()), duplicated_points_(vector<vector<std::size_t>>()),
-                                                          sentprocs_(vector<int>()), duplicatedprocs_(vector<int>()), sentpoints_(vector<vector<std::size_t>>()), Nghost_(vector<vector<std::size_t>>()),
-                                                          self_index_(vector<std::size_t>()), temp_points_(std::array<Vector3D, 4>()), temp_points2_(std::array<Vector3D, 5>()), box_faces_(box_faces)
-                                                          #ifdef RICH_MPI
-                                                          ,hilbertAgent(HilbertAgent(this->ll_, this->ur_, DEFAULT_HILBERT_ACCURACY)), initialRadius(0.0)
-                                                          #endif // RICH_MPI
->>>>>>> 342f02048afef504c85b1f72ffc45f1cefee8c24
 {
     size_t const Nfaces = box_faces.size();
     if(Nfaces < 4)
@@ -801,11 +781,7 @@ Voronoi3D::Voronoi3D(Vector3D const &ll, Vector3D const &ur) : ll_(ll), ur_(ur),
                                                               sentprocs_(vector<int>()), duplicatedprocs_(vector<int>()), sentpoints_(vector<vector<std::size_t>>()), Nghost_(vector<vector<std::size_t>>()),
                                                               self_index_(vector<std::size_t>()), temp_points_(std::array<Vector3D, 4>()), temp_points2_(std::array<Vector3D, 5>()), box_faces_(std::vector<Face> ())
                                                               #ifdef RICH_MPI
-<<<<<<< HEAD
                                                               , hilbertAgent(HilbertAgent(this->ll_, this->ur_, DEFAULT_HILBERT_ACCURACY)), initialRadius(0.0), firstCall(true)
-=======
-                                                              ,hilbertAgent(HilbertAgent(this->ll_, this->ur_, DEFAULT_HILBERT_ACCURACY))
->>>>>>> 342f02048afef504c85b1f72ffc45f1cefee8c24
                                                               #endif // RICH_MPI
                                                               {}
 
@@ -840,7 +816,7 @@ vector<Vector3D> Voronoi3D::CreateBoundaryPoints(vector<std::pair<std::size_t, s
     for (std::size_t i = 0; i < Ncheck; ++i)
     {
         if (first_time || !std::binary_search(past_duplicate[to_duplicate[i].first].begin(),
-                                              past_duplicate[to_duplicate[i].first].end(), to_duplicate[i].second))
+                                                                                    past_duplicate[to_duplicate[i].first].end(), to_duplicate[i].second))
         {
             res.push_back(MirrorPoint(faces[to_duplicate[i].first], del_.points_[to_duplicate[i].second]));
             to_add.push_back(to_duplicate[i]);
@@ -2860,11 +2836,7 @@ Voronoi3D::Voronoi3D(Voronoi3D const &other) : ll_(other.ll_), ur_(other.ur_), N
                                                 duplicated_points_(other.duplicated_points_), sentprocs_(other.sentprocs_), duplicatedprocs_(other.duplicatedprocs_), sentpoints_(other.sentpoints_),
                                                 Nghost_(other.Nghost_), self_index_(other.self_index_), temp_points_(std::array<Vector3D, 4>()), temp_points2_(std::array<Vector3D, 5>()), box_faces_(other.box_faces_)
                                                 #ifdef RICH_MPI
-<<<<<<< HEAD
                                                 , hilbertAgent(other.hilbertAgent), initialRadius(other.initialRadius), firstCall(true) 
-=======
-                                                ,hilbertAgent(other.hilbertAgent), initialRadius(other.initialRadius)
->>>>>>> 342f02048afef504c85b1f72ffc45f1cefee8c24
                                                 #endif // RICH_MPI
                                                 {}
 

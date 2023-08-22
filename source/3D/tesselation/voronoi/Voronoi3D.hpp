@@ -143,14 +143,9 @@ private:
   std::vector<double> radiuses;
   HilbertAgent hilbertAgent;
   double initialRadius;
-<<<<<<< HEAD
   bool firstCall;
   #endif // RICH_MPI
 
-=======
-  #endif // RICH_MPI
-  
->>>>>>> 342f02048afef504c85b1f72ffc45f1cefee8c24
 public:
 #ifdef RICH_MPI
   /*! \brief Update meta tessellation
