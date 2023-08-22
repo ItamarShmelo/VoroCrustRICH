@@ -1,6 +1,8 @@
 #ifndef _RICH_RANGE_AGENT_H_
 #define _RICH_RANGE_AGENT_H_
 
+#ifdef RICH_MPI
+
 #include <iostream> // todo remove
 #include <algorithm>
 #include <cmath>
@@ -100,5 +102,7 @@ private:
     void sendFinish();
     int checkForFinishMessages() const;
 };
+
+#endif // RICH_MPI
 
 #endif // _RICH_RANGE_AGENT_H_

@@ -1,6 +1,8 @@
 #ifndef _DISTRIBUTED_OCTTREE_HPP
 #define _DISTRIBUTED_OCTTREE_HPP
 
+#ifdef RICH_MPI
+
 #include <iostream> // todo remove
 #include <vector>
 #include <assert.h>
@@ -222,6 +224,8 @@ boost::container::flat_set<int> DistributedOctTree<T>::getIntersectingRanks(cons
     }
     return ranks;
 }
+
+#endif // RICH_MPI
 
 #endif // _DISTRIBUTED_OCTTREE_HPP
 

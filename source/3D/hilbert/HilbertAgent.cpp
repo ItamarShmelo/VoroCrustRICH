@@ -1,3 +1,5 @@
+#ifdef RICH_MPI
+
 #include "HilbertAgent.h"
 
 HilbertAgent::HilbertAgent(const Vector3D &origin, const Vector3D &corner): ll(origin), ur(corner), dx(corner - origin)
@@ -259,3 +261,5 @@ typename HilbertAgent::_set<size_t> HilbertAgent::getIntersectingCircle(const Ve
     
     return hilbertCells;
 }
+
+#endif // RICH_MPI

@@ -1,3 +1,5 @@
+#ifdef RICH_MPI
+
 #include "RangeAgent.h"
 
 RangeAgent::RangeAgent(MPI_Comm comm, const HilbertAgent &hilbertAgent, RangeFinder *rangeFinder):
@@ -261,5 +263,6 @@ QueryBatchInfo RangeAgent::runBatch(std::queue<RangeQueryData> &queries)
         MPI_Waitall(this->requests.size(), &(*(this->requests.begin())), MPI_STATUSES_IGNORE); // make sure any query was indeed received
     }
     return queriesBatch;
-
 }
+
+#endif // RICH_MPI

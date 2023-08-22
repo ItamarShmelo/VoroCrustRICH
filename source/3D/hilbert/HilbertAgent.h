@@ -1,10 +1,12 @@
 /**
- * The hilbert agent is a class that is responsible for rearranging points and
+ * The hilbert agent is responsible for getting familiar with the neighborhood, rearranging points and
  * getting information about the hilbert infastructure of the space.
 */
 
 #ifndef _RICH_3DINTERSECT_H
 #define _RICH_3DINTERSECT_H
+
+#ifdef RICH_MPI
 
 #include <iostream>
 #include <vector>
@@ -76,5 +78,7 @@ private:
     void pointsReceive(std::vector<Vector3D> &points, std::vector<double> &radiuses, bool blocking) const;
     inline int getOwner(const Vector3D &point) const{return this->getCellOwner(this->xyz2d(point));};
 };
+
+#endif // RICH_MPI
 
 #endif // _RICH_3DINTERSECT_H
