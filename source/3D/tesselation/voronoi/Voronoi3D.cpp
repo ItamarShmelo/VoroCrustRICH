@@ -21,7 +21,6 @@
 #include "3D/range/finders/HashBruteForce.hpp"
 #include "3D/range/finders/GroupRangeTree.hpp"
 #include "misc/int2str.hpp"
-#include "utils/exchange/exchange.hpp"
 #include <boost/multiprecision/cpp_dec_float.hpp>
 #include <boost/container/static_vector.hpp>
 #include <omp.h>
@@ -328,7 +327,7 @@ namespace
         return bigtet;
     }
 
-void CleanSameLine(boost::container::small_vector<size_t, 8> &indeces, vector<Vector3D> const& face_points, std::array<double, 128> &area_vec_temp)
+    bool CleanSameLine(boost::container::small_vector<size_t, 8> &indeces, vector<Vector3D> const& face_points, std::array<double, 128> &area_vec_temp)
     {
         point_vec old;
         size_t const N = indeces.size();
@@ -338,66 +337,45 @@ void CleanSameLine(boost::container::small_vector<size_t, 8> &indeces, vector<Ve
         Vector3D good_normal;
         for(size_t i = 0; i < N; ++i)
         {
-            area_vec_temp[i] = fastabs(CrossProduct(face_points[indeces[i]] - face_points[indeces[(N + i - 1) % N]], face_points[indeces[(i + 1) % N]] 
-            - face_points[indeces[(N + i - 1) % N]]));
-            old.push_back(indeces[i]);
+        area_vec_temp[i] = fastabs(CrossProduct(face_points[indeces[i]] - face_points[indeces[(N + i - 1) % N]], face_points[indeces[(i + 1) % N]] 
+        - face_points[indeces[(N + i - 1) % N]]));
+        old.push_back(indeces[i]);
         }
         double const area_scale = *std::max_element(area_vec_temp.begin(), area_vec_temp.begin() + N);
         good_normal = CrossProduct(face_points[indeces[0]] - face_points[indeces[N - 1]], face_points[indeces[1]] 
-            - face_points[indeces[N - 1]]);
-        good_normal *= 1.0 / fastabs(good_normal);
+        - face_points[indeces[N - 1]]);
+        good_normal *= 1.0 / (100 * std::numeric_limits<double>::min() + fastabs(good_normal));
         for(size_t i = 1; i < N; ++i)
         {
-            if(area_vec_temp[i] > area_scale * medium_fraction)
-            {
-                good_normal = CrossProduct(face_points[indeces[i]] - face_points[indeces[i - 1]], face_points[indeces[(i + 1) % N]] 
-                    - face_points[indeces[i - 1]]);
-                good_normal *= 1.0 / fastabs(good_normal);
-                break;
-            }
+        if(area_vec_temp[i] > area_scale * medium_fraction)
+        {
+            good_normal = CrossProduct(face_points[indeces[i]] - face_points[indeces[i - 1]], face_points[indeces[(i + 1) % N]] 
+            - face_points[indeces[i - 1]]);
+            good_normal *= 1.0 / fastabs(good_normal);
+            break;
+        }
         }
         size_t Nindeces = indeces.size();
         for(size_t i = 0; i < Nindeces; ++i)
         {
-            Vector3D normal_temp = CrossProduct(face_points[indeces[i]] - face_points[indeces[(Nindeces + i - 1) % Nindeces]], face_points[indeces[(i + 1) % Nindeces]] 
-                - face_points[indeces[(Nindeces + i - 1) % Nindeces]]);
-            double const area = fastabs(normal_temp);
-            normal_temp *= 1.0 / area;
-            if(area < area_scale * small_fraction || ScalarProd(normal_temp, good_normal) < 0.99998)
-            {
-                indeces.erase(indeces.begin() + i);
-                if(i == indeces.size() - 1)
-                    break;
-                --i;
-                Nindeces = indeces.size();
-            }
+        Vector3D normal_temp = CrossProduct(face_points[indeces[i]] - face_points[indeces[(Nindeces + i - 1) % Nindeces]], face_points[indeces[(i + 1) % Nindeces]] - face_points[indeces[(Nindeces + i - 1) % Nindeces]]);
+        double const area = fastabs(normal_temp);
+        normal_temp *= 1.0 / (100 * std::numeric_limits<double>::min() + area);
+        if(area < area_scale * small_fraction || ScalarProd(normal_temp, good_normal) < 0.99998)
+        {
+            indeces.erase(indeces.begin() + i);
+            if(i == indeces.size() - 1)
+            break;
+            --i;
+            Nindeces = indeces.size();
+        }
         }
         if(Nindeces < 3)
-        {
-            UniversalError eo("Not enough point in face in CleanSameLine");
-            eo.addEntry("original size", old.size());
-            eo.addEntry("Area scale", area_scale);
-            std::cout<<std::setprecision(15)<<std::endl;
-            eo.addEntry("Normal x", good_normal.x);
-            eo.addEntry("Normal y", good_normal.y);
-            eo.addEntry("Normal z", good_normal.z);
-            eo.addEntry("Point0 x", face_points[old[0]].x);
-            eo.addEntry("Point0 y", face_points[old[0]].y);
-            eo.addEntry("Point0 z", face_points[old[0]].z);
-            for(size_t i = 1; i < old.size(); ++i)
-            {
-                Vector3D normal_temp = CrossProduct(face_points[old[i]] - face_points[old[i - 1]], face_points[old[(i + 1) % old.size()]] - face_points[old[i - 1]]);
-                normal_temp *= 1.0 /fastabs(normal_temp);
-                double const s = ScalarProd(normal_temp, good_normal);
-                eo.addEntry("Point" + std::to_string(i) + " x", face_points[old[i]].x);
-                eo.addEntry("Point" + std::to_string(i) + " y", face_points[old[i]].y);
-                eo.addEntry("Point" + std::to_string(i) + " z", face_points[old[i]].z);
-                eo.addEntry("Area", area_vec_temp[i]);
-                eo.addEntry("s", s);
-            }
-            throw eo;
-        }
+        return false;
+        else
+        return true;
     }
+
 
     void MakeRightHandFace(boost::container::small_vector<size_t, 8> &indeces, Vector3D const &point, vector<Vector3D> const &face_points,
                                                  std::array<size_t, 128> &temp, double areascale)
@@ -1459,8 +1437,6 @@ void Voronoi3D::PrepareToBuildHilbert(const std::vector<Vector3D> &points)
           {
             // batchInfo.pointsFromRanks[_rank][i] holds an index of point, but this point will be added to my delaunay, so
             // its index there will be this->del_.points_.size() + batchInfo.pointsFromRanks[_rank][i]
-
-            //this->duplicated_points_[rankIdx].push_back(this->del_.points_.size() + RelativePointIdx);
             this->Nghost_[rankIdx].push_back(this->del_.points_.size() + RelativePointIdx);
           }
         }
@@ -1500,7 +1476,7 @@ void Voronoi3D::PrepareToBuildHilbert(const std::vector<Vector3D> &points)
         }
     }
 
-    const std::vector<RangeAgent::_set<size_t>> &sentPoints = rangeAgent.getSentPoints();
+    const std::vector<std::vector<size_t>> &sentPoints = rangeAgent.getSentPoints();
     const std::vector<int> &sentProc = rangeAgent.getSentProc();
 
     for(size_t i = 0; i < sentProc.size(); i++)
@@ -1517,7 +1493,6 @@ void Voronoi3D::PrepareToBuildHilbert(const std::vector<Vector3D> &points)
       for(const size_t &pointIdx : sentPoints[i])
       {
         this->duplicated_points_[rankIdx].push_back(pointIdx);
-        // this->Nghost_[rankIdx].push_back(pointIdx);
       }
     }
 }
@@ -1622,6 +1597,8 @@ void Voronoi3D::BuildHilbert(const std::vector<Vector3D> &points)
             CalcRigidCM(i);
 
     // communicate the ghost CM
+    
+    // TODO: I suspect this part as being wrong (are the radiuses being sent correctly?)
 
     // vector<vector<Vector3D>> incoming = MPI_Exchange_serializable(CM_, duplicatedprocs_, duplicated_points_);
     vector<vector<Vector3D>> incoming = MPI_exchange_data(duplicatedprocs_, duplicated_points_, CM_);

@@ -135,6 +135,9 @@ std::vector<Vector3D> HilbertAgent::pointsExchange(const std::vector<Vector3D> &
     std::vector<MPI_Request> requests;
     std::vector<double> oldRadiuses = std::move(radiuses);
     radiuses.clear();
+    self_index_.clear();
+    sentprocs_.clear();
+    sentpoints_.clear();
 
     for(size_t i = 0; i < points.size(); i++)
     {

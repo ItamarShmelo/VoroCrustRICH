@@ -125,7 +125,7 @@ private:
   std::vector<point_vec > PointsInFace_; // Right hand with regard to first neighbor
   //vector<vector<std::size_t> > PointsInFace_; // Right hand with regard to first neighbor
   vector<std::pair<std::size_t, std::size_t> > FaceNeighbors_;
-  vector<Vector3D> CM_,Face_CM_;
+  vector<Vector3D> CM_, Face_CM_; // center of masses
   vector<double> volume_; // volumes of each one of the tetrahedra
   vector<double> area_; // surface area of each one of the tetrahedra
   vector<int> sentprocs_;

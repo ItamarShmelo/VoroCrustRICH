@@ -111,6 +111,18 @@ namespace
                         return comp(lhs, rhs);
                     }; 
         typename std::vector<T>::iterator vectorBeforeMid = std::lower_bound(vectorFirst, vectorLast, medianOfMedians.first, newComp);
+        if((vectorLast - vectorFirst > 1) and (medianOfMedians.second == rank) and (vectorBeforeMid == vectorFirst))
+        {
+            // edge case
+            if(vectorLast - vectorFirst == 2)
+            {
+                vectorBeforeMid = vectorFirst + 1; // ONE BEFORE LAST (otherwise we stay in the same vectorFirst, vectorLast)
+            }
+            else
+            {
+                vectorBeforeMid = vectorFirst + vecMidLen; // MIDDLE
+            }
+        }
         size_t numBeforeMid = static_cast<size_t>(vectorBeforeMid - vectorFirst);
         size_t statOrderOfMedOfMed;
         MPI_Allreduce(&numBeforeMid, &statOrderOfMedOfMed, 1, MPI_UNSIGNED_LONG, MPI_SUM, MPI_COMM_WORLD);
