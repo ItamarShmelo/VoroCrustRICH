@@ -1,5 +1,8 @@
 #ifdef RICH_MPI
+<<<<<<< HEAD
 
+=======
+>>>>>>> 342f02048afef504c85b1f72ffc45f1cefee8c24
 #include "RangeAgent.h"
 
 RangeAgent::RangeAgent(MPI_Comm comm, const HilbertAgent &hilbertAgent, RangeFinder *rangeFinder):
@@ -82,19 +85,32 @@ std::vector<Vector3D> RangeAgent::getRangeResult(const SubQueryData &query, int 
         {
             // rank is not inside the sentProcessors rank, add it
             this->sentProcessorsRanks.push_back(rank);
+<<<<<<< HEAD
             this->sentPointsSet.push_back(_set<size_t>());
             this->sentPoints.push_back(std::vector<size_t>());
+=======
+            this->sentPoints.emplace_back(std::vector<size_t>());
+            this->sentPointsSet.emplace_back(_set<size_t>());
+>>>>>>> 342f02048afef504c85b1f72ffc45f1cefee8c24
         }
         for(const size_t &pointIdx : nonFilteredResult)
         {
             // check if the point wasn't already sent to node, only after that, add it to the result
+<<<<<<< HEAD
             //if(std::find(this->sentPoints[rankIndex].begin(), this->sentPoints[rankIndex].end(), pointIdx) == this->sentPoints[rankIndex].end())
+=======
+>>>>>>> 342f02048afef504c85b1f72ffc45f1cefee8c24
             if(this->sentPointsSet[rankIndex].find(pointIdx) == this->sentPointsSet[rankIndex].end())
             {
                 // point haven't been sent, send it
                 result.push_back(this->rangeFinder->getPoint(pointIdx));
+<<<<<<< HEAD
                 this->sentPointsSet[rankIndex].insert(pointIdx);
                 this->sentPoints[rankIndex].push_back(pointIdx);
+=======
+                this->sentPoints[rankIndex].push_back(pointIdx);
+                this->sentPointsSet[rankIndex].insert(pointIdx);
+>>>>>>> 342f02048afef504c85b1f72ffc45f1cefee8c24
             }
         }
     }

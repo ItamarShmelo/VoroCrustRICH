@@ -2,7 +2,6 @@
  * The hilbert agent is responsible for getting familiar with the neighborhood, rearranging points and
  * getting information about the hilbert infastructure of the space.
 */
-
 #ifndef _RICH_3DINTERSECT_H
 #define _RICH_3DINTERSECT_H
 
@@ -81,4 +80,8 @@ private:
 
 #endif // RICH_MPI
 
+<<<<<<< HEAD
 #endif // _RICH_3DINTERSECT_H
+=======
+#endif // _RICH_3DINTERSECT_H
+>>>>>>> 342f02048afef504c85b1f72ffc45f1cefee8c24

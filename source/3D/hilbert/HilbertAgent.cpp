@@ -1,5 +1,8 @@
 #ifdef RICH_MPI
+<<<<<<< HEAD
 
+=======
+>>>>>>> 342f02048afef504c85b1f72ffc45f1cefee8c24
 #include "HilbertAgent.h"
 
 HilbertAgent::HilbertAgent(const Vector3D &origin, const Vector3D &corner): ll(origin), ur(corner), dx(corner - origin)
