@@ -1,6 +1,8 @@
 #ifndef _SMART_BRUTE_FORCE_RANGE_HPP
 #define _SMART_BRUTE_FORCE_RANGE_HPP
 
+#ifdef RICH_MPI
+
 #include <mpi.h>
 #include "3D/hilbert/HilbertAgent.h"
 #include "RangeFinder.hpp"
@@ -73,5 +75,7 @@ private:
     std::vector<Vector3D> myPoints;
     HilbertAgent *hilbertAgent;
 };
+
+#endif // RICH_MPI
 
 #endif // _SMART_BRUTE_FORCE_RANGE_HPP
