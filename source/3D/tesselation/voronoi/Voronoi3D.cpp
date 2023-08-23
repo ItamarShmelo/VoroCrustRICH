@@ -14,16 +14,21 @@
 #include <boost/container/flat_map.hpp>
 #include <boost/container/flat_set.hpp>
 #include "3D/GeometryCommon/Intersections.hpp"
+#include "misc/int2str.hpp"
+#include <boost/multiprecision/cpp_dec_float.hpp>
+#include <boost/container/static_vector.hpp>
+#include <omp.h>
+
+#ifdef RICH_MPI
+
 #include "3D/range/finders/BruteForce.hpp"
 #include "3D/range/finders/RangeTree.hpp"
 #include "3D/range/finders/OctTree.hpp"
 #include "3D/range/finders/SmartBruteForce.hpp"
 #include "3D/range/finders/HashBruteForce.hpp"
 #include "3D/range/finders/GroupRangeTree.hpp"
-#include "misc/int2str.hpp"
-#include <boost/multiprecision/cpp_dec_float.hpp>
-#include <boost/container/static_vector.hpp>
-#include <omp.h>
+
+#endif // RICH_MPI
 
 // #define VORONOI_DEBUG
 
@@ -1477,7 +1482,7 @@ void Voronoi3D::PrepareToBuildHilbert(const std::vector<Vector3D> &points)
             }
             else
             {
-                double radius = std::min(this->radiuses[current[i]] * 1.618, s); // todo define 1.618 as a constant
+                double radius = std::min(this->radiuses[current[i]] * RADIUSES_GROWING_FACTOR, s);
                 this->radiuses[current[i]] = radius;
             }
         }
@@ -1512,7 +1517,7 @@ void Voronoi3D::CalculateInitialRadius(size_t pointsSize)
       double volume = (this->ur_[0] - this->ll_[0]) * (this->ur_[1] - this->ll_[1]) * (this->ur_[2] - this->ll_[2]);
       size_t N;
       MPI_Allreduce(&pointsSize, &N, 1, MPI_UNSIGNED_LONG, MPI_SUM, MPI_COMM_WORLD);
-      this->initialRadius = 0.25 * std::pow(volume / N, 0.333333f); // heuristic
+      this->initialRadius = 2 * std::pow(volume / N, 0.333333f); // heuristic
     } 
     std::fill(this->radiuses.begin(), this->radiuses.end(), this->initialRadius);
 }
@@ -1607,8 +1612,6 @@ void Voronoi3D::BuildHilbert(const std::vector<Vector3D> &points)
 
     // communicate the ghost CM
     
-    // TODO: I suspect this part as being wrong (are the radiuses being sent correctly?)
-
     // vector<vector<Vector3D>> incoming = MPI_Exchange_serializable(CM_, duplicatedprocs_, duplicated_points_);
     vector<vector<Vector3D>> incoming = MPI_exchange_data(duplicatedprocs_, duplicated_points_, CM_);
     // Add the recieved CM

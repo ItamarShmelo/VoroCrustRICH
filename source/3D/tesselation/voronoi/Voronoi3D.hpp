@@ -27,9 +27,13 @@
 #include "mpi/mpi_commands.hpp"
 #endif
 
+#ifdef RICH_MPI
 #define RICH_TESELLATION_FINISHED_TAG 505
 #define DEFAULT_HILBERT_ACCURACY 18
-#define BALANCE_FACTOR 1.01
+#define RADIUSES_GROWING_FACTOR 1.5 // 1.618
+#define BALANCE_FACTOR 1.2
+
+#endif 
 
 typedef std::array<std::size_t, 4> b_array_4;
 typedef std::array<std::size_t, 3> b_array_3;
