@@ -69,7 +69,7 @@ public:
     inline ~RangeAgent(){delete this->hilbertTree;};
 
     void receiveQueries(QueryBatchInfo &batch);
-    void answerQueries(bool finishAnswering);
+    void answerQueries();
     void sendQuery(const QueryInfo &query);
     QueryBatchInfo runBatch(std::queue<RangeQueryData> &queries);
 

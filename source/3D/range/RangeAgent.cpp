@@ -101,7 +101,7 @@ std::vector<Vector3D> RangeAgent::getRangeResult(const SubQueryData &query, int 
     return result;
 }
 
-void RangeAgent::answerQueries(bool finishAnswering)
+void RangeAgent::answerQueries()
 {
     MPI_Status status;
     int arrivedNew = 0;
@@ -110,7 +110,7 @@ void RangeAgent::answerQueries(bool finishAnswering)
     MPI_Iprobe(MPI_ANY_SOURCE, TAG_REQUEST, this->comm, &arrivedNew, &status);
 
     // while arrived new messages, and we should answer until the end, or answer until a bound we haven't reached to
-    while(arrivedNew != 0 and (finishAnswering or (!finishAnswering and answered < MAX_ANSWER_IN_CYCLE)))
+    while((arrivedNew != 0) and (answered < MAX_ANSWER_IN_CYCLE))
     {
         SubQueryData query;
         MPI_Recv(&query, sizeof(SubQueryData), MPI_BYTE, status.MPI_SOURCE,  TAG_REQUEST, this->comm, MPI_STATUS_IGNORE);
@@ -238,9 +238,9 @@ QueryBatchInfo RangeAgent::runBatch(std::queue<RangeQueryData> &queries)
         }
         else
         {
-            if(i % FINISH_AUTOFLUSH_NUM == 0)
+            if(/*(i % FINISH_AUTOFLUSH_NUM == 0) and */(this->shouldReceiveInTotal <= this->receivedUntilNow))
             {
-                if((this->shouldReceiveInTotal <= this->receivedUntilNow) and !sentFinished)
+                if(!sentFinished)
                 {
                     sentFinished = true;
                     this->sendFinish();
@@ -248,14 +248,15 @@ QueryBatchInfo RangeAgent::runBatch(std::queue<RangeQueryData> &queries)
                 finishedReceived += this->checkForFinishMessages();
             }
         }
+        /*
         if(i % QUERY_AUTOFLUSH_NUM == 0)
-        {
-            this->answerQueries(false);
-        }
-        if(i % RECEIVE_AUTOFLUSH_NUM == 0)
-        {
+        {*/
+            this->answerQueries();
+        //}
+        /*if(i % RECEIVE_AUTOFLUSH_NUM == 0)
+        {*/
             this->receiveQueries(queriesBatch);
-        }
+        //}
         ++i;
     }
     if(this->requests.size() > 0)

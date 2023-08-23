@@ -297,9 +297,7 @@ namespace
         size_t bigtet(0);
         bool has_good, has_big;
         // change empty tetras to be not relevant
-        for (boost::container::flat_set<size_t>::const_iterator it = empty_tetras.begin(); it !=
-                                                                                                                                                                             empty_tetras.end();
-                 ++it)
+        for (boost::container::flat_set<size_t>::const_iterator it = empty_tetras.begin(); it != empty_tetras.end(); ++it)
         {
 #ifdef __INTEL_COMPILER
 #pragma omp simd early_exit
@@ -1488,6 +1486,7 @@ void Voronoi3D::PrepareToBuildHilbert(const std::vector<Vector3D> &points)
         }
     }
 
+
     const std::vector<std::vector<size_t>> &sentPoints = rangeAgent.getSentPoints();
     const std::vector<int> &sentProc = rangeAgent.getSentProc();
 
@@ -1517,7 +1516,7 @@ void Voronoi3D::CalculateInitialRadius(size_t pointsSize)
       double volume = (this->ur_[0] - this->ll_[0]) * (this->ur_[1] - this->ll_[1]) * (this->ur_[2] - this->ll_[2]);
       size_t N;
       MPI_Allreduce(&pointsSize, &N, 1, MPI_UNSIGNED_LONG, MPI_SUM, MPI_COMM_WORLD);
-      this->initialRadius = 2 * std::pow(volume / N, 0.333333f); // heuristic
+      this->initialRadius = 1 * std::pow(volume / N, 0.333333f); // heuristic
     } 
     std::fill(this->radiuses.begin(), this->radiuses.end(), this->initialRadius);
 }

@@ -16,7 +16,7 @@ public:
     ~OctTreeFinder();
     inline std::vector<size_t> range(const Vector3D &center, double radius) const override{
         std::vector<size_t> toReturn;
-        for(const IndexedVector3D &vec : this->octTree->range(_Sphere<IndexedVector3D>(IndexedVector3D(center.x, center.y, center.z, ILLEGAL_IDX), radius, DIMENSIONS)))
+        for(const IndexedVector3D &vec : this->octTree->range(_Sphere<IndexedVector3D>(IndexedVector3D(center.x, center.y, center.z, ILLEGAL_IDX), radius)))
         {
             toReturn.push_back(vec.index);
         }

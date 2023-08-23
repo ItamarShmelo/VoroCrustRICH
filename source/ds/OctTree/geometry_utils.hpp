@@ -15,9 +15,9 @@ public:
     inline _BoundingBox(const T &ll, const T &ur): ll(ll), ur(ur){};
     inline _BoundingBox(): _BoundingBox(T(), T()){};
     
-    inline bool contains(const T &point, int dim) const
+    inline bool contains(const T &point) const
     {
-        for(int i = 0; i < dim; i++)
+        for(int i = 0; i < DIM; i++)
         {
             if(point[i] < ll[i] | point[i] > ur[i])
             {
@@ -34,13 +34,12 @@ class _Sphere
 public:
     T center;
     coord_t radius;
-    int dim;
 
-    _Sphere(const T &center, coord_t radius, int dim): center(center), radius(radius), dim(dim){};
+    _Sphere(const T &center, coord_t radius): center(center), radius(radius){};
     inline bool contains(const T &point) const
     {
         coord_t distance = 0;
-        for(int i = 0; i < DIM /*this->dim*/; i++)
+        for(int i = 0; i < DIM; i++)
         {
             double _distance = (point[i] - this->center[i]);
             distance += _distance * _distance;
@@ -56,8 +55,24 @@ bool SphereBoxIntersection(const _BoundingBox<T> &box, const _Sphere<T> &sphere)
     coord_t distance = 0;
     for(int i = 0; i < DIM /*sphere.dim*/; i++)
     {
-        closestPoint[i] = (sphere.center[i] < box.ll[i])? box.ll[i] : ((sphere.center[i] > box.ur[i])? box.ur[i] : sphere.center[i]);
-        double _distance = (closestPoint[i] - sphere.center[i]);
+        typename T::coord_type centerCoord = sphere.center[i];
+        if(centerCoord < box.ll[i])
+        {
+            closestPoint[i] = box.ll[i];
+        }
+        else
+        {
+            if(centerCoord <= box.ur[i])
+            {
+                closestPoint[i] = centerCoord;
+            }
+            else
+            {
+                closestPoint[i] = box.ur[i];
+            }
+        }
+        // closestPoint[i] = (sphere.center[i] < box.ll[i])? box.ll[i] : ((sphere.center[i] > box.ur[i])? box.ur[i] : sphere.center[i]);
+        typename T::coord_type _distance = (closestPoint[i] - sphere.center[i]);
         _distance *= _distance;
         distance += _distance;
     }

@@ -20,62 +20,42 @@ namespace
         MPI_Comm_rank(MPI_COMM_WORLD, &rank);
         MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-        std::vector<MPI_Request> requests;
-        for(int _rank = 0; _rank < size; _rank++)
+        std::vector<T> medians(size);
+        MPI_Allgather(&value, sizeof(T), MPI_BYTE, &medians[0], sizeof(T), MPI_BYTE, MPI_COMM_WORLD);
+
+        std::vector<int> haveValues(size);
+        int hasValueToSend = (hasValue)? 1 : 0;
+        MPI_Allgather(&hasValueToSend, 1, MPI_INT, &haveValues[0], 1, MPI_INT, MPI_COMM_WORLD);
+
+        std::vector<std::pair<T, int>> mediansByRanks;
+
+        for(int i = 0; i < size; i++)
         {
-            requests.push_back(MPI_REQUEST_NULL);
-            if(hasValue)
+            if(haveValues[i])
             {
-                MPI_Isend(&value, sizeof(T), MPI_BYTE, _rank, MEDIAN_TAG, MPI_COMM_WORLD, &requests[requests.size() - 1]);
-            }
-            else
-            {
-                int dummy;
-                MPI_Isend(&dummy, 1, MPI_BYTE, _rank, NO_VALUES_TAG, MPI_COMM_WORLD, &requests[requests.size() - 1]);
+                mediansByRanks.push_back(std::make_pair(medians[i], i));
             }
         }
 
-        std::vector<std::pair<T, int>> medians;
-        medians.reserve(size);
-
-        int arrived = 0;
-        MPI_Status status;
-        while(arrived != size)
-        {
-            MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-            if(status.MPI_TAG == MEDIAN_TAG)
-            {
-                medians.push_back(std::make_pair<T, int>(T(), reinterpret_cast<int&&>(status.MPI_SOURCE)));
-                MPI_Recv(&medians[medians.size() - 1].first, sizeof(T), MPI_BYTE, status.MPI_SOURCE, MEDIAN_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            }
-            else
-            {
-                int dummy;
-                MPI_Recv(&dummy, 1, MPI_BYTE, status.MPI_SOURCE, NO_VALUES_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            }
-            arrived++;
-        }
-        if(medians.empty())
+        if(mediansByRanks.empty())
         {
             std::cerr << "Error! Requested stat-orders are too high" << std::endl;
         }
 
-        assert(!medians.empty());
         auto newComp = [comp](const std::pair<T, int> &lhs, const std::pair<T, int> &rhs)
                         {
                             if(lhs.first == rhs.first) return lhs.second < rhs.second;
                             else return comp(lhs.first, rhs.first);
                         }; 
 
-        std::sort(medians.begin(), medians.end(), newComp);
-        MPI_Waitall(requests.size(), &requests[0], MPI_STATUSES_IGNORE);
-        return medians[medians.size() / 2];
+        std::sort(mediansByRanks.begin(), mediansByRanks.end(), newComp);
+        return mediansByRanks[mediansByRanks.size() / 2];
     }
 
     template<typename T, typename Comparator = std::function<bool(const T&, const T&)>>
     void findOrderStatistics(const typename std::vector<T>::iterator &vectorFirst, const typename std::vector<T>::iterator &vectorLast, const typename std::vector<size_t>::iterator &statsFirst, const typename std::vector<size_t>::iterator &statsLast, std::vector<T> &result, const Comparator &comp, size_t statOffset)
     {
-        MPI_Barrier(MPI_COMM_WORLD);
+        // MPI_Barrier(MPI_COMM_WORLD);
 
         int rank;
         MPI_Comm_rank(MPI_COMM_WORLD, &rank);

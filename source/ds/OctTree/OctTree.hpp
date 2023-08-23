@@ -188,7 +188,7 @@ typename OctTree<T>::OctTreeNode *OctTree<T>::OctTreeNode::createChild(int child
 template<typename T>
 int OctTree<T>::OctTreeNode::getChildNumberContaining(const T &point) const
 {
-    assert(this->boundingBox.contains(point, DIM));
+    assert(this->boundingBox.contains(point));
     int direction = 0;
     for(int i = 0; i < DIM; i++)
     {
