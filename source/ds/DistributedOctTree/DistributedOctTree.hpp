@@ -26,7 +26,7 @@ public:
 
     void print() const{this->octTree->print();};
     boost::container::flat_set<int> getIntersectingRanks(const _Sphere<T> &sphere) const;
-    inline boost::container::flat_set<int> getIntersectingRanks(const T &center, const typename T::coord_type radius) const{return this->getIntersectingRanks(_Sphere(center, radius, DIM));};
+    inline boost::container::flat_set<int> getIntersectingRanks(const T &center, const typename T::coord_type radius) const{return this->getIntersectingRanks(_Sphere(center, radius));};
 
     #ifdef DEBUG_MODE
     inline bool validate() const{if(this->octTree != nullptr) return this->validateHelper(this->octTree->getRoot()); return true;};
@@ -36,8 +36,9 @@ private:
     class _Wrapper
     {
         friend class DistributedOctTree;
-
     public:
+        using coord_type = typename T::coord_type;
+
         T value;
         int owner; // rank of the owner
 
@@ -84,10 +85,8 @@ void DistributedOctTree<T>::buildTreeHelper(typename OctTree<_Wrapper>::OctTreeN
 {
     assert(newNode != nullptr);
 
-    MPI_Barrier(this->comm);
-    
-    // std::cout << "currently rank " << this->rank << " is at node with box " << newNode->boundingBox.ll << " x " << newNode->boundingBox.ur << std::endl;
-    
+    // MPI_Barrier(this->comm);
+        
     unsigned char valueToSend = 0; // assumes `CHILDREN` is 8. this variable contains 1 in the `i`th bit iff child `i` exists
     if(node != nullptr)
     {
@@ -96,7 +95,6 @@ void DistributedOctTree<T>::buildTreeHelper(typename OctTree<_Wrapper>::OctTreeN
             bool bit = (node->children[i] != nullptr || (node->isValue and newNode->getChildNumberContaining(_Wrapper(node->value, UNDEFINED_OWNER)) == i));
             valueToSend |= (bit << i);
         }
-        // std::cout << "rank " << this->rank << ", sending " << std::bitset<8>(valueToSend) << std::endl;
     }
     std::vector<char> childBuff(this->size);
     MPI_Allgather(&valueToSend, 1, MPI_BYTE, &childBuff[0], 1, MPI_BYTE, this->comm);
@@ -129,14 +127,13 @@ void DistributedOctTree<T>::buildTreeHelper(typename OctTree<_Wrapper>::OctTreeN
             newNode->createChild(i); // creates the child in my node
             if(recursiveBuild)
             {
-                //std::cout << "should build recursively child i=" << i << " of " << newNode->boundingBox.ll << " x " << newNode->boundingBox.ur << std::endl;
                 // there are several holders, call recursive build
                 const typename OctTree<T>::OctTreeNode *nextNode = nullptr;
                 if(node != nullptr)
                 {
                     if(node->isValue)
                     {
-                        nextNode = newNode->children[i]->boundingBox.contains(_Wrapper(node->value, UNDEFINED_OWNER), DIM)? node : nullptr;
+                        nextNode = newNode->children[i]->boundingBox.contains(_Wrapper(node->value, UNDEFINED_OWNER))? node : nullptr;
                     }
                     else
                     {
@@ -163,10 +160,6 @@ void DistributedOctTree<T>::buildTreeHelper(typename OctTree<_Wrapper>::OctTreeN
         {
             newNode->children[i] = nullptr;
         }
-    }
-    if(!somebodyHolds)
-    {
-        // std::cout << "nobody holds the point " << newNode->boundingBox.ll << " x " << newNode->boundingBox.ur << ". finished recursion" << std::endl;
     }
 }
 
@@ -218,7 +211,7 @@ template<typename T>
 boost::container::flat_set<int> DistributedOctTree<T>::getIntersectingRanks(const _Sphere<T> &sphere) const
 {
     boost::container::flat_set<int> ranks;
-    for(const _Wrapper &point : this->octTree->range(_Sphere<_Wrapper>(_Wrapper(sphere.center, UNDEFINED_OWNER), sphere.radius, sphere.dim)))
+    for(const _Wrapper &point : this->octTree->range(_Sphere<_Wrapper>(_Wrapper(sphere.center, UNDEFINED_OWNER), sphere.radius)))
     {
         ranks.insert(point.owner);
     }

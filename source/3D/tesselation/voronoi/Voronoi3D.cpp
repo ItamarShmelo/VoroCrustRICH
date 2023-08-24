@@ -1400,6 +1400,7 @@ void Voronoi3D::PrepareToBuildHilbert(const std::vector<Vector3D> &points)
     OctTree<Vector3D> pointsTree(this->ll_, this->ur_, points);
     RangeAgent rangeAgent(this->hilbertAgent, &rangeFinder);
     
+    // todo: is there any need to build the tree again?
     rangeAgent.buildHilbertTree(&pointsTree);
 
     std::vector<Vector3D> allMirrored;

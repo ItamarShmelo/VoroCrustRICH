@@ -23,11 +23,14 @@
 #define TAG_RESPONSE 201
 #define TAG_FINISHED 202
 
-#define QUERY_AUTOFLUSH_NUM 50
-#define RECEIVE_AUTOFLUSH_NUM 5
-#define FINISH_AUTOFLUSH_NUM 20
-#define MAX_RECEIVE_IN_CYCLE 1000
-#define MAX_ANSWER_IN_CYCLE 1000
+#define UNDEFINED_BUFFER_IDX -1
+#define FLUSH_QUERIES_NUM 80
+
+#define QUERY_AUTOFLUSH_NUM 100
+#define RECEIVE_AUTOFLUSH_NUM 15
+#define FINISH_AUTOFLUSH_NUM 50
+#define MAX_RECEIVE_IN_CYCLE 20
+#define MAX_ANSWER_IN_CYCLE 20
 
 typedef struct RangeQueryData
 {
@@ -66,7 +69,7 @@ public:
     inline RangeAgent(const HilbertAgent &hilbertAgent, RangeFinder *rangeFinder): RangeAgent(MPI_COMM_WORLD, hilbertAgent, rangeFinder){};
     inline RangeAgent(MPI_Comm comm, const Vector3D &origin, const Vector3D &corner, int order, RangeFinder *rangeFinder): RangeAgent(comm, HilbertAgent(origin, corner, order), rangeFinder){};
     inline RangeAgent(const Vector3D &origin, const Vector3D &corner, int order, RangeFinder *rangeFinder): RangeAgent(MPI_COMM_WORLD, origin, corner, order, rangeFinder){};
-    inline ~RangeAgent(){delete this->hilbertTree;};
+    inline ~RangeAgent(){/*delete this->hilbertTree;*/};
 
     void receiveQueries(QueryBatchInfo &batch);
     void answerQueries();
@@ -83,7 +86,6 @@ public:
 private:
     MPI_Comm comm;
     int rank, size;
-    int order;
     std::vector<MPI_Request> requests;
     std::vector<std::vector<char>> buffers;
     size_t receivedUntilNow;
@@ -96,11 +98,27 @@ private:
     std::vector<std::vector<size_t>> sentPoints; 
     std::vector<_set<size_t>> sentPointsSet; 
     std::vector<std::vector<size_t>> recvPoints; 
+    std::vector<int> ranksBufferIdx;
     
     std::vector<Vector3D> getRangeResult(const SubQueryData &query, int rank);
     _set<int> getIntersectingRanks(const Vector3D &center, coord_t radius) const;
     void sendFinish();
     int checkForFinishMessages() const;
+    inline void flushBuffer(int node)
+    {
+        int bufferIdx = this->ranksBufferIdx[node];
+        if(bufferIdx == UNDEFINED_BUFFER_IDX)
+        {
+            return;
+        }
+        if(this->buffers[bufferIdx].size() > 0)
+        {
+            this->requests.push_back(MPI_REQUEST_NULL);
+            MPI_Isend(&this->buffers[bufferIdx][0], this->buffers[bufferIdx].size(), MPI_BYTE, node, TAG_REQUEST, this->comm, &this->requests[this->requests.size() - 1]);
+        }
+        this->ranksBufferIdx[node] = UNDEFINED_BUFFER_IDX;
+    }
+    inline void flushAll(){for(int i = 0; i < this->size; i++) this->flushBuffer(i);};
 };
 
 #endif // RICH_MPI
