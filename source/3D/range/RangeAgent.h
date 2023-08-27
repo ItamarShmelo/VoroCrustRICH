@@ -82,6 +82,7 @@ public:
     std::vector<std::vector<size_t>> &getSentPoints(){return this->sentPoints;};
     std::vector<std::vector<size_t>> &getRecvPoints(){return this->recvPoints;};
     std::vector<int> &getSentProc(){return this->sentProcessorsRanks;};
+    std::vector<int> &getRecvProc(){return this->recvProcessorsRanks;};
 
 private:
     MPI_Comm comm;
@@ -95,9 +96,10 @@ private:
     DistributedOctTree<Vector3D> *hilbertTree;
 
     std::vector<int> sentProcessorsRanks;
+    std::vector<int> recvProcessorsRanks;
+    std::vector<std::vector<size_t>> recvPoints; 
     std::vector<std::vector<size_t>> sentPoints; 
     std::vector<_set<size_t>> sentPointsSet; 
-    std::vector<std::vector<size_t>> recvPoints; 
     std::vector<int> ranksBufferIdx;
     
     std::vector<Vector3D> getRangeResult(const SubQueryData &query, int rank);

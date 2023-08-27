@@ -48,7 +48,14 @@ void RangeAgent::receiveQueries(QueryBatchInfo &batch)
             // insert the results to the points received by rank `status.MPI_SOURCE` and to the queries result
             queries[id].finalResults.resize(queries[id].finalResults.size() + length);
             MPI_Unpack(&(*(buffer.begin())), count, &pos, &(*(queries[id].finalResults.end() - length)), length * sizeof(_3DPoint), MPI_BYTE, this->comm);
-            std::vector<size_t> &rankRecvPoints = this->recvPoints[status.MPI_SOURCE];
+            size_t rankIndex = std::find(this->recvProcessorsRanks.begin(), this->recvProcessorsRanks.end(), status.MPI_SOURCE) - this->recvProcessorsRanks.begin();
+            if(rankIndex == this->recvProcessorsRanks.size())
+            {
+                // rank is not inside the recvProcessors rank, add it
+                this->recvProcessorsRanks.push_back(status.MPI_SOURCE);
+                this->recvPoints.push_back(std::vector<size_t>());
+            }
+            std::vector<size_t> &rankRecvPoints = this->recvPoints[rankIndex];
             rankRecvPoints.reserve(rankRecvPoints.size() + length);
             batch.newPoints.reserve(batch.newPoints.size() + length);
             for(size_t i = 0; i < static_cast<size_t>(length); i++)
@@ -245,7 +252,10 @@ QueryBatchInfo RangeAgent::runBatch(std::queue<RangeQueryData> &queries)
 {
     this->receivedUntilNow = 0; // reset the receive counter
     this->shouldReceiveInTotal = 0; // reset the should-be-received counter
-    this->recvPoints = std::vector<std::vector<size_t>>(this->size);
+    for(std::vector<size_t> &_rankPoints : this->recvPoints)
+    {
+        _rankPoints.clear();
+    }
     this->buffers.clear();
     this->buffers.reserve(2 * queries.size()); // heuristic
     this->requests.clear();

@@ -70,8 +70,8 @@ private:
     Vector3D ll, ur, myll, myur, dx, sidesLengths;
     int order;
     int rank, size;
-    int hilbert_cells;
-    int pointsPerRank;
+    long int hilbert_cells;
+    long int pointsPerRank;
     hilbert_index_t myHilbertMin, myHilbertMax;
     std::vector<hilbert_index_t> range;
     

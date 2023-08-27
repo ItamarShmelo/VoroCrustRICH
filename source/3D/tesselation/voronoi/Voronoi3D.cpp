@@ -1334,9 +1334,11 @@ void Voronoi3D::BuildInitialize(size_t num_points)
     Norg_ = num_points;
     duplicatedprocs_.clear();
     duplicated_points_.clear();
+    /*
     self_index_.clear();
     sentprocs_.clear();
     sentpoints_.clear();
+    */
     Nghost_.clear();
 }
 
@@ -1429,6 +1431,40 @@ void Voronoi3D::PrepareToBuildHilbert(const std::vector<Vector3D> &points)
 
         std::vector<Vector3D> &newPoints = batchInfo.newPoints;
 
+
+
+        const std::vector<int> &recvProc = rangeAgent.getRecvProc();
+        const std::vector<std::vector<size_t>> &recvPoints = rangeAgent.getRecvPoints();
+
+        for(size_t i = 0; i < recvProc.size(); i++)
+        {
+            /*
+            if(recvPoints[i].empty())
+            {
+                continue;
+            }
+            */
+            int _rank = recvProc[i];
+            const std::vector<size_t> &receivedFromRank = recvPoints[i];
+            size_t rankIdx = std::find(this->duplicatedprocs_.begin(), this->duplicatedprocs_.end(), _rank) - this->duplicatedprocs_.begin();
+            if(rankIdx == this->duplicatedprocs_.size())
+            {
+                // new rank in this->duplicatedprocs_, initialize it
+                this->duplicatedprocs_.push_back(_rank);
+                this->duplicated_points_.emplace_back(std::vector<size_t>());
+                this->Nghost_.emplace_back(std::vector<size_t>());
+            }
+            for(const size_t &RelativePointIdx : receivedFromRank)
+            {
+                // batchInfo.pointsFromRanks[_rank][i] holds an index of point, but this point will be added to my delaunay, so
+                // its index there will be this->del_.points_.size() + batchInfo.pointsFromRanks[_rank][i]
+                this->Nghost_[rankIdx].push_back(this->del_.points_.size() + RelativePointIdx);
+            }
+        }
+
+        /*
+
+
         for(int _rank = 0; _rank < size; _rank++)
         {
           std::vector<size_t> &receivedFromRank = rangeAgent.getRecvPoints()[_rank];
@@ -1451,6 +1487,7 @@ void Voronoi3D::PrepareToBuildHilbert(const std::vector<Vector3D> &points)
             this->Nghost_[rankIdx].push_back(this->del_.points_.size() + RelativePointIdx);
           }
         }
+        */
 
         for(const Vector3D &point : mirroedPoints)
         {
@@ -1493,6 +1530,12 @@ void Voronoi3D::PrepareToBuildHilbert(const std::vector<Vector3D> &points)
 
     for(size_t i = 0; i < sentProc.size(); i++)
     {
+        /*
+        if(sentPoints[i].empty())
+        {
+            continue;
+        }
+        */
       int _rank = sentProc[i];
       size_t rankIdx = std::find(this->duplicatedprocs_.begin(), this->duplicatedprocs_.end(), _rank) - this->duplicatedprocs_.begin();
       if(rankIdx == this->duplicatedprocs_.size())
@@ -1506,6 +1549,21 @@ void Voronoi3D::PrepareToBuildHilbert(const std::vector<Vector3D> &points)
       {
         this->duplicated_points_[rankIdx].push_back(pointIdx);
       }
+    }
+
+    const std::vector<int> &recvProc = rangeAgent.getRecvProc();
+
+    for(size_t i = 0; i < this->duplicatedprocs_.size(); i++)
+    {
+        int _rank =  this->duplicatedprocs_[i];
+        if((std::find(sentProc.begin(), sentProc.end(), _rank) == sentProc.end()) or (std::find(recvProc.begin(), recvProc.end(), _rank) == recvProc.end()))
+        {
+            // not in the intersection
+            this->duplicatedprocs_.erase(this->duplicatedprocs_.begin() + i);
+            this->duplicated_points_.erase(this->duplicated_points_.begin() + i);
+            this->Nghost_.erase(this->Nghost_.begin() + i);
+            i--;
+        }
     }
 }
 
@@ -1616,8 +1674,12 @@ void Voronoi3D::BuildHilbert(const std::vector<Vector3D> &points)
     vector<vector<Vector3D>> incoming = MPI_exchange_data(duplicatedprocs_, duplicated_points_, CM_);
     // Add the recieved CM
     for (size_t i = 0; i < incoming.size(); ++i)
+    {
         for (size_t j = 0; j < incoming.at(i).size(); ++j)
+        {
             CM_[Nghost_.at(i).at(j)] = incoming[i][j];
+        }
+    }   
 }
 
 #endif // RICH_MPI
