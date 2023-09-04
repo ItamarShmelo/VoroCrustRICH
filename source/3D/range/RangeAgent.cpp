@@ -25,7 +25,7 @@ void RangeAgent::receiveQueries(QueryBatchInfo &batch)
 
     std::vector<char> buffer;
 
-    while(receivedAnswer and received < MAX_RECEIVE_IN_CYCLE)
+    while(receivedAnswer and (received < MAX_RECEIVE_IN_CYCLE))
     {
         ++this->receivedUntilNow;
         ++received;
@@ -37,33 +37,30 @@ void RangeAgent::receiveQueries(QueryBatchInfo &batch)
             buffer.resize(count);
         }
 
-        MPI_Recv(&(*(buffer.begin())), count, MPI_BYTE, status.MPI_SOURCE, TAG_RESPONSE, this->comm, MPI_STATUS_IGNORE);
-        size_t id;
+        MPI_Recv(&buffer[0], count, MPI_BYTE, status.MPI_SOURCE, TAG_RESPONSE, this->comm, MPI_STATUS_IGNORE);
+        long int id;
         long int length;
         int pos = 0;
-        MPI_Unpack(&(*(buffer.begin())), count, &pos, &id, 1, MPI_UNSIGNED_LONG, this->comm);
+
+        /*
+        MPI_Unpack(&(*(buffer.begin())), count, &pos, &id, 1, MPI_LONG, this->comm);
         MPI_Unpack(&(*(buffer.begin())), count, &pos, &length, 1, MPI_LONG, this->comm);
+        */
+        id = *reinterpret_cast<long int*>(buffer.data());
+        length = *reinterpret_cast<long int*>(buffer.data() + sizeof(long int));
+
         if(length > 0)
         {
             // insert the results to the points received by rank `status.MPI_SOURCE` and to the queries result
             queries[id].finalResults.resize(queries[id].finalResults.size() + length);
-            MPI_Unpack(&(*(buffer.begin())), count, &pos, &(*(queries[id].finalResults.end() - length)), length * sizeof(_3DPoint), MPI_BYTE, this->comm);
-            size_t rankIndex = std::find(this->recvProcessorsRanks.begin(), this->recvProcessorsRanks.end(), status.MPI_SOURCE) - this->recvProcessorsRanks.begin();
-            if(rankIndex == this->recvProcessorsRanks.size())
-            {
-                // rank is not inside the recvProcessors rank, add it
-                this->recvProcessorsRanks.push_back(status.MPI_SOURCE);
-                this->recvPoints.push_back(std::vector<size_t>());
-            }
-            std::vector<size_t> &rankRecvPoints = this->recvPoints[rankIndex];
-            rankRecvPoints.reserve(rankRecvPoints.size() + length);
-            batch.newPoints.reserve(batch.newPoints.size() + length);
+
+            _3DPoint* base = reinterpret_cast<_3DPoint*>(buffer.data() + 2 * sizeof(long int));
+            // MPI_Unpack(&(*(buffer.begin())), count, &pos, &(*(queries[id].finalResults.end() - length)), length * sizeof(_3DPoint), MPI_BYTE, this->comm);
             for(size_t i = 0; i < static_cast<size_t>(length); i++)
             {
-                rankRecvPoints.push_back(batch.newPoints.size());
-                _3DPoint &point = *(queries[id].finalResults.end() - length + i);
+                _3DPoint &point = base[i]; // *(queries[id].finalResults.end() - length + i);
                 Vector3D vector(point.x, point.y, point.z);
-                batch.newPoints.emplace_back(vector);
+                batch.newPointsRanks[status.MPI_SOURCE].emplace_back(vector);
             }
         }
         else
@@ -141,24 +138,35 @@ void RangeAgent::answerQueries()
             std::vector<Vector3D> result = this->getRangeResult(query, status.MPI_SOURCE);
             long int resultSize = static_cast<long int>(result.size());
 
-            int pos = 0;
             this->buffers.push_back(std::vector<char>());
             std::vector<char> &to_send = this->buffers[this->buffers.size() - 1];
-            size_t msg_size = 2 * sizeof(size_t) + resultSize * sizeof(_3DPoint);
+            size_t msg_size = 2 * sizeof(long int) + resultSize * sizeof(_3DPoint);
             to_send.resize(msg_size);
 
-            MPI_Pack(&query.parent_id, 1, MPI_UNSIGNED_LONG, &to_send[0], msg_size, &pos, this->comm);
+            long int id = query.parent_id;
+
+            int pos = 0;
+            /*
+            MPI_Pack(&id, 1, MPI_LONG, &to_send[0], msg_size, &pos, this->comm);
             MPI_Pack(&resultSize, 1, MPI_LONG, &to_send[0], msg_size, &pos, this->comm);
+            */
+           *reinterpret_cast<long int*>(to_send.data()) = id;
+           *reinterpret_cast<long int*>(to_send.data() + sizeof(long int)) = resultSize;
+
             if(resultSize > 0)
             {
-                _3DPoint *points = reinterpret_cast<_3DPoint*>((&to_send[0]) + pos);
+                _3DPoint *points = reinterpret_cast<_3DPoint*>(to_send.data() + sizeof(id) + sizeof(resultSize));
                 for(size_t i = 0; i < static_cast<size_t>(resultSize); i++)
                 {
                     points[i] = {result[i].x, result[i].y, result[i].z};
                 }
             }
+
+            /*
             this->requests.push_back(MPI_REQUEST_NULL);
             MPI_Isend(&to_send[0], msg_size, MPI_BYTE, status.MPI_SOURCE, TAG_RESPONSE, this->comm, &this->requests[requests.size() - 1]);
+            */
+            MPI_Send(&to_send[0], msg_size, MPI_BYTE, status.MPI_SOURCE, TAG_RESPONSE, this->comm);
         }
         MPI_Iprobe(MPI_ANY_SOURCE,  TAG_REQUEST, this->comm, &arrivedNew, &status);
     }
@@ -171,6 +179,7 @@ typename RangeAgent::_set<int> RangeAgent::getIntersectingRanks(const Vector3D &
 {
     _set<int> possibleNodes;
 
+    
     if(this->hilbertTree == nullptr)
     {
         auto intersectionHilbertCells = this->hilbertAgent.getIntersectingCircle(center, radius);
@@ -185,8 +194,15 @@ typename RangeAgent::_set<int> RangeAgent::getIntersectingRanks(const Vector3D &
         {
             possibleNodes.insert(rank);
         }
+    }/*
+   for(int _rank = 0; _rank < this->size; _rank++)
+   {
+    if(_rank != this->rank)
+    {
+        possibleNodes.insert(_rank);
     }
-
+   }
+    */
     return possibleNodes;
 }
 
@@ -256,25 +272,30 @@ QueryBatchInfo RangeAgent::runBatch(std::queue<RangeQueryData> &queries)
     {
         _rankPoints.clear();
     }
+
     this->buffers.clear();
-    this->buffers.reserve(2 * queries.size()); // heuristic
+    size_t originalQueriesNum = queries.size();
+    this->buffers.reserve(2 * originalQueriesNum); // heuristic
     this->requests.clear();
     QueryBatchInfo queriesBatch;
     std::vector<QueryInfo> &queriesInfo = queriesBatch.queriesAnswers;
-
+    queriesBatch.newPointsRanks.resize(this->size);
     int finishedReceived = 0;
     bool sentFinished = false;
     size_t i = 0;
-    while((finishedReceived < this->size) or (!queries.empty()))
+    bool notEmpty = false;
+
+    while((notEmpty = (i < originalQueriesNum)) or (finishedReceived < this->size))
     {
-        if(!queries.empty())
+        if(notEmpty)
         {
+
             RangeQueryData queryData = queries.front();
             queries.pop();
             queriesInfo.push_back({queryData, i, std::vector<_3DPoint>()});
             QueryInfo &query = queriesInfo[queriesInfo.size() - 1];
             this->sendQuery(query);
-            if(queries.empty())
+            if(i == (originalQueriesNum - 1))
             {
                 // send the rest of the waiting (buffered) requests
                 this->flushAll();
@@ -301,12 +322,44 @@ QueryBatchInfo RangeAgent::runBatch(std::queue<RangeQueryData> &queries)
         {
             this->answerQueries();
         }
-
         ++i;
     }
     if(this->requests.size() > 0)
     {
         MPI_Waitall(this->requests.size(), &(*(this->requests.begin())), MPI_STATUSES_IGNORE); // make sure any query was indeed received
+    }
+    
+    for(int _rank = 0; _rank < this->size; _rank++)
+    {
+        if(_rank == this->rank)
+        {
+            continue; // shouldn't be relevant
+        }
+        if(queriesBatch.newPointsRanks[_rank].empty())
+        {
+            continue;
+        }
+        size_t rankIndex = std::find(this->recvProcessorsRanks.begin(), this->recvProcessorsRanks.end(), _rank) - this->recvProcessorsRanks.begin();
+        if(rankIndex == this->recvProcessorsRanks.size())
+        {
+            // rank is not inside the recvProcessors rank, add it
+            this->recvProcessorsRanks.push_back(_rank);
+            this->recvPoints.push_back(std::vector<size_t>());
+        }
+    }
+
+    for(size_t i = 0; i < this->recvProcessorsRanks.size(); i++)
+    {
+        int _rank = this->recvProcessorsRanks[i];
+        std::vector<size_t> &rankRecvPoints = this->recvPoints[i];
+        rankRecvPoints.reserve(queriesBatch.newPointsRanks[_rank].size());
+        queriesBatch.newPoints.reserve(queriesBatch.newPoints.size() + rankRecvPoints.size());
+        for(const Vector3D &_point : queriesBatch.newPointsRanks[_rank])
+        {
+            rankRecvPoints.push_back(queriesBatch.newPoints.size());
+            queriesBatch.newPoints.emplace_back(_point);
+        }
+        
     }
     return queriesBatch;
 }

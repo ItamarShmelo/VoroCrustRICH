@@ -294,8 +294,7 @@ void OctTree<T>::OctTreeNode::splitNode()
     }
 
     // this node is the `i`th child of its parent
-    
-    // replace it with a new (non-value) node, which will be our parent
+        // replace it with a new (non-value) node, which will be our parent
     this->parent->children[i] = nullptr;
     this->parent->createChild(i);
     
@@ -445,6 +444,8 @@ void OctTree<T>::rangeHelper(const OctTreeNode *node, const _Sphere<T> &sphere, 
     }
     if(node->isValue)
     {
+        // DO NOT CHANGE THIS LINE TO "if `node->value` in in sphere"
+        // that is because a leaf not necessarily has to be a point (it can be a box, as in `DistributedOctTree`)
         if(SphereBoxIntersection(node->boundingBox, sphere))
         {
             result.push_back(node->value);

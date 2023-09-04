@@ -14,28 +14,18 @@
 #include <set>
 #include <boost/container/flat_set.hpp>
 #include <mpi.h>
+#include "utils/exchange/exchange.hpp"
 #include "utils/balance/balance.hpp"
 #include "hilbertTypes.h"
 #include "HilbertOrder3D.hpp"
 
 #define POINT_SEND_TAG 115
-#define FINISH_TAG 116
+#define NONE_SEND_TAG 116
 #define POINTS_EXCHANGE_RECEIVE_CYCLE 5
 
 #define AVERAGE_INTERSECT 128
 
-#define MAX_HILBERT_ORDER 12
-
-struct _Hilbert3DPoint
-{
-    coord_t x, y, z;
-    hilbert_index_t idx;
-
-    inline _Hilbert3DPoint(coord_t x, coord_t y, coord_t z, hilbert_index_t idx): x(x), y(y), z(z), idx(idx){};
-    inline explicit _Hilbert3DPoint(): _Hilbert3DPoint(0, 0, 0, -1){};
-    bool operator<(const _Hilbert3DPoint &other) const{return this->idx < other.idx;};
-    bool operator==(const _Hilbert3DPoint &other) const{return this->idx == other.idx;};
-};
+#define MAX_HILBERT_ORDER 18
 
 class HilbertAgent
 {
@@ -59,11 +49,10 @@ public:
     inline hilbert_index_t getMyHilbertMin() const{return this->myHilbertMin;};
     inline hilbert_index_t getMyHilbertMax() const{return this->myHilbertMax;};
     void determineBorders(const std::vector<Vector3D> &points);
-    std::vector<Vector3D> determineBordersAndExchange(const std::vector<Vector3D> &points, std::vector<size_t> &self_index_, std::vector<int> &sentprocs_, std::vector<std::vector<size_t>> &sentpoints_);
     std::vector<Vector3D> pointsExchange(const std::vector<Vector3D> &points, std::vector<size_t> &self_index_, std::vector<int> &sentprocs_, std::vector<std::vector<size_t>> &sentpoints_, std::vector<double> &radiuses) const;
     void calculateBoundingBox();
-    void buildHilbertOctTree();
     void setOrder(int order);
+    inline int getOwner(const Vector3D &point) const{return this->getCellOwner(this->xyz2d(point));};
 
 private:
     HilbertCurve3D curve;
@@ -75,8 +64,8 @@ private:
     hilbert_index_t myHilbertMin, myHilbertMax;
     std::vector<hilbert_index_t> range;
     
-    void pointsReceive(std::vector<Vector3D> &points, std::vector<double> &radiuses, bool blocking) const;
-    inline int getOwner(const Vector3D &point) const{return this->getCellOwner(this->xyz2d(point));};
+    // old implementation:
+    std::vector<std::vector<_3DPointRadius>> pointsReceive(std::vector<int> &sentprocs_, std::vector<std::vector<size_t>> &sentpoints_, const std::vector<_3DPointRadius> &myPoints) const;
 };
 
 #endif // RICH_MPI

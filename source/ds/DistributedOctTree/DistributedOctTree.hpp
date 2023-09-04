@@ -52,7 +52,8 @@ private:
         inline _Wrapper operator-(const _Wrapper &other) const{int owner = (this->owner == other.owner)? this->owner : UNDEFINED_OWNER; return _Wrapper(this->value - other.value, owner);};
         inline _Wrapper operator*(double constant) const{return _Wrapper(this->value * constant, owner);};
         inline _Wrapper operator/(double constant) const{return this->operator*(1/constant);};
-
+        inline bool operator==(const _Wrapper &other) const{return this->value == other.value;};
+        inline bool operator!=(const _Wrapper &other) const{return this->value != other.value;};
         friend std::ostream &operator<<(std::ostream &stream, const _Wrapper &wrapper)
         {
             return stream << wrapper.value << " [owner: " << wrapper.owner << "]";
@@ -96,10 +97,9 @@ void DistributedOctTree<T>::buildTreeHelper(typename OctTree<_Wrapper>::OctTreeN
             valueToSend |= (bit << i);
         }
     }
-    std::vector<char> childBuff(this->size);
-    MPI_Allgather(&valueToSend, 1, MPI_BYTE, &childBuff[0], 1, MPI_BYTE, this->comm);
+    std::vector<unsigned char> childBuff(this->size);
+    MPI_Allgather(&valueToSend, 1, MPI_UNSIGNED_CHAR, &childBuff[0], 1, MPI_BYTE, this->comm);
 
-    bool somebodyHolds = false;
     for(int i = 0; i < CHILDREN; i++)
     {
         bool recursiveBuild = false;
@@ -110,11 +110,11 @@ void DistributedOctTree<T>::buildTreeHelper(typename OctTree<_Wrapper>::OctTreeN
             {
                 if(containingValue == UNDEFINED_OWNER)
                 {
-                    somebodyHolds = true;
                     containingValue = _rank;
                 }
                 else
                 {
+                    // more than one child has a point in this route of the tree, so we continue to split recursively
                     recursiveBuild = true;
                     break;
                 }
@@ -128,6 +128,8 @@ void DistributedOctTree<T>::buildTreeHelper(typename OctTree<_Wrapper>::OctTreeN
             if(recursiveBuild)
             {
                 // there are several holders, call recursive build
+                // determine what's the next node in my own tree to continue the recursive build with
+                // this node might be null, if I don't have any nodes this depth in the tree
                 const typename OctTree<T>::OctTreeNode *nextNode = nullptr;
                 if(node != nullptr)
                 {
@@ -144,13 +146,14 @@ void DistributedOctTree<T>::buildTreeHelper(typename OctTree<_Wrapper>::OctTreeN
                 {
                     nextNode = nullptr;
                 }
+                // continue recursively
                 this->buildTreeHelper(newNode->children[i], nextNode);
-                newNode->children[i]->value.owner = UNDEFINED_OWNER;
+                newNode->children[i]->value.owner = UNDEFINED_OWNER; // several owners
                 newNode->children[i]->boundingBox.ll.owner = newNode->children[i]->boundingBox.ur.owner = UNDEFINED_OWNER;
             }
             else
             {
-                // there is only one holder, set its owner
+                // there is only one holder, set its owner field
                 newNode->children[i]->value.owner = containingValue;
                 newNode->children[i]->boundingBox.ll.owner = newNode->children[i]->boundingBox.ur.owner = containingValue;
                 newNode->children[i]->isValue = true;

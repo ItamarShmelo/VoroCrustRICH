@@ -226,6 +226,7 @@ namespace
         res[5].vertices.push_back(points[6]);
         return res;
     }
+
 #ifdef RICH_MPI
     vector<Vector3D> GetBoxNormals(Vector3D const &ll, Vector3D const &ur, vector<Face> const& box_faces_)
     {
@@ -340,42 +341,107 @@ namespace
         Vector3D good_normal;
         for(size_t i = 0; i < N; ++i)
         {
-        area_vec_temp[i] = fastabs(CrossProduct(face_points[indeces[i]] - face_points[indeces[(N + i - 1) % N]], face_points[indeces[(i + 1) % N]] 
-        - face_points[indeces[(N + i - 1) % N]]));
-        old.push_back(indeces[i]);
+            area_vec_temp[i] = fastabs(CrossProduct(face_points[indeces[i]] - face_points[indeces[(N + i - 1) % N]], face_points[indeces[(i + 1) % N]] 
+            - face_points[indeces[(N + i - 1) % N]]));
+            old.push_back(indeces[i]);
         }
+
+        // ADDED
+
+        double max_value = area_vec_temp[0];
+        double second_max_value = max_value;
+        size_t max_index = 0, second_max_index = 0;
+        for(size_t i = 1; i < N; ++i)
+        {
+            if(area_vec_temp[i] > max_value)
+            {
+                second_max_value = max_value;
+                max_value = area_vec_temp[i];
+                second_max_index = max_index;
+                max_index = i;
+            }
+            else
+            {
+                if(area_vec_temp[i] > second_max_value)
+                {
+                    second_max_value = area_vec_temp[i];
+                    second_max_index = i;
+                }
+            }
+        }
+
+        // FINISHED ADDED
+        /*
         double const area_scale = *std::max_element(area_vec_temp.begin(), area_vec_temp.begin() + N);
         good_normal = CrossProduct(face_points[indeces[0]] - face_points[indeces[N - 1]], face_points[indeces[1]] 
         - face_points[indeces[N - 1]]);
         good_normal *= 1.0 / (100 * std::numeric_limits<double>::min() + fastabs(good_normal));
+        */
+
+        double const area_scale = area_vec_temp[max_index];
+        good_normal = CrossProduct(face_points[indeces[max_index]] - face_points[indeces[(N + max_index - 1) % N]], face_points[indeces[(max_index + 1) % N]] - face_points[indeces[(N + max_index - 1) % N]]);
+        good_normal *= 1.0 / fastabs(good_normal);
+
+        /*
         for(size_t i = 1; i < N; ++i)
         {
-        if(area_vec_temp[i] > area_scale * medium_fraction)
-        {
-            good_normal = CrossProduct(face_points[indeces[i]] - face_points[indeces[i - 1]], face_points[indeces[(i + 1) % N]] 
-            - face_points[indeces[i - 1]]);
-            good_normal *= 1.0 / fastabs(good_normal);
-            break;
+            if(area_vec_temp[i] > area_scale * medium_fraction)
+            {
+                good_normal = CrossProduct(face_points[indeces[i]] - face_points[indeces[i - 1]], face_points[indeces[(i + 1) % N]] 
+                - face_points[indeces[i - 1]]);
+                good_normal *= 1.0 / fastabs(good_normal);
+                break;
+            }
         }
-        }
+        */
         size_t Nindeces = indeces.size();
         for(size_t i = 0; i < Nindeces; ++i)
         {
-        Vector3D normal_temp = CrossProduct(face_points[indeces[i]] - face_points[indeces[(Nindeces + i - 1) % Nindeces]], face_points[indeces[(i + 1) % Nindeces]] - face_points[indeces[(Nindeces + i - 1) % Nindeces]]);
-        double const area = fastabs(normal_temp);
-        normal_temp *= 1.0 / (100 * std::numeric_limits<double>::min() + area);
-        if(area < area_scale * small_fraction || ScalarProd(normal_temp, good_normal) < 0.99998)
-        {
-            indeces.erase(indeces.begin() + i);
-            if(i == indeces.size() - 1)
-            break;
-            --i;
-            Nindeces = indeces.size();
+            Vector3D normal_temp = CrossProduct(face_points[indeces[i]] - face_points[indeces[(Nindeces + i - 1) % Nindeces]], face_points[indeces[(i + 1) % Nindeces]] - face_points[indeces[(Nindeces + i - 1) % Nindeces]]);
+            double const area = fastabs(normal_temp);
+            normal_temp *= 1.0 / (100 * std::numeric_limits<double>::min() + area);
+            if(area < area_scale * small_fraction || ScalarProd(normal_temp, good_normal) < /*0.99998*/ 0.9999)
+            {
+                indeces.erase(indeces.begin() + i);
+                if(i == indeces.size() - 1)
+                    break;
+                --i;
+                Nindeces = indeces.size();
+            }
         }
-        }
+
         if(Nindeces < 3)
+        {
+            indeces = old;
+            max_index = second_max_index;
+            good_normal = CrossProduct(face_points[indeces[max_index]] - face_points[indeces[(N + max_index - 1) % N]], face_points[indeces[(max_index + 1) % N]] - face_points[indeces[(N + max_index - 1) % N]]);
+            good_normal *= 1.0 / fastabs(good_normal);
+
+            for(size_t i = 0; i < Nindeces; i++)
+            {
+                Vector3D normal_temp = CrossProduct(face_points[indeces[i]] - face_points[indeces[(Nindeces + i - 1) % Nindeces]], face_points[indeces[(i + 1) % Nindeces]] - face_points[indeces[(Nindeces + i - 1) % Nindeces]]);
+                double const area = fastabs(normal_temp);
+                normal_temp *= 1.0 / area;
+                if(area < area_scale * small_fraction || ScalarProd(normal_temp, good_normal) < /*0.99998*/ 0.9999)
+                {
+                    indeces.erase(indeces.begin() + i);
+                    if(i == indeces.size() - 1)
+                        break;
+                    --i;
+                    Nindeces = indeces.size();
+                }
+            }
+        }
+
+        if(Nindeces < 3)
+        {
+            // TODO HERE
+            throw UniversalError("Bad CleanSameLine");
+        }
+        /*
         return false;
         else
+        */
         return true;
     }
 
@@ -467,6 +533,9 @@ namespace
         return std::pair<Vector3D, Vector3D>(ll, ur);
     }
 
+    /**
+     * Performs intersection between ranks vectors (so that the vectors are symmetric: a is in b iff b is in a)
+    */
     void TalkSymmetry(vector<int> &to_talk_with)
     {
         int wsize;
@@ -511,7 +580,9 @@ namespace
 #endif
         for (size_t i = 0; i < Nloop; i++)
             points[i] = allpoints[indeces[i]];
-        Nloop -= 2;
+        assert(Nloop > 1); // todo: added by maor
+        // Nloop -= 2; // todo: (MAOR) bug!!!!!!!!!!!!!!!!!!!!!!!!!
+        Nloop = (Nloop > 1)? Nloop - 2 : 0;
         Area = 0;
         //Vector3D temp3, temp4, temp5;
         for (size_t i = 0; i < Nloop; i++)
@@ -565,9 +636,28 @@ namespace
 
 #ifdef RICH_MPI
 vector<Vector3D> Voronoi3D::UpdateMPIPoints(Tessellation3D const &vproc, int rank,
-                                                                                        vector<Vector3D> const &points, vector<std::size_t> &selfindex, vector<int> &sentproc,
-                                                                                        vector<vector<std::size_t>> &sentpoints)
+                                             vector<Vector3D> const &points,
+                                              vector<std::size_t> &selfindex, 
+                                             vector<int> &sentproc,
+                                             vector<vector<std::size_t>> &sentpoints)
 {
+   /*
+    if(this->firstCall or this->CheckForRebalance(points))
+    {
+        this->firstCall = false;
+        // first, calculate (by heuristic) the order we should sort by
+        OctTree<Vector3D> tree(this->ll_, this->ur_, points);
+        int depth = tree.getDepth();
+        int maxDepth;
+        MPI_Allreduce(&depth, &maxDepth, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+        // notify the agent with the order
+        this->hilbertAgent.setOrder(maxDepth);
+        // calculate the new borders
+        this->hilbertAgent.determineBorders(points);
+    }
+    return this->hilbertAgent.pointsExchange(points, selfindex, sentproc, sentpoints, this->radiuses);
+    */
+ 
     vector<Vector3D> res;
     res.reserve(points.size());
     selfindex.clear();
@@ -833,6 +923,10 @@ vector<Vector3D> Voronoi3D::CreateBoundaryPoints(vector<std::pair<std::size_t, s
 }
 
 #ifdef RICH_MPI
+/**
+ * 
+ * `to_duplicate` is a vector of pairs: the first element is a face index, and the second is a point index.
+*/
 vector<Vector3D> Voronoi3D::CreateBoundaryPointsMPI(vector<std::pair<std::size_t, std::size_t>> const &to_duplicate,
                                                     Tessellation3D const &tproc, vector<vector<size_t>> &self_duplicate)
 {
@@ -868,6 +962,7 @@ vector<Vector3D> Voronoi3D::CreateBoundaryPointsMPI(vector<std::pair<std::size_t
     // Get the indeces and deal with selfboundary
     for (std::size_t i = 0; i < Ndup; ++i)
     {
+        // `neigh` contains the neighbors of the face
         std::pair<std::size_t, std::size_t> const &neigh = tproc.GetFaceNeighbors(to_duplicate[i].first);
         if (neigh.first != static_cast<std::size_t>(rank))
         {
@@ -906,20 +1001,24 @@ vector<Vector3D> Voronoi3D::CreateBoundaryPointsMPI(vector<std::pair<std::size_t
     for (size_t i = 0; i < duplicated_points_.size(); ++i)
     {
         std::sort(to_send[i].begin(), to_send[i].end());
-        to_send[i] = unique(to_send[i]);
+        to_send[i] = unique(to_send[i]); // remove duplications
         vector<size_t> temp;
         size_t Nsend = to_send[i].size();
-        vector<size_t> indeces = sort_index(duplicated_points_[i]);
+        // save the original indices order of duplicatd_points_[i], because we now sort the array (so we can apply `std::binary_search` to find efficiently)
+        vector<size_t> indeces = sort_index(duplicated_points_[i]); 
         sort(duplicated_points_[i].begin(), duplicated_points_[i].end());
 
         for (size_t j = 0; j < Nsend; ++j)
         {
+            // for each point in `to_sent[i]`, add the point index to `tmp`, if it isn't in `duplicated_points_[i]`
             if (duplicated_points_[i].empty() ||
                     !std::binary_search(duplicated_points_[i].begin(), duplicated_points_[i].end(), to_send[i][j]))
                 temp.push_back(to_send[i][j]);
         }
-        to_send[i] = temp;
-        duplicated_points_[i].insert(duplicated_points_[i].end(), temp.begin(), temp.end());
+        to_send[i] = temp; // removed duplications
+        duplicated_points_[i].insert(duplicated_points_[i].end(), temp.begin(), temp.end()); // union between to_send[i] and temp
+        
+        // restore the elements according to their original indices
         Nsend = indeces.size();
         temp = duplicated_points_[i];
         for (size_t j = 0; j < Nsend; ++j)
@@ -1039,7 +1138,7 @@ void Voronoi3D::Build(vector<Vector3D> const &points, Tessellation3D const &tpro
   bigtet_ = SetPointTetras(PointTetras_, Norg_, del_.tetras_, del_.empty_tetras_);
 
   vector<vector<size_t>> self_duplicate;
-  vector<std::pair<std::size_t, std::size_t>> ghost_index;
+  vector<std::pair<std::size_t, std::size_t>> ghost_index; // <face idx, point idx> pairs
   MPIFirstIntersections(tproc, ghost_index);
 
 #ifdef timing
@@ -1307,6 +1406,7 @@ namespace
                 if(vector[i] == vector[j])
                 {
                     std::cout << "duplication found in indices " << i << " and " << j << ": " << vector[i] << std::endl;
+                    MPI_Abort(MPI_COMM_WORLD, 2050);
                 }
             }
         }
@@ -1342,8 +1442,9 @@ void Voronoi3D::BuildInitialize(size_t num_points)
     Nghost_.clear();
 }
 
-void Voronoi3D::CheckToMirror(const Vector3D &point, double radius, std::vector<Face> &box, std::vector<Vector3D> &normals, std::vector<Vector3D> &points)
+std::vector<size_t> Voronoi3D::CheckToMirror(const Vector3D &point, double radius, std::vector<Face> &box, std::vector<Vector3D> &normals)
 {
+    std::vector<size_t> facesItCuts;
     for(size_t i = 0; i < box.size(); i++)
     {
         // check for intersecting the sphere with radius `radius` around `point`, with the `i`th face of `box`
@@ -1351,13 +1452,15 @@ void Voronoi3D::CheckToMirror(const Vector3D &point, double radius, std::vector<
         if(FaceSphereIntersections(box[i], sphere, normals[i]))
         {
             // intersects! mirror the point
-            points.push_back(MirrorPoint(box[i], point));
+            facesItCuts.push_back(i);
         }
     }
+    return facesItCuts;
 }
 
 bool Voronoi3D::CheckForRebalance(const std::vector<Vector3D> &points) const
 {
+    return false;
     int size;
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     size_t mySize = points.size();
@@ -1368,6 +1471,36 @@ bool Voronoi3D::CheckForRebalance(const std::vector<Vector3D> &points) const
     int rebalance = 0;
     MPI_Allreduce(&I_say, &rebalance, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
     return (rebalance > 0);
+}
+
+#define PRECISION 15
+
+namespace
+{
+    void validate(const Vector3D &center, double radius, const std::vector<Vector3D> &proposedResult, const std::vector<Vector3D> &allPoints, const HilbertAgent &hilbertAgent)
+    {
+        int rank;
+        MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+        std::vector<Vector3D> realResult;
+        for(const Vector3D &point_ : allPoints)
+        {
+            double distance = (point_[0] - center[0]) * (point_[0] - center[0]) + (point_[1] - center[1]) * (point_[1] - center[1]) + (point_[2] - center[2]) * (point_[2] - center[2]);
+            if(distance <= (radius * radius))
+            {
+                realResult.push_back(point_);
+            }
+        }
+        std::cout << "in total, allPoints.size() is " << allPoints.size() << ", real result is " << realResult.size() << std::endl;
+        for(const Vector3D &point_ : realResult)
+        {
+            if(hilbertAgent.getOwner(point_) != rank and std::find(proposedResult.begin(), proposedResult.end(), point_) == proposedResult.end())
+            {
+                std::cerr << std::setprecision(PRECISION) << "[RANK " << rank << "] Query: " << center << " with r=" << radius << ", " << point_ << " (belongs to rank " << hilbertAgent.getOwner(point_) << ") should be in result, but is not (False Negative), results size is " << proposedResult.size() << std::endl;
+                exit(EXIT_FAILURE);
+            }
+        }
+    }
 }
 
 /**
@@ -1386,7 +1519,8 @@ void Voronoi3D::PrepareToBuildHilbert(const std::vector<Vector3D> &points)
 
     bool sent_finished = false; // if I sent a finished message
     int finished = 0; // the number of finished ranks
-    std::deque<int> current;    // the indexes of the current "bad" points (points with h_i <= s_i)
+    std::vector<size_t> current;    // the indices of the current "bad" points (points with h_i <= s_i)
+    // initialize current, as all the indices
     for(size_t i = 0; i < points.size(); i++)
     {
         current.push_back(i);
@@ -1405,18 +1539,23 @@ void Voronoi3D::PrepareToBuildHilbert(const std::vector<Vector3D> &points)
     // todo: is there any need to build the tree again?
     rangeAgent.buildHilbertTree(&pointsTree);
 
-    std::vector<Vector3D> allMirrored;
+    std::vector<std::pair<size_t, size_t>> allMirrored;
 
     while(finished != size)
     {
         std::queue<RangeQueryData> queries;
-        std::vector<Vector3D> mirroedPoints;
+        std::vector<std::pair<size_t, size_t>> mirroredPoints;
 
-        for(std::size_t i = 0; i < current.size(); i++)
+        for(const size_t &pointIdx : current)  // index in this->del_.points_
         {
-            this->CheckToMirror(this->del_.points_[current[i]], this->radiuses[current[i]], box, normals, mirroedPoints);
-            Vector3D &point = this->del_.points_[current[i]];
-            queries.push({{point.x, point.y, point.z}, this->radiuses[current[i]]});
+            const Vector3D &point = this->del_.points_[pointIdx];
+            const double &radius = this->radiuses[pointIdx];
+            std::vector<size_t> facesItCuts = this->CheckToMirror(point, radius, box, normals);
+            for(const size_t &faceIdx : facesItCuts)
+            {
+                mirroredPoints.push_back(std::make_pair(faceIdx, pointIdx));
+            }
+            queries.push({{point.x, point.y, point.z}, radius});
         }
     
         if(current.empty() and !sent_finished)
@@ -1431,19 +1570,13 @@ void Voronoi3D::PrepareToBuildHilbert(const std::vector<Vector3D> &points)
 
         std::vector<Vector3D> &newPoints = batchInfo.newPoints;
 
-
-
         const std::vector<int> &recvProc = rangeAgent.getRecvProc();
         const std::vector<std::vector<size_t>> &recvPoints = rangeAgent.getRecvPoints();
 
+        int last = -1;
+
         for(size_t i = 0; i < recvProc.size(); i++)
         {
-            /*
-            if(recvPoints[i].empty())
-            {
-                continue;
-            }
-            */
             int _rank = recvProc[i];
             const std::vector<size_t> &receivedFromRank = recvPoints[i];
             size_t rankIdx = std::find(this->duplicatedprocs_.begin(), this->duplicatedprocs_.end(), _rank) - this->duplicatedprocs_.begin();
@@ -1456,90 +1589,86 @@ void Voronoi3D::PrepareToBuildHilbert(const std::vector<Vector3D> &points)
             }
             for(const size_t &RelativePointIdx : receivedFromRank)
             {
+                if(static_cast<int>(RelativePointIdx) <= last)
+                {
+                    std::cout << "rank " << rank << ", error! " << RelativePointIdx << std::endl;
+                    MPI_Abort(MPI_COMM_WORLD, 2004);
+                }
+                last = static_cast<int>(RelativePointIdx);
                 // batchInfo.pointsFromRanks[_rank][i] holds an index of point, but this point will be added to my delaunay, so
                 // its index there will be this->del_.points_.size() + batchInfo.pointsFromRanks[_rank][i]
                 this->Nghost_[rankIdx].push_back(this->del_.points_.size() + RelativePointIdx);
             }
         }
 
-        /*
+        // mirror points:
 
-
-        for(int _rank = 0; _rank < size; _rank++)
+        for(const std::pair<size_t, size_t> &pairFacePoint : mirroredPoints)
         {
-          std::vector<size_t> &receivedFromRank = rangeAgent.getRecvPoints()[_rank];
-          if(receivedFromRank.empty())
-          {
-            continue;
-          }
-          size_t rankIdx = std::find(this->duplicatedprocs_.begin(), this->duplicatedprocs_.end(), _rank) - this->duplicatedprocs_.begin();
-          if(rankIdx == this->duplicatedprocs_.size())
-          {
-            // new rank in this->duplicatedprocs_, initialize it
-            this->duplicatedprocs_.push_back(_rank);
-            this->duplicated_points_.emplace_back(std::vector<size_t>());
-            this->Nghost_.emplace_back(std::vector<size_t>());
-          }
-          for(const size_t &RelativePointIdx : receivedFromRank)
-          {
-            // batchInfo.pointsFromRanks[_rank][i] holds an index of point, but this point will be added to my delaunay, so
-            // its index there will be this->del_.points_.size() + batchInfo.pointsFromRanks[_rank][i]
-            this->Nghost_[rankIdx].push_back(this->del_.points_.size() + RelativePointIdx);
-          }
-        }
-        */
-
-        for(const Vector3D &point : mirroedPoints)
-        {
-            if(std::find(allMirrored.begin(), allMirrored.end(), point) == allMirrored.end())
+            // check if we have already mirrored this point with this face
+            if(std::find(allMirrored.begin(), allMirrored.end(), pairFacePoint) == allMirrored.end())
             {
-                allMirrored.push_back(point);
-                newPoints.push_back(point);
+                allMirrored.push_back(pairFacePoint); // remember we mirrored this point with this face
+                newPoints.push_back(MirrorPoint(box[pairFacePoint.first], this->del_.points_[pairFacePoint.second]));
             }
         }
 
         // performs internal tesselation:
         this->del_.BuildExtra(newPoints);
 
+        /*
+        // VALIDATE
+        for(size_t i = 0; i < batchInfo.queriesAnswers.size(); i++)
+        {
+            Vector3D point_(batchInfo.queriesAnswers[i].data.center.x, batchInfo.queriesAnswers[i].data.center.y, batchInfo.queriesAnswers[i].data.center.z);
+            double radius_ = batchInfo.queriesAnswers[i].data.radius;
+            validate(point_, radius_, this->del_.points_, allPoints, this->hilbertAgent);
+            std::cout << "Passed point " << i << " out of " << batchInfo.queriesAnswers.size() << ", of rank " << rank << std::endl;
+        }
+        */
+
         // updates the radiuses array of the tetrahedra, as well as the lists for each point what tetras it belongs to
+
         this->R_.resize(this->del_.tetras_.size());
         std::fill(this->R_.begin(), this->R_.end(), -1);
         this->tetra_centers_.resize(this->R_.size());
         this->bigtet_ = SetPointTetras(this->PointTetras_, this->Norg_, this->del_.tetras_, this->del_.empty_tetras_);
 
-        for(std::size_t i = 0; i < current.size(); i++)
-        {
-            double s = 2 * this->GetMaxRadius(current[i]);
+        std::vector<size_t> newCurrent;
 
-            if(this->radiuses[current[i]] >= s)
+        for(const size_t &PointIdx : current)
+        {
+            // a diameter of a circle C around `PointIdx` to ensure all the circles containing the point `PointIdx`, are included in C 
+            double diameter = 2 * this->GetMaxRadius(PointIdx);
+
+            if(this->radiuses[PointIdx] >= diameter)
             {
-                // h_i > s_i, remove point from current
-                current.erase(current.cbegin() + i);
+                // we know the radius we have just searched (`this->radiuses[PointIdx]`) contains C
+                continue;
             }
             else
             {
-                double radius = std::min(this->radiuses[current[i]] * RADIUSES_GROWING_FACTOR, s);
-                this->radiuses[current[i]] = radius;
+                // update radius
+                this->radiuses[PointIdx] = std::min(this->radiuses[PointIdx] * RADIUSES_GROWING_FACTOR, diameter);
+                newCurrent.push_back(PointIdx);
             }
         }
+
+        current = std::move(newCurrent);
     }
 
+    // calculate this->duplicated_points_
 
     const std::vector<std::vector<size_t>> &sentPoints = rangeAgent.getSentPoints();
     const std::vector<int> &sentProc = rangeAgent.getSentProc();
 
     for(size_t i = 0; i < sentProc.size(); i++)
     {
-        /*
-        if(sentPoints[i].empty())
-        {
-            continue;
-        }
-        */
       int _rank = sentProc[i];
       size_t rankIdx = std::find(this->duplicatedprocs_.begin(), this->duplicatedprocs_.end(), _rank) - this->duplicatedprocs_.begin();
       if(rankIdx == this->duplicatedprocs_.size())
       {
+         // TODO: necessary? If `rankIdx` didn't appear in `this->duplicatedprocs_`, we will delete it in the next part
         // new rank in this->duplicatedprocs_, initialize it
         this->duplicatedprocs_.push_back(_rank);
         this->duplicated_points_.emplace_back(std::vector<size_t>());
@@ -1551,6 +1680,8 @@ void Voronoi3D::PrepareToBuildHilbert(const std::vector<Vector3D> &points)
       }
     }
 
+    // remove whomever that does not appear both in my sent vector and receive vector (because if one appears in only one, it means that we either sent it a point, or received one, but has no used of it at all (otherwise it would require a symetric call))
+
     const std::vector<int> &recvProc = rangeAgent.getRecvProc();
 
     for(size_t i = 0; i < this->duplicatedprocs_.size(); i++)
@@ -1558,7 +1689,7 @@ void Voronoi3D::PrepareToBuildHilbert(const std::vector<Vector3D> &points)
         int _rank =  this->duplicatedprocs_[i];
         if((std::find(sentProc.begin(), sentProc.end(), _rank) == sentProc.end()) or (std::find(recvProc.begin(), recvProc.end(), _rank) == recvProc.end()))
         {
-            // not in the intersection
+            // not in the intersection, remove the rank
             this->duplicatedprocs_.erase(this->duplicatedprocs_.begin() + i);
             this->duplicated_points_.erase(this->duplicated_points_.begin() + i);
             this->Nghost_.erase(this->Nghost_.begin() + i);
@@ -1594,6 +1725,7 @@ void Voronoi3D::BuildHilbert(const std::vector<Vector3D> &points)
     {
         this->CalculateInitialRadius(points.size());
     }
+
     if(this->radiuses.size() < points.size())
     {
         this->radiuses.resize(points.size(), this->initialRadius);
@@ -1605,16 +1737,17 @@ void Voronoi3D::BuildHilbert(const std::vector<Vector3D> &points)
         // first, calculate (by heuristic) the order we should sort by
         OctTree<Vector3D> tree(this->ll_, this->ur_, points);
         int depth = tree.getDepth();
-        MPI_Allreduce(&depth, &depth, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+        int maxDepth;
+        MPI_Allreduce(&depth, &maxDepth, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
         // notify the agent with the order
-        this->hilbertAgent.setOrder(depth);
+        this->hilbertAgent.setOrder(maxDepth);
         // calculate the new borders
         this->hilbertAgent.determineBorders(points);
     }
     std::vector<Vector3D> new_points = this->hilbertAgent.pointsExchange(points, this->self_index_, this->sentprocs_, this->sentpoints_, this->radiuses);
-    // hilbertAgent.calculateBoundingBox();
-    // std::cout << "rank " << rank << ", I have " << new_points.size() << " points" << std::endl;
     this->BuildInitialize(new_points.size());
+    
+    // std::cout << "points.size() was " << points.size() << " and now is " << new_points.size() << std::endl;
 
     std::vector<size_t> order;
 
@@ -1627,23 +1760,33 @@ void Voronoi3D::BuildHilbert(const std::vector<Vector3D> &points)
             bounding_box.second.x = std::max(bounding_box.second.x, point.x);
             bounding_box.first.y = std::min(bounding_box.first.y, point.y);
             bounding_box.second.y = std::max(bounding_box.second.y, point.y);
-            bounding_box.first.z = std::min(bounding_box.first.z, point.y);
+            bounding_box.first.z = std::min(bounding_box.first.z, point.z);
             bounding_box.second.z = std::max(bounding_box.second.z, point.z);
         }
 
+        /*
+        bounding_box.first.x = std::max(bounding_box.first.x, this->ll_.x);
+        bounding_box.first.y = std::max(bounding_box.first.y, this->ll_.y);
+        bounding_box.first.z = std::max(bounding_box.first.z, this->ll_.z);
+        bounding_box.second.x = std::min(bounding_box.second.x, this->ur_.x);
+        bounding_box.second.y = std::min(bounding_box.second.y, this->ur_.y);
+        bounding_box.second.z = std::min(bounding_box.second.z, this->ur_.z);
+        */
+
         // performs internal tesselation:
+        // std::cout << "checking duplications..." << std::endl;
         // reportDuplications(new_points);
         order = HilbertOrder3D(new_points);
-
+        
         // initial build for the points
         this->del_.Build(new_points, bounding_box.second, bounding_box.first, order);
-    }
 
-    // updates the radiuses array of the tetrahedra, as well as the lists for each point what tetras it belongs to
-    this->R_.resize(this->del_.tetras_.size());
-    std::fill(this->R_.begin(), this->R_.end(), -1);
-    this->tetra_centers_.resize(this->R_.size());
-    this->bigtet_ = SetPointTetras(this->PointTetras_, this->Norg_, this->del_.tetras_, this->del_.empty_tetras_);
+        // updates the radiuses array of the tetrahedra, as well as the lists for each point what tetras it belongs to
+        this->R_.resize(this->del_.tetras_.size());
+        std::fill(this->R_.begin(), this->R_.end(), -1);
+        this->tetra_centers_.resize(this->R_.size());
+        this->bigtet_ = SetPointTetras(this->PointTetras_, this->Norg_, this->del_.tetras_, this->del_.empty_tetras_);
+    }
 
     if(this->radiuses.size() != new_points.size())
     {
@@ -1693,6 +1836,7 @@ void Voronoi3D::CalcAllCM(void)
 {
     std::array<Vector3D, 4> tetra;
     size_t Nfaces = FaceNeighbors_.size();
+    assert(Nfaces == 0 or Nfaces >= 4);
     Vector3D vtemp;
     std::vector<Vector3D> vectemp;
     double vol;
@@ -1701,18 +1845,22 @@ void Voronoi3D::CalcAllCM(void)
         size_t N0 = FaceNeighbors_[i].first;
         size_t N1 = FaceNeighbors_[i].second;
         size_t Npoints = PointsInFace_[i].size();
+        assert(Npoints > 1); // todo: added by maor
         vectemp.resize(Npoints);
 #ifdef __INTEL_COMPILER
 #pragma ivdep
 #endif
         for (size_t j = 0; j < Npoints; ++j)
             vectemp[j] = tetra_centers_[PointsInFace_[i][j]];
-        Npoints -= 2;
+        // Npoints -= 2; // todo: (MAOR) bug!!!!!!!!!!!!!!!!!!!!!!!!!
+        Npoints = (Npoints > 1)? Npoints - 2 : 0;
         tetra[0] = vectemp[0];
+
         for (std::size_t j = 0; j < Npoints; ++j)
         {
             tetra[1] = vectemp[j + 1];
             tetra[2] = vectemp[j + 2];
+            // todo: this part can be outside of the loop??????
             if (N1 < Norg_)
             {
                 tetra[3] = del_.points_[N1];

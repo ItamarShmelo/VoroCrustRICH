@@ -29,9 +29,9 @@
 
 #ifdef RICH_MPI
 #define RICH_TESELLATION_FINISHED_TAG 505
-#define DEFAULT_HILBERT_ACCURACY 13
+#define DEFAULT_HILBERT_ACCURACY 14
 #define RADIUSES_GROWING_FACTOR 1.618 // 1.618
-#define BALANCE_FACTOR 1.1
+#define BALANCE_FACTOR 1.2
 
 #endif 
 
@@ -115,7 +115,7 @@ private:
   void PrepareToBuildHilbert(const std::vector<Vector3D> &points);
   void BuildInitialize(size_t num_points);
   bool CheckForRebalance(const std::vector<Vector3D> &points) const;
-  void CheckToMirror(const Vector3D &point, double radius, std::vector<Face> &box, std::vector<Vector3D> &normals, std::vector<Vector3D> &points);
+  std::vector<size_t> CheckToMirror(const Vector3D &point, double radius, std::vector<Face> &box, std::vector<Vector3D> &normals);
   #endif // RICH_MPI
 
   Delaunay3D del_;

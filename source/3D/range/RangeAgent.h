@@ -56,6 +56,7 @@ typedef struct QueryBatchInfo
 {
     std::vector<QueryInfo> queriesAnswers;
     std::vector<Vector3D> newPoints;
+    std::vector<std::vector<Vector3D>> newPointsRanks;
 } QueryBatchInfo;
 
 
@@ -101,7 +102,7 @@ private:
     std::vector<std::vector<size_t>> sentPoints; 
     std::vector<_set<size_t>> sentPointsSet; 
     std::vector<int> ranksBufferIdx;
-    
+
     std::vector<Vector3D> getRangeResult(const SubQueryData &query, int rank);
     _set<int> getIntersectingRanks(const Vector3D &center, coord_t radius) const;
     void sendFinish();
@@ -116,7 +117,10 @@ private:
         if(this->buffers[bufferIdx].size() > 0)
         {
             this->requests.push_back(MPI_REQUEST_NULL);
+            /*
             MPI_Isend(&this->buffers[bufferIdx][0], this->buffers[bufferIdx].size(), MPI_BYTE, node, TAG_REQUEST, this->comm, &this->requests[this->requests.size() - 1]);
+            */
+            MPI_Send(&this->buffers[bufferIdx][0], this->buffers[bufferIdx].size(), MPI_BYTE, node, TAG_REQUEST, this->comm);
         }
         this->ranksBufferIdx[node] = UNDEFINED_BUFFER_IDX;
     }

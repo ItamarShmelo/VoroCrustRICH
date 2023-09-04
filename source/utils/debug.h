@@ -1,14 +1,13 @@
 #include <iostream>
 #include <unistd.h>
 #include <execinfo.h>
-#define WITH_MPI
 
-#ifdef WITH_MPI
+#ifdef RICH_MPI
 #include <mpi.h>
 #include <shmem.h>
 #define MPI_SYNC_TAG 2003
 #define MPI_MASTER_SYNC_TAG 2002
-#endif // WITH_MPI
+#endif // RICH_MPI
 
 #define MAX_HOSTNAME_LENGTH 50
 #define MAX_STACK_LENGTH 120
@@ -20,7 +19,7 @@ void printDebugInfo()
     std::cout << "host: " << hostname << ", pid: " << getpid() << std::endl;
 }
 
-#ifdef WITH_MPI
+#ifdef RICH_MPI
 void printDebugInfoMPI()
 {
     char hostname[MPI_MAX_PROCESSOR_NAME + 1];
@@ -100,7 +99,7 @@ void MPI_Synchronoize(int seconds, const MPI_Comm &comm = MPI_COMM_WORLD)
     MPI_Waitall(requests.size(), &requests[0], MPI_STATUSES_IGNORE);
 }
 
-#endif // WITH_MPI
+#endif // RICH_MPI
 
 void printStack(int accuracy = MAX_STACK_LENGTH)
 {
