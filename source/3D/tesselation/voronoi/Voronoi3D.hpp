@@ -28,11 +28,9 @@
 #endif
 
 #ifdef RICH_MPI
+#include "PointsManager.hpp"
 #define RICH_TESELLATION_FINISHED_TAG 505
-#define DEFAULT_HILBERT_ACCURACY 14
 #define RADIUSES_GROWING_FACTOR 1.618 // 1.618
-#define BALANCE_FACTOR 1.2
-
 #endif 
 
 typedef std::array<std::size_t, 4> b_array_4;
@@ -112,9 +110,9 @@ private:
   #ifdef RICH_MPI
   void Build(std::vector<Vector3D> const &points, Tessellation3D const &tproc); // old implementation
   void CalculateInitialRadius(size_t pointsSize);
-  void PrepareToBuildHilbert(const std::vector<Vector3D> &points);
+  void BringGhostPointsToBuild(const std::vector<Vector3D> &points);
+  std::vector<Vector3D> PrepareToBuildHilbert(const std::vector<Vector3D> &points);
   void BuildInitialize(size_t num_points);
-  bool CheckForRebalance(const std::vector<Vector3D> &points) const;
   std::vector<size_t> CheckToMirror(const Vector3D &point, double radius, std::vector<Face> &box, std::vector<Vector3D> &normals);
   #endif // RICH_MPI
 
@@ -144,13 +142,23 @@ private:
   std::array<Vector3D, 5> temp_points2_;
   std::vector<Face> box_faces_;
   #ifdef RICH_MPI
-  std::vector<double> radiuses;
-  HilbertAgent hilbertAgent;
-  double initialRadius;
-  bool firstCall;
+    std::vector<double> radiuses;
+    EnvironmentAgent *envAgent = nullptr;
+    double initialRadius;
+    bool firstCall;
+    std::vector<hilbert_index_t> responsibilityRange;
+    PointsManager pointsManager;
+    int hilbertOrder;
   #endif // RICH_MPI
 
 public:
+  inline ~Voronoi3D()
+  {
+    #ifdef RICH_MPI
+      delete this->envAgent;
+    #endif // RICH_MPI
+  }
+
 #ifdef RICH_MPI
   /*! \brief Update meta tessellation
     \param vproc Meta tessellation
@@ -164,6 +172,7 @@ public:
   vector<Vector3D> UpdateMPIPoints(Tessellation3D const& vproc, int rank,
 				   vector<Vector3D> const& points, vector<std::size_t>& selfindex, vector<int>& sentproc,
 				   vector<vector<std::size_t> >& sentpoints) override;
+          
 #endif
   vector<int>& GetSentProcs(void) override;
 

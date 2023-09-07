@@ -25,7 +25,7 @@ public:
             dx *= dx;
             dy *= dy;
             dz *= dz;
-            if((dx + dy + dz) <= (radius * radius))
+            if(std::abs((dx + dy + dz) - (radius * radius)) <= EPSILON)
             {
                 result.push_back(i);
             }

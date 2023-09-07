@@ -4,7 +4,7 @@
 #ifdef RICH_MPI
 
 #include <mpi.h>
-#include "3D/hilbert/HilbertAgent.h"
+#include "3D/environment/HilbertEnvAgent.hpp"
 #include "RangeFinder.hpp"
 
 #define HASH_SIZE 128
@@ -13,9 +13,9 @@ class HashBruteForceFinder : public RangeFinder
 {
 public:
     template<typename RandomAccessIterator>
-    HashBruteForceFinder(HilbertAgent *agent, RandomAccessIterator first, RandomAccessIterator last): hilbertAgent(agent)
+    HashBruteForceFinder(const EnvironmentAgent *envAgent, RandomAccessIterator first, RandomAccessIterator last): envAgent(envAgent)
     {
-        this->cellsPointsSize = static_cast<size_t>(std::pow(2, 1.4 * this->hilbertAgent->getOrder()));
+        this->cellsPointsSize = static_cast<size_t>(std::pow(2, 1.4 * this->envAgent->getOrder()));
         this->cellsPoints.resize(this->cellsPointsSize);
 
         MPI_Comm_rank(MPI_COMM_WORLD, &this->rank);
@@ -24,7 +24,7 @@ public:
         {
             const Vector3D &point = *it;
             this->myPoints.push_back(point);
-            hilbert_index_t cell = this->hilbertAgent->xyz2d(point);
+            hilbert_index_t cell = this->envAgent->xyz2d(point);
             this->cellsPoints[cell % this->cellsPointsSize].push_back(index);
             index++;
         }
@@ -32,16 +32,16 @@ public:
     };
 
     template<typename Container>
-    inline HashBruteForceFinder(HilbertAgent *agent, Container points): HashBruteForceFinder(agent, points.begin(), points.end()){};
+    inline HashBruteForceFinder(const EnvironmentAgent *envAgent, Container points): HashBruteForceFinder(dynamic_cast<const HilbertEnvironmentAgent*>(envAgent), points.begin(), points.end()){};
     inline ~HashBruteForceFinder() = default;
 
     std::vector<size_t> range(const Vector3D &center, double radius) const override
     {
-        boost::container::flat_set<size_t> intersectingCells = this->hilbertAgent->getIntersectingCircle(center, radius);
+        boost::container::flat_set<size_t> intersectingCells = this->envAgent->getIntersectingCells(center, radius);
         std::vector<size_t> result;
         for(hilbert_index_t cell : intersectingCells)
         {
-            if(this->hilbertAgent->getCellOwner(cell) == this->rank)
+            if(this->envAgent->getCellOwner(cell) == this->rank)
             {
                 const size_t *_points = this->cellsPoints[cell % this->cellsPointsSize].data();
                 size_t cellPointsSize = this->cellsPoints[cell % this->cellsPointsSize].size();
@@ -70,7 +70,7 @@ private:
     std::vector<std::vector<size_t>> cellsPoints;
     size_t cellsPointsSize;
     std::vector<Vector3D> myPoints;
-    HilbertAgent *hilbertAgent;
+    const HilbertEnvironmentAgent *envAgent;
 };
 
 #endif // RICH_MPI

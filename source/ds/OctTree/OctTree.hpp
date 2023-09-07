@@ -56,6 +56,7 @@ public:
 
         OctTreeNode *createChild(int childNumber);
         int getChildNumberContaining(const T &point) const;
+        const OctTreeNode *getChildContaining(const T &point) const{return this->children[this->getChildNumberContaining(point)];};
 
         bool isValue;
         T value; // if a leaf, that's a point value, otherwise, thats the value for partition
@@ -68,8 +69,6 @@ public:
     private:
         void fixHeightsRecursively();
         void splitNode();
-        const OctTreeNode *getChildContaining(const T &point) const{return this->children[this->getChildNumberContaining(point)];};
-
     };
 
 private:
@@ -218,7 +217,6 @@ const typename OctTree<T>::OctTreeNode *OctTree<T>::tryFindParent(const T &point
             return current;
         }
         current = nextChild;
-
     }
     return nullptr;
 }

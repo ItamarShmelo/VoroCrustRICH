@@ -27,6 +27,8 @@ public:
     void print() const{this->octTree->print();};
     boost::container::flat_set<int> getIntersectingRanks(const _Sphere<T> &sphere) const;
     inline boost::container::flat_set<int> getIntersectingRanks(const T &center, const typename T::coord_type radius) const{return this->getIntersectingRanks(_Sphere(center, radius));};
+    int getOwnerRank(const T &point) const;
+    int getDepth() const{return this->octTree->getDepth();};
 
     #ifdef DEBUG_MODE
     inline bool validate() const{if(this->octTree != nullptr) return this->validateHelper(this->octTree->getRoot()); return true;};
@@ -85,8 +87,6 @@ template<typename T>
 void DistributedOctTree<T>::buildTreeHelper(typename OctTree<_Wrapper>::OctTreeNode *newNode, const typename OctTree<T>::OctTreeNode *node)
 {
     assert(newNode != nullptr);
-
-    // MPI_Barrier(this->comm);
         
     unsigned char valueToSend = 0; // assumes `CHILDREN` is 8. this variable contains 1 in the `i`th bit iff child `i` exists
     if(node != nullptr)
@@ -124,10 +124,10 @@ void DistributedOctTree<T>::buildTreeHelper(typename OctTree<_Wrapper>::OctTreeN
         if(containingValue != UNDEFINED_OWNER)
         {
             // someone holds the `i`th child
-            newNode->createChild(i); // creates the child in my node
+            newNode->createChild(i); // creates the child in my own tree
             if(recursiveBuild)
             {
-                // there are several holders, call recursive build
+                // there are several holders, call recursive build (until we reach one holder)
                 // determine what's the next node in my own tree to continue the recursive build with
                 // this node might be null, if I don't have any nodes this depth in the tree
                 const typename OctTree<T>::OctTreeNode *nextNode = nullptr;
@@ -164,6 +164,23 @@ void DistributedOctTree<T>::buildTreeHelper(typename OctTree<_Wrapper>::OctTreeN
             newNode->children[i] = nullptr;
         }
     }
+}
+
+template<typename T>
+int DistributedOctTree<T>::getOwnerRank(const T &point) const
+{
+    _Wrapper pointWrapping(point, UNDEFINED_OWNER);
+    const typename OctTree<_Wrapper>::OctTreeNode *current = this->octTree->getRoot();
+
+    while(current != nullptr and (!current->isValue))
+    {
+        current = current->getChildContaining(pointWrapping);
+    }
+    if(current == nullptr)
+    {
+        std::cerr << "Error! (point is " << point << ")" << std::endl;
+    }
+    return current->value.owner;
 }
 
 #ifdef DEBUG_MODE
