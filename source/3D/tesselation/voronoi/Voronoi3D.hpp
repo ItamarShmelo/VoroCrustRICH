@@ -57,17 +57,6 @@ private:
   void FindIntersectionsSingle(vector<Face> const& box, std::size_t point, Sphere &sphere,
 			       vector<size_t> &intersecting_faces,std::vector<double> &Rtemp,std::vector<Vector3D> &vtemp);
 
-#ifdef RICH_MPI
-
-  void FindIntersectionsRecursive(vector<std::size_t> &res,Tessellation3D const& tproc, std::size_t rank,
-				  std::size_t point, Sphere &sphere, size_t mode, boost::container::flat_set<size_t> &visited,
-				  std::stack<std::size_t> &to_check,bool &skipped,face_vec &faces, vector<size_t> &past_duplicate);
-
-  void FindIntersectionsFirstMPI(vector<std::size_t> &res, std::size_t point,
-      Sphere &sphere, std::vector<Face> const& faces, bool &skipped, face_vec const& face_index);
-
-#endif // RICH_MPI
-
   std::size_t GetFirstPointToCheck(void)const;
 
   /*! \brief Get point to check
@@ -85,19 +74,6 @@ private:
   vector<std::pair<std::size_t, std::size_t> > SerialFindIntersections(bool first_run);
   vector<std::pair<std::size_t, std::size_t> > SerialFirstIntersections(void);
   double CalcTetraRadiusCenterHiPrecision(std::size_t index);
-
-#ifdef RICH_MPI
-  vector<std::pair<std::size_t, std::size_t> > FindIntersections(Tessellation3D const& tproc, size_t mode,
-								 vector<unsigned char> &checked_clear);
-  vector<Vector3D> CreateBoundaryPointsMPI(vector<std::pair<std::size_t, std::size_t> > const& to_duplicate,
-					   Tessellation3D const& tproc, vector<vector<size_t> > &self_duplicate);
-
-  /*! \brief Calculate intersections
-    \param tproc Meta tessellation
-    \param ghost_index Indices of ghost points
-   */
-  void MPIFirstIntersections(Tessellation3D const& tproc, vector<std::pair<std::size_t, std::size_t> > &ghost_index);
-#endif
 
   double CalcTetraRadiusCenter(std::size_t index);
   vector<Vector3D> CreateBoundaryPoints(vector<std::pair<std::size_t, std::size_t> > const& to_duplicate,
@@ -159,21 +135,22 @@ public:
     #endif // RICH_MPI
   }
 
-#ifdef RICH_MPI
-  /*! \brief Update meta tessellation
-    \param vproc Meta tessellation
-    \param rank Parallel process rank
-    \param points New point positions
-    \param selfindex Self indices of points
-    \param sentproc List of processes to which points were sent
-    \param sentpoints List of indices of points sent
-    \return Received points
-   */
-  vector<Vector3D> UpdateMPIPoints(Tessellation3D const& vproc, int rank,
-				   vector<Vector3D> const& points, vector<std::size_t>& selfindex, vector<int>& sentproc,
-				   vector<vector<std::size_t> >& sentpoints) override;
-          
-#endif
+  #ifdef RICH_MPI
+    /*! \brief Update meta tessellation
+      \param vproc Meta tessellation
+      \param rank Parallel process rank
+      \param points New point positions
+      \param selfindex Self indices of points
+      \param sentproc List of processes to which points were sent
+      \param sentpoints List of indices of points sent
+      \return Received points
+    */
+    vector<Vector3D> UpdateMPIPoints(Tessellation3D const& vproc, int rank,
+            vector<Vector3D> const& points, vector<std::size_t>& selfindex, vector<int>& sentproc,
+            vector<vector<std::size_t> >& sentpoints) override;
+            
+  #endif
+
   vector<int>& GetSentProcs(void) override;
 
   vector<vector<size_t> >& GetSentPoints(void) override;

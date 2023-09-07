@@ -34,6 +34,171 @@
 
 // #define VORONOI_DEBUG
 
+#ifdef RICH_MPI
+vector<Vector3D> Voronoi3D::UpdateMPIPoints(Tessellation3D const &vproc, int rank,
+                                             vector<Vector3D> const &points,
+                                              vector<std::size_t> &selfindex, 
+                                             vector<int> &sentproc,
+                                             vector<vector<std::size_t>> &sentpoints)
+{
+    vector<Vector3D> res;
+    res.reserve(points.size());
+    selfindex.clear();
+    std::size_t npoints = points.size();
+    std::size_t nproc = vproc.GetPointNo();
+    vector<std::size_t> neighbors = vproc.GetNeighbors(static_cast<std::size_t>(rank));
+    vector<std::size_t> realneigh;
+    sentpoints.clear();
+    sentproc.clear();
+    for (std::size_t i = 0; i < neighbors.size(); ++i)
+        if (static_cast<std::size_t>(neighbors[i]) < nproc)
+        {
+            realneigh.push_back(neighbors[i]);
+            sentproc.push_back(static_cast<int>(neighbors[i]));
+        }
+    std::size_t Nreal = realneigh.size();
+    sentpoints.resize(sentproc.size());
+
+    for (std::size_t i = 0; i < npoints; ++i)
+    {
+        Vector3D temp = points[i];
+        if (PointInPoly(vproc, temp, static_cast<std::size_t>(rank)))
+        {
+            res.push_back(temp);
+            selfindex.push_back(i);
+            continue;
+        }
+        bool good = false;
+        for (std::size_t j = 0; j < Nreal; ++j)
+        {
+            if (PointInPoly(vproc, temp, realneigh[j]))
+            {
+                sentpoints[j].push_back(i);
+                good = true;
+                break;
+            }
+        }
+        if (good)
+            continue;
+        for (std::size_t j = 0; j < nproc; ++j)
+        {
+            if (std::find(realneigh.begin(), realneigh.end(), j) != realneigh.end() || j == static_cast<std::size_t>(rank))
+                continue;
+            if (PointInPoly(vproc, temp, j))
+            {
+                good = true;
+                std::size_t index = std::find(sentproc.begin(), sentproc.end(), j) - sentproc.begin();
+                if (index >= sentproc.size())
+                {
+                    sentproc.push_back(static_cast<int>(j));
+                    sentpoints.push_back(vector<std::size_t>(1, i));
+                }
+                else
+                    sentpoints[index].push_back(i);
+                break;
+            }
+        }
+        if (good)
+            continue;
+        UniversalError eo("Point is not inside any processor");
+        eo.addEntry("CPU rank", rank);
+        eo.addEntry("Point number", static_cast<double>(i));
+        eo.addEntry("Point x cor", points[i].x);
+        eo.addEntry("Point y cor", points[i].y);
+        eo.addEntry("Point z cor", points[i].z);
+        vproc.output("vproc_" + int2str(rank) + ".bin");
+        std::array<Vector3D, 4> vec;
+        face_vec faces_error = vproc.GetCellFaces(static_cast<size_t>(rank));
+        for (size_t j = 0; j < faces_error.size(); ++j)
+        {
+            point_vec_v f_points = VectorValues(vproc.GetFacePoints(), vproc.GetPointsInFace(faces_error[j]));
+            for (size_t k = 0; k < f_points.size(); ++k)
+            {
+                std::cout << "Rank " << rank << " face " << faces_error[j] << " point " << k << " cor " << f_points[k].x
+                                    << " " << f_points[k].y << " " << f_points[k].z << std::endl;
+            }
+            vec[0] = f_points[0];
+            vec[1] = f_points[1];
+            vec[2] = f_points[2];
+            vec[3] = vproc.GetMeshPoint(rank);
+            double s1 = orient3d(vec);
+            vec[3] = points[i];
+            double s2 = orient3d(vec);
+            std::cout << "s1 = " << s1 << " s2 = " << s2 << std::endl;
+        }
+        for (std::size_t l = 0; l < Nreal; ++l)
+        {
+            faces_error = vproc.GetCellFaces(static_cast<size_t>(realneigh[l]));
+            for (size_t j = 0; j < faces_error.size(); ++j)
+            {
+                point_vec_v f_points = VectorValues(vproc.GetFacePoints(), vproc.GetPointsInFace(faces_error[j]));
+                for (size_t k = 0; k < f_points.size(); ++k)
+                {
+                    std::cout << "Rank " << realneigh[l] << " face " << faces_error[j] << " point " << k << " cor " << f_points[k].x
+                                        << " " << f_points[k].y << " " << f_points[k].z << std::endl;
+                }
+                vec[0] = f_points[0];
+                vec[1] = f_points[1];
+                vec[2] = f_points[2];
+                vec[3] = vproc.GetMeshPoint(rank);
+                double s1 = orient3d(vec);
+                vec[3] = points[i];
+                double s2 = orient3d(vec);
+                std::cout << "s1 = " << s1 << " s2 = " << s2 << std::endl;
+            }
+        }
+        throw eo;
+    }
+    // Send/Recv the points
+    // Communication
+    int wsize;
+    MPI_Comm_size(MPI_COMM_WORLD, &wsize);
+    vector<int> totalk(static_cast<std::size_t>(wsize), 0);
+    vector<int> scounts(totalk.size(), 1);
+    for (std::size_t i = 0; i < sentproc.size(); ++i)
+        totalk[sentproc[i]] = 1;
+    int nrecv;
+    MPI_Reduce_scatter(&totalk[0], &nrecv, &scounts[0], MPI_INT, MPI_SUM,
+                                         MPI_COMM_WORLD);
+
+    vector<MPI_Request> req(sentproc.size());
+    std::vector<int> dummy_send(req.size());
+    for (std::size_t i = 0; i < sentproc.size(); ++i)
+        MPI_Isend(&dummy_send[i], 1, MPI_INT, sentproc[i], 3, MPI_COMM_WORLD, &req[i]);
+    vector<int> talkwithme;
+    for (int i = 0; i < nrecv; ++i)
+    {
+        MPI_Status status;
+        MPI_Recv(&wsize, 1, MPI_INT, MPI_ANY_SOURCE, 3, MPI_COMM_WORLD, &status);
+        talkwithme.push_back(status.MPI_SOURCE);
+    }
+    MPI_Waitall(static_cast<int>(req.size()), &req[0], MPI_STATUSES_IGNORE);
+    MPI_Barrier(MPI_COMM_WORLD);
+    for (std::size_t i = 0; i < talkwithme.size(); ++i)
+    {
+        if (std::find(sentproc.begin(), sentproc.end(), talkwithme[i]) == sentproc.end())
+        {
+            sentproc.push_back(talkwithme[i]);
+            sentpoints.push_back(vector<std::size_t>());
+        }
+    }
+    // Point exchange
+    vector<vector<Vector3D>> incoming;
+    if (points.empty())
+    {
+        vector<Vector3D> dummy(1);
+        incoming = MPI_exchange_data(sentproc, sentpoints, dummy);
+    }
+    else
+        incoming = MPI_exchange_data(sentproc, sentpoints, points);
+    // Combine the vectors
+    for (std::size_t i = 0; i < incoming.size(); ++i)
+        for (std::size_t j = 0; j < incoming[i].size(); ++j)
+            res.push_back(incoming[i][j]);
+    return res;
+}
+#endif //RICH_MPI
+
 bool PointInPoly(Tessellation3D const &tess, Vector3D const &point, std::size_t index)
 {
     face_vec const &faces = tess.GetCellFaces(index);
@@ -507,70 +672,6 @@ namespace
         return cur_tetra.neighbors[i];
     }
 
-#ifdef RICH_MPI
-    std::pair<Vector3D, Vector3D> GetBoundingBox(Tessellation3D const &tproc, int rank)
-    {
-        vector<Vector3D> const &face_points = tproc.GetFacePoints();
-        face_vec faces = tproc.GetCellFaces(static_cast<size_t>(rank));
-        Vector3D ll = face_points[tproc.GetPointsInFace(faces[0])[0]];
-        Vector3D ur(ll);
-        size_t Nface = faces.size();
-        for (size_t i = 0; i < Nface; ++i)
-        {
-            point_vec const &findex = tproc.GetPointsInFace(faces[i]);
-            size_t Nindex = findex.size();
-#ifdef __INTEL_COMPILER
-#pragma ivdep
-#endif
-            for (size_t j = 0; j < Nindex; j++)
-            {
-                ll.x = std::min(ll.x, face_points[findex[j]].x);
-                ll.y = std::min(ll.y, face_points[findex[j]].y);
-                ll.z = std::min(ll.z, face_points[findex[j]].z);
-                ur.x = std::max(ur.x, face_points[findex[j]].x);
-                ur.y = std::max(ur.y, face_points[findex[j]].y);
-                ur.z = std::max(ur.z, face_points[findex[j]].z);
-            }
-        }
-        return std::pair<Vector3D, Vector3D>(ll, ur);
-    }
-
-    /**
-     * Performs intersection between ranks vectors (so that the vectors are symmetric: a is in b iff b is in a)
-    */
-    void TalkSymmetry(vector<int> &to_talk_with)
-    {
-        int wsize;
-        MPI_Comm_size(MPI_COMM_WORLD, &wsize);
-        vector<int> totalk(static_cast<std::size_t>(wsize), 0);
-        vector<int> scounts(totalk.size(), 1);
-        for (std::size_t i = 0; i < to_talk_with.size(); ++i)
-            totalk[to_talk_with[i]] = 1;
-        int nrecv = 0;
-        MPI_Reduce_scatter(&totalk[0], &nrecv, &scounts[0], MPI_INT, MPI_SUM,
-                                             MPI_COMM_WORLD);
-
-        vector<MPI_Request> req(to_talk_with.size());
-        std::vector<int> dummy_send(to_talk_with.size());
-        for (std::size_t i = 0; i < to_talk_with.size(); ++i)
-            MPI_Isend(&dummy_send[i], 1, MPI_INT, to_talk_with[i], 3, MPI_COMM_WORLD, &req[i]);
-        vector<int> talkwithme;
-        for (int i = 0; i < nrecv; ++i)
-        {
-            MPI_Status status;
-            MPI_Recv(&wsize, 1, MPI_INT, MPI_ANY_SOURCE, 3, MPI_COMM_WORLD, &status);
-            talkwithme.push_back(status.MPI_SOURCE);
-        }
-        if (!to_talk_with.empty())
-            MPI_Waitall(static_cast<int>(to_talk_with.size()), &req[0], MPI_STATUSES_IGNORE);
-        vector<int> new_talk_with_me;
-        for (std::size_t i = 0; i < to_talk_with.size(); ++i)
-            if (std::find(talkwithme.begin(), talkwithme.end(), to_talk_with[i]) != talkwithme.end())
-                new_talk_with_me.push_back(to_talk_with[i]);
-        to_talk_with = new_talk_with_me;
-    }
-#endif //RICH_MPI
-
     void CalcFaceAreaCM(boost::container::small_vector<size_t, 8> const &indeces, std::vector<Vector3D> const &allpoints,
                                             std::array<Vector3D, 128> &points, double &Area, Vector3D &CM,
                                             std::array<double, 128> &Atemp)
@@ -582,9 +683,7 @@ namespace
 #endif
         for (size_t i = 0; i < Nloop; i++)
             points[i] = allpoints[indeces[i]];
-        assert(Nloop > 1); // todo: added by maor
-        // Nloop -= 2; // todo: (MAOR) bug!!!!!!!!!!!!!!!!!!!!!!!!!
-        Nloop = (Nloop > 1)? Nloop - 2 : 0;
+        Nloop -= 2;
         Area = 0;
         //Vector3D temp3, temp4, temp5;
         for (size_t i = 0; i < Nloop; i++)
@@ -635,171 +734,6 @@ namespace
         return point - (2 * ScalarProd(point - face.vertices[0], normal)) * normal;
     }
 }
-
-#ifdef RICH_MPI
-vector<Vector3D> Voronoi3D::UpdateMPIPoints(Tessellation3D const &vproc, int rank,
-                                             vector<Vector3D> const &points,
-                                              vector<std::size_t> &selfindex, 
-                                             vector<int> &sentproc,
-                                             vector<vector<std::size_t>> &sentpoints)
-{
-    vector<Vector3D> res;
-    res.reserve(points.size());
-    selfindex.clear();
-    std::size_t npoints = points.size();
-    std::size_t nproc = vproc.GetPointNo();
-    vector<std::size_t> neighbors = vproc.GetNeighbors(static_cast<std::size_t>(rank));
-    vector<std::size_t> realneigh;
-    sentpoints.clear();
-    sentproc.clear();
-    for (std::size_t i = 0; i < neighbors.size(); ++i)
-        if (static_cast<std::size_t>(neighbors[i]) < nproc)
-        {
-            realneigh.push_back(neighbors[i]);
-            sentproc.push_back(static_cast<int>(neighbors[i]));
-        }
-    std::size_t Nreal = realneigh.size();
-    sentpoints.resize(sentproc.size());
-
-    for (std::size_t i = 0; i < npoints; ++i)
-    {
-        Vector3D temp = points[i];
-        if (PointInPoly(vproc, temp, static_cast<std::size_t>(rank)))
-        {
-            res.push_back(temp);
-            selfindex.push_back(i);
-            continue;
-        }
-        bool good = false;
-        for (std::size_t j = 0; j < Nreal; ++j)
-        {
-            if (PointInPoly(vproc, temp, realneigh[j]))
-            {
-                sentpoints[j].push_back(i);
-                good = true;
-                break;
-            }
-        }
-        if (good)
-            continue;
-        for (std::size_t j = 0; j < nproc; ++j)
-        {
-            if (std::find(realneigh.begin(), realneigh.end(), j) != realneigh.end() || j == static_cast<std::size_t>(rank))
-                continue;
-            if (PointInPoly(vproc, temp, j))
-            {
-                good = true;
-                std::size_t index = std::find(sentproc.begin(), sentproc.end(), j) - sentproc.begin();
-                if (index >= sentproc.size())
-                {
-                    sentproc.push_back(static_cast<int>(j));
-                    sentpoints.push_back(vector<std::size_t>(1, i));
-                }
-                else
-                    sentpoints[index].push_back(i);
-                break;
-            }
-        }
-        if (good)
-            continue;
-        UniversalError eo("Point is not inside any processor");
-        eo.addEntry("CPU rank", rank);
-        eo.addEntry("Point number", static_cast<double>(i));
-        eo.addEntry("Point x cor", points[i].x);
-        eo.addEntry("Point y cor", points[i].y);
-        eo.addEntry("Point z cor", points[i].z);
-        vproc.output("vproc_" + int2str(rank) + ".bin");
-        std::array<Vector3D, 4> vec;
-        face_vec faces_error = vproc.GetCellFaces(static_cast<size_t>(rank));
-        for (size_t j = 0; j < faces_error.size(); ++j)
-        {
-            point_vec_v f_points = VectorValues(vproc.GetFacePoints(), vproc.GetPointsInFace(faces_error[j]));
-            for (size_t k = 0; k < f_points.size(); ++k)
-            {
-                std::cout << "Rank " << rank << " face " << faces_error[j] << " point " << k << " cor " << f_points[k].x
-                                    << " " << f_points[k].y << " " << f_points[k].z << std::endl;
-            }
-            vec[0] = f_points[0];
-            vec[1] = f_points[1];
-            vec[2] = f_points[2];
-            vec[3] = vproc.GetMeshPoint(rank);
-            double s1 = orient3d(vec);
-            vec[3] = points[i];
-            double s2 = orient3d(vec);
-            std::cout << "s1 = " << s1 << " s2 = " << s2 << std::endl;
-        }
-        for (std::size_t l = 0; l < Nreal; ++l)
-        {
-            faces_error = vproc.GetCellFaces(static_cast<size_t>(realneigh[l]));
-            for (size_t j = 0; j < faces_error.size(); ++j)
-            {
-                point_vec_v f_points = VectorValues(vproc.GetFacePoints(), vproc.GetPointsInFace(faces_error[j]));
-                for (size_t k = 0; k < f_points.size(); ++k)
-                {
-                    std::cout << "Rank " << realneigh[l] << " face " << faces_error[j] << " point " << k << " cor " << f_points[k].x
-                                        << " " << f_points[k].y << " " << f_points[k].z << std::endl;
-                }
-                vec[0] = f_points[0];
-                vec[1] = f_points[1];
-                vec[2] = f_points[2];
-                vec[3] = vproc.GetMeshPoint(rank);
-                double s1 = orient3d(vec);
-                vec[3] = points[i];
-                double s2 = orient3d(vec);
-                std::cout << "s1 = " << s1 << " s2 = " << s2 << std::endl;
-            }
-        }
-        throw eo;
-    }
-    // Send/Recv the points
-    // Communication
-    int wsize;
-    MPI_Comm_size(MPI_COMM_WORLD, &wsize);
-    vector<int> totalk(static_cast<std::size_t>(wsize), 0);
-    vector<int> scounts(totalk.size(), 1);
-    for (std::size_t i = 0; i < sentproc.size(); ++i)
-        totalk[sentproc[i]] = 1;
-    int nrecv;
-    MPI_Reduce_scatter(&totalk[0], &nrecv, &scounts[0], MPI_INT, MPI_SUM,
-                                         MPI_COMM_WORLD);
-
-    vector<MPI_Request> req(sentproc.size());
-    std::vector<int> dummy_send(req.size());
-    for (std::size_t i = 0; i < sentproc.size(); ++i)
-        MPI_Isend(&dummy_send[i], 1, MPI_INT, sentproc[i], 3, MPI_COMM_WORLD, &req[i]);
-    vector<int> talkwithme;
-    for (int i = 0; i < nrecv; ++i)
-    {
-        MPI_Status status;
-        MPI_Recv(&wsize, 1, MPI_INT, MPI_ANY_SOURCE, 3, MPI_COMM_WORLD, &status);
-        talkwithme.push_back(status.MPI_SOURCE);
-    }
-    MPI_Waitall(static_cast<int>(req.size()), &req[0], MPI_STATUSES_IGNORE);
-    MPI_Barrier(MPI_COMM_WORLD);
-    for (std::size_t i = 0; i < talkwithme.size(); ++i)
-    {
-        if (std::find(sentproc.begin(), sentproc.end(), talkwithme[i]) == sentproc.end())
-        {
-            sentproc.push_back(talkwithme[i]);
-            sentpoints.push_back(vector<std::size_t>());
-        }
-    }
-    // Point exchange
-    vector<vector<Vector3D>> incoming;
-    if (points.empty())
-    {
-        vector<Vector3D> dummy(1);
-        incoming = MPI_exchange_data(sentproc, sentpoints, dummy);
-    }
-    else
-        incoming = MPI_exchange_data(sentproc, sentpoints, points);
-    // Combine the vectors
-    for (std::size_t i = 0; i < incoming.size(); ++i)
-        for (std::size_t j = 0; j < incoming[i].size(); ++j)
-            res.push_back(incoming[i][j]);
-    return res;
-}
-#endif //RICH_MPI
 
 Voronoi3D::Voronoi3D() : ll_(Vector3D()), ur_(Vector3D()), Norg_(0), bigtet_(0), set_temp_(std::set<int>()), stack_temp_(std::stack<int>()),
                         del_(Delaunay3D()), PointTetras_(vector<tetra_vec>()), R_(vector<double>()), tetra_centers_(vector<Vector3D>()),
@@ -907,406 +841,10 @@ vector<Vector3D> Voronoi3D::CreateBoundaryPoints(vector<std::pair<std::size_t, s
     return res;
 }
 
-#ifdef RICH_MPI
-/**
- * 
- * `to_duplicate` is a vector of pairs: the first element is a face index, and the second is a point index.
-*/
-vector<Vector3D> Voronoi3D::CreateBoundaryPointsMPI(vector<std::pair<std::size_t, std::size_t>> const &to_duplicate,
-                                                    Tessellation3D const &tproc, vector<vector<size_t>> &self_duplicate)
-{
-    vector<vector<size_t>> to_send;
-
-    vector<Face> box_faces = box_faces_.empty() ? BuildBox(ll_, ur_) : box_faces_;
-    vector<Vector3D> box_normals = GetBoxNormals(ll_, ur_, box_faces_);
-    vector<vector<size_t>> box_candidates(box_normals.size());
-    self_duplicate.resize(box_faces.size());
-
-    int rank = 0;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    std::size_t Nproc = tproc.GetPointNo();
-    size_t Ndup = to_duplicate.size();
-    for (std::size_t i = 0; i < Ndup; i++)
-    {
-        std::pair<std::size_t, std::size_t> const &neigh = tproc.GetFaceNeighbors(to_duplicate[i].first);
-        if (neigh.first < Nproc && static_cast<int>(neigh.first) != rank)
-        {
-            if (std::find(duplicatedprocs_.begin(), duplicatedprocs_.end(), neigh.first) == duplicatedprocs_.end())
-                duplicatedprocs_.push_back(static_cast<int>(neigh.first));
-        }
-        if (neigh.second < Nproc && static_cast<int>(neigh.second) != rank)
-        {
-            if (std::find(duplicatedprocs_.begin(), duplicatedprocs_.end(), neigh.second) == duplicatedprocs_.end())
-                duplicatedprocs_.push_back(static_cast<int>(neigh.second));
-        }
-    }
-    TalkSymmetry(duplicatedprocs_);
-    to_send.resize(duplicatedprocs_.size());
-    duplicated_points_.resize(duplicatedprocs_.size());
-    vector<Vector3D> res;
-    // Get the indeces and deal with selfboundary
-    for (std::size_t i = 0; i < Ndup; ++i)
-    {
-        // `neigh` contains the neighbors of the face
-        std::pair<std::size_t, std::size_t> const &neigh = tproc.GetFaceNeighbors(to_duplicate[i].first);
-        if (neigh.first != static_cast<std::size_t>(rank))
-        {
-            if (neigh.first < Nproc)
-            {
-                std::size_t index = std::find(duplicatedprocs_.begin(), duplicatedprocs_.end(), static_cast<int>(neigh.first)) - duplicatedprocs_.begin();
-                if (index < duplicatedprocs_.size())
-                    to_send[index].push_back(to_duplicate[i].second);
-            }
-            else
-            {
-                Vector3D face_normal = tproc.GetMeshPoint(neigh.first) - tproc.GetMeshPoint(neigh.second);
-                face_normal *= 1.0 / abs(face_normal);
-                size_t index = BoxIndex(box_normals, face_normal);
-                box_candidates[index].push_back(to_duplicate[i].second);
-            }
-        }
-        if (neigh.second != static_cast<std::size_t>(rank))
-        {
-            if (neigh.second < Nproc)
-            {
-                std::size_t index = std::find(duplicatedprocs_.begin(), duplicatedprocs_.end(), static_cast<int>(neigh.second)) - duplicatedprocs_.begin();
-                if (index < duplicatedprocs_.size())
-                    to_send[index].push_back(to_duplicate[i].second);
-            }
-            else
-            {
-                Vector3D face_normal = tproc.GetMeshPoint(neigh.second) - tproc.GetMeshPoint(neigh.first);
-                face_normal *= 1.0 / abs(face_normal);
-                size_t index = BoxIndex(box_normals, face_normal);
-                box_candidates[index].push_back(to_duplicate[i].second);
-            }
-        }
-    }
-    // Clean
-    for (size_t i = 0; i < duplicated_points_.size(); ++i)
-    {
-        std::sort(to_send[i].begin(), to_send[i].end());
-        to_send[i] = unique(to_send[i]); // remove duplications
-        vector<size_t> temp;
-        size_t Nsend = to_send[i].size();
-        // save the original indices order of duplicatd_points_[i], because we now sort the array (so we can apply `std::binary_search` to find efficiently)
-        vector<size_t> indeces = sort_index(duplicated_points_[i]); 
-        sort(duplicated_points_[i].begin(), duplicated_points_[i].end());
-
-        for (size_t j = 0; j < Nsend; ++j)
-        {
-            // for each point in `to_sent[i]`, add the point index to `tmp`, if it isn't in `duplicated_points_[i]`
-            if (duplicated_points_[i].empty() ||
-                    !std::binary_search(duplicated_points_[i].begin(), duplicated_points_[i].end(), to_send[i][j]))
-                temp.push_back(to_send[i][j]);
-        }
-        to_send[i] = temp; // removed duplications
-        duplicated_points_[i].insert(duplicated_points_[i].end(), temp.begin(), temp.end()); // union between to_send[i] and temp
-        
-        // restore the elements according to their original indices
-        Nsend = indeces.size();
-        temp = duplicated_points_[i];
-        for (size_t j = 0; j < Nsend; ++j)
-            duplicated_points_[i][indeces[j]] = temp[j];
-    }
-    for (size_t i = 0; i < box_candidates.size(); ++i)
-    {
-        std::sort(box_candidates[i].begin(), box_candidates[i].end());
-        box_candidates[i] = unique(box_candidates[i]);
-        vector<size_t> indeces = sort_index(self_duplicate[i]);
-        sort(self_duplicate[i].begin(), self_duplicate[i].end());
-
-        vector<size_t> temp;
-
-        for (size_t j = 0; j < box_candidates[i].size(); ++j)
-        {
-            if (self_duplicate[i].empty() ||
-                    !std::binary_search(self_duplicate[i].begin(), self_duplicate[i].end(), box_candidates[i][j]))
-            {
-                temp.push_back(box_candidates[i][j]);
-                res.push_back(MirrorPoint(box_faces[i], del_.points_[temp.back()]));
-            }
-        }
-        self_duplicate[i].insert(self_duplicate[i].end(), temp.begin(), temp.end());
-        box_candidates[i] = temp;
-        size_t Nsend = indeces.size();
-        temp = self_duplicate[i];
-        for (size_t j = 0; j < Nsend; ++j)
-            self_duplicate[i][indeces[j]] = temp[j];
-    }
-    // Communicate
-    vector<vector<Vector3D>> toadd = MPI_exchange_data(duplicatedprocs_, to_send, del_.points_);
-    // Add points
-    Nghost_.resize(toadd.size());
-    size_t temp_add = del_.points_.size();
-    for (std::size_t i = 0; i < toadd.size(); ++i)
-        for (std::size_t j = 0; j < toadd[i].size(); ++j)
-        {
-            Nghost_[i].push_back(temp_add + res.size());
-            res.push_back(toadd[i][j]);
-        }
-    return res;
-}
-#endif //RICH_MPI
-
 vector<vector<std::size_t>> const &Voronoi3D::GetGhostIndeces(void) const
 {
     return Nghost_;
 }
-
-#ifdef RICH_MPI
-void Voronoi3D::Build(vector<Vector3D> const &points, Tessellation3D const &tproc)
-{
-  //assert(points.size() > 0);
-  // Clear data
-  PointTetras_.clear();
-  R_.clear();
-  R_.reserve(points.size() * 11);
-  tetra_centers_.clear();
-  tetra_centers_.reserve(points.size() * 11);
-  del_.Clean();
-  // Voronoi Data
-  FacesInCell_.clear();
-  PointsInFace_.clear();
-  FaceNeighbors_.clear();
-  CM_.clear();
-  Face_CM_.clear();
-  volume_.clear();
-  area_.clear();
-  Nghost_.clear();
-  duplicatedprocs_.clear();
-  duplicated_points_.clear();
-
-  int rank = 0;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  vector<Vector3D> new_points = UpdateMPIPoints(tproc, rank, points, self_index_, sentprocs_, sentpoints_);
-  Norg_ = new_points.size();
-  /*	if (Norg_ == 0)
-	{
-	std::cout << "Zero Norg in rank " << rank << std::endl;
-	std::cout << "Rank CM " << tproc.GetCellCM(static_cast<size_t>(rank)).x << ","
-	<< tproc.GetCellCM(static_cast<size_t>(rank)).y << "," << tproc.GetCellCM(static_cast<size_t>(rank)).z << std::endl;
-	std::cout << "Rank point " << tproc.GetMeshPoint(static_cast<size_t>(rank)).x << ","
-	<< tproc.GetMeshPoint(static_cast<size_t>(rank)).y << "," << tproc.GetMeshPoint(static_cast<size_t>(rank)).z << std::endl;
-	std::cout << "Rank R " << tproc.GetWidth(static_cast<size_t>(rank)) << std::endl;
-	}
-	assert(Norg_ > 0);*/
-  std::pair<Vector3D, Vector3D> bounding_box = GetBoundingBox(tproc, rank);
-
-#ifdef timing
-  MPI_Barrier(MPI_COMM_WORLD);
-  double t0 = MPI_Wtime();
-#endif
-  std::vector<size_t> order = HilbertOrder3D(new_points);
-
-#ifdef vdebug
-  std::vector<Vector3D> bbox;
-  bbox.push_back(bounding_box.first);
-  bbox.push_back(bounding_box.second);
-  write_vecst(order, "order_" + int2str(rank) + ".bin");
-  write_vec3d(new_points, "points0_" + int2str(rank) + ".bin");
-  write_vec3d(bbox, "bb_" + int2str(rank) + ".bin");
-#endif
-
-  del_.Build(new_points, bounding_box.second, bounding_box.first, order);
-
-#ifdef timing
-  MPI_Barrier(MPI_COMM_WORLD);
-  double t1 = MPI_Wtime();
-  if (rank == 0)
-    std::cout << "First build time " << t1 - t0 << std::endl;
-#endif
-
-  R_.resize(del_.tetras_.size());
-  std::fill(R_.begin(), R_.end(), -1);
-  tetra_centers_.resize(R_.size());
-  bigtet_ = SetPointTetras(PointTetras_, Norg_, del_.tetras_, del_.empty_tetras_);
-
-  vector<vector<size_t>> self_duplicate;
-  vector<std::pair<std::size_t, std::size_t>> ghost_index; // <face idx, point idx> pairs
-  MPIFirstIntersections(tproc, ghost_index);
-
-#ifdef timing
-  MPI_Barrier(MPI_COMM_WORLD);
-  t0 = MPI_Wtime();
-  if (rank == 0)
-    std::cout << "First ghost time " << t0 - t1 << std::endl;
-#endif
-
-  vector<Vector3D> extra_points = CreateBoundaryPointsMPI(ghost_index, tproc, self_duplicate);
-
-#ifdef vdebug
-  write_vec3d(extra_points, "points1_" + int2str(rank) + ".bin");
-#endif
-
-  try
-  {
-    del_.BuildExtra(extra_points);
-  }
-  catch (UniversalError &eo)
-  {
-    std::cout << "Error in first extra rank " << rank << std::endl;
-    string fname("extra_" + int2str(rank) + ".bin");
-    output_buildextra(fname);
-    tproc.output("vproc_" + int2str(rank) + ".bin");
-    throw;
-  }
-
-#ifdef timing
-  MPI_Barrier(MPI_COMM_WORLD);
-  t1 = MPI_Wtime();
-  if (rank == 0)
-    std::cout << "First ghost build time " << t1 - t0 << std::endl;
-#endif
-
-  R_.resize(del_.tetras_.size());
-  std::fill(R_.begin(), R_.end(), -1);
-  tetra_centers_.resize(R_.size());
-  bigtet_ = SetPointTetras(PointTetras_, Norg_, del_.tetras_, del_.empty_tetras_);
-  vector<unsigned char> checked_clear(Norg_, 0);
-  ghost_index = FindIntersections(tproc, 1, checked_clear); // intersecting tproc face, point index
-
-#ifdef timing
-  MPI_Barrier(MPI_COMM_WORLD);
-  t0 = MPI_Wtime();
-  if (rank == 0)
-    std::cout << "Second ghost time " << t0 - t1 << std::endl;
-#endif
-
-  extra_points = CreateBoundaryPointsMPI(ghost_index, tproc, self_duplicate);
-
-#ifdef vdebug
-  write_vec3d(extra_points, "points2_" + int2str(rank) + ".bin");
-#endif
-
-  try
-  {
-    del_.BuildExtra(extra_points);
-  }
-  catch (UniversalError &eo)
-  {
-    std::cout << "Error in second extra rank " << rank << std::endl;
-    string fname("extra_" + int2str(rank) + ".bin");
-    output_buildextra(fname);
-    tproc.output("vproc_" + int2str(rank) + ".bin");
-    throw;
-  }
-
-#ifdef timing
-  MPI_Barrier(MPI_COMM_WORLD);
-  t1 = MPI_Wtime();
-  if (rank == 0)
-    std::cout << "Second ghost build time " << t1 - t0 << std::endl;
-#endif
-
-  R_.resize(del_.tetras_.size());
-  std::fill(R_.begin(), R_.end(), -1);
-  tetra_centers_.resize(R_.size());
-  bigtet_ = SetPointTetras(PointTetras_, Norg_, del_.tetras_, del_.empty_tetras_);
-
-  ghost_index = FindIntersections(tproc, 2, checked_clear);
-
-#ifdef timing
-  MPI_Barrier(MPI_COMM_WORLD);
-  t0 = MPI_Wtime();
-  if (rank == 0)
-    std::cout << "Third ghost time " << t0 - t1 << std::endl;
-#endif
-
-  extra_points = CreateBoundaryPointsMPI(ghost_index, tproc, self_duplicate);
-
-#ifdef vdebug
-  write_vec3d(extra_points, "points3_" + int2str(rank) + ".bin");
-#endif
-
-  try
-  {
-    del_.BuildExtra(extra_points);
-  }
-  catch (UniversalError &eo)
-  {
-    std::cout << "Error in third extra rank " << rank << std::endl;
-    string fname("extra_" + int2str(rank) + ".bin");
-    output_buildextra(fname);
-    tproc.output("vproc_" + int2str(rank) + ".bin");
-    throw;
-  }
-
-#ifdef timing
-  MPI_Barrier(MPI_COMM_WORLD);
-  t1 = MPI_Wtime();
-  if (rank == 0)
-    std::cout << "Third ghost build time " << t1 - t0 << std::endl;
-#endif
-
-  R_.resize(del_.tetras_.size());
-  std::fill(R_.begin(), R_.end(), -1);
-  tetra_centers_.resize(R_.size());
-  bigtet_ = SetPointTetras(PointTetras_, Norg_, del_.tetras_, del_.empty_tetras_);
-
-  ghost_index = FindIntersections(tproc, 3, checked_clear);
-
-#ifdef timing
-  MPI_Barrier(MPI_COMM_WORLD);
-  t0 = MPI_Wtime();
-  if (rank == 0)
-    std::cout << "Fourth ghost time " << t0 - t1 << std::endl;
-#endif
-
-  extra_points = CreateBoundaryPointsMPI(ghost_index, tproc, self_duplicate);
-
-#ifdef vdebug
-  write_vec3d(extra_points, "points4_" + int2str(rank) + ".bin");
-#endif
-
-  try
-  {
-    del_.BuildExtra(extra_points);
-  }
-  catch (UniversalError &eo)
-  {
-    std::cout << "Error in fourth extra rank " << rank << std::endl;
-    string fname("extra_" + int2str(rank) + ".bin");
-    output_buildextra(fname);
-    tproc.output("vproc_" + int2str(rank) + ".bin");
-    throw;
-  }
-
-#ifdef timing
-  MPI_Barrier(MPI_COMM_WORLD);
-  t1 = MPI_Wtime();
-  if (rank == 0)
-    std::cout << "Fourth ghost build time " << t1 - t0 << std::endl;
-#endif
-  bigtet_ = SetPointTetras(PointTetras_, Norg_, del_.tetras_, del_.empty_tetras_);
-  std::vector<std::pair<size_t, size_t>>().swap(ghost_index);
-  std::vector<Vector3D>().swap(extra_points);
-
-  R_.resize(del_.tetras_.size());
-  std::fill(R_.begin(), R_.end(), -1);
-  tetra_centers_.resize(R_.size());
-
-  CM_.resize(del_.points_.size());
-  volume_.resize(Norg_);
-
-  // Create Voronoi
-  BuildVoronoi(order);
-
-  std::vector<double>().swap(R_);
-  std::vector<tetra_vec>().swap(PointTetras_);
-
-  CalcAllCM();
-  for (std::size_t i = 0; i < FaceNeighbors_.size(); ++i)
-    if (BoundaryFace(i))
-      CalcRigidCM(i);
-  // communicate the ghost CM
-  vector<vector<Vector3D>> incoming = MPI_exchange_data(duplicatedprocs_, duplicated_points_, CM_);
-  // Add the recieved CM
-  for (size_t i = 0; i < incoming.size(); ++i)
-    for (size_t j = 0; j < incoming.at(i).size(); ++j)
-      CM_[Nghost_.at(i).at(j)] = incoming[i][j];
-}
-#endif
 
 /**
  * gets a point index, and returns the maximal radius of the tetrahedra containing that point.
@@ -1661,7 +1199,7 @@ void Voronoi3D::CalculateInitialRadius(size_t pointsSize)
       double volume = (this->ur_[0] - this->ll_[0]) * (this->ur_[1] - this->ll_[1]) * (this->ur_[2] - this->ll_[2]);
       size_t N;
       MPI_Allreduce(&pointsSize, &N, 1, MPI_UNSIGNED_LONG, MPI_SUM, MPI_COMM_WORLD);
-      this->initialRadius = 1 * std::pow(volume / N, 0.333333f); // heuristic
+      this->initialRadius = 2 * std::pow(volume / N, 0.333333f); // heuristic
     } 
     std::fill(this->radiuses.begin(), this->radiuses.end(), this->initialRadius);
 }
@@ -1828,22 +1366,19 @@ void Voronoi3D::CalcAllCM(void)
         size_t N0 = FaceNeighbors_[i].first;
         size_t N1 = FaceNeighbors_[i].second;
         size_t Npoints = PointsInFace_[i].size();
-        assert(Npoints > 1); // todo: added by maor
         vectemp.resize(Npoints);
 #ifdef __INTEL_COMPILER
 #pragma ivdep
 #endif
         for (size_t j = 0; j < Npoints; ++j)
             vectemp[j] = tetra_centers_[PointsInFace_[i][j]];
-        // Npoints -= 2; // todo: (MAOR) bug!!!!!!!!!!!!!!!!!!!!!!!!!
-        Npoints = (Npoints > 1)? Npoints - 2 : 0;
+        Npoints -= 2;
         tetra[0] = vectemp[0];
 
         for (std::size_t j = 0; j < Npoints; ++j)
         {
             tetra[1] = vectemp[j + 1];
             tetra[2] = vectemp[j + 2];
-            // todo: this part can be outside of the loop??????
             if (N1 < Norg_)
             {
                 tetra[3] = del_.points_[N1];
@@ -2233,188 +1768,6 @@ void Voronoi3D::FindIntersectionsSingle(vector<Face> const &box, std::size_t poi
     }
 }
 
-#ifdef RICH_MPI
-void Voronoi3D::FindIntersectionsFirstMPI(vector<std::size_t> &res, std::size_t point,
-                                                                                    Sphere &sphere, std::vector<Face> const &faces, bool &skipped, face_vec const &face_index)
-{
-    res.clear();
-    std::size_t Ntetra = PointTetras_[point].size();
-    size_t Nfaces = faces.size();
-    skipped = true;
-    double maxR = GetRadius(PointTetras_[point].at(0));
-    for (std::size_t j = 1; j < Ntetra; ++j)
-        maxR = std::max(maxR, GetRadius(PointTetras_[point][j]));
-    for (size_t i = 0; i < Nfaces; ++i)
-    {
-        Face const &f = faces[i];
-        Vector3D normal = CrossProduct(f.vertices[1] - f.vertices[0], f.vertices[2] - f.vertices[0]);
-        normal *= (1.0 / fastsqrt(ScalarProd(normal, normal)));
-
-        // Quick check if there is no intersection for sure 
-        sphere.radius = 2 * maxR;
-        sphere.center = GetMeshPoint(point);
-        if (!FaceSphereIntersections(f, sphere, normal))
-            continue;
-
-        for (std::size_t j = 0; j < Ntetra; ++j)
-        {
-            sphere.radius = GetRadius(PointTetras_[point][j]);
-            sphere.center = tetra_centers_[PointTetras_[point][j]];
-            if (FaceSphereIntersections(f, sphere, normal))
-            {
-                res.push_back(face_index[i]);
-                skipped = false;
-                break;
-            }
-        }
-    }
-    std::sort(res.begin(), res.end());
-    res = unique(res);
-}
-
-void Voronoi3D::FindIntersectionsRecursive(vector<std::size_t> &res, Tessellation3D const &tproc, std::size_t rank, std::size_t point,
-                                                                                     Sphere &sphere, size_t mode, boost::container::flat_set<size_t> &visited, std::stack<std::size_t> &to_check,
-                                                                                     bool &skipped, face_vec &faces, vector<size_t> &past_duplicate)
-{
-    res.clear();
-    std::size_t N = tproc.GetPointNo();
-    assert(to_check.empty());
-    std::size_t Ntetra = PointTetras_[point].size();
-    vector<size_t> neigh;
-    if (mode == 1)
-    {
-        faces = tproc.GetCellFaces(rank);
-        for (std::size_t i = 0; i < faces.size(); ++i)
-        {
-            size_t other = tproc.GetFaceNeighbors(faces[i]).first == rank ? tproc.GetFaceNeighbors(faces[i]).second : tproc.GetFaceNeighbors(faces[i]).first;
-            if (other < tproc.GetPointNo() && fastabs(tproc.GetCellCM(other) - del_.points_[point]) > 50 * tproc.GetWidth(other))
-                continue;
-            to_check.push(faces[i]);
-        }
-    }
-    else
-    {
-        if (mode == 2)
-        {
-            neigh.push_back(rank);
-            if (past_duplicate.empty())
-            {
-                tproc.GetNeighbors(rank, past_duplicate);
-                size_t Nn = past_duplicate.size();
-                for (size_t j = 0; j < Nn; ++j)
-                    past_duplicate[j] = std::min(past_duplicate[j], tproc.GetPointNo() - 1);
-            }
-        }
-        else
-        {
-            tproc.GetNeighbors(rank, neigh);
-            std::sort(neigh.begin(), neigh.end());
-            {
-                tproc.GetNeighbors(rank, past_duplicate);
-                size_t Nn = past_duplicate.size();
-                for (size_t j = 0; j < Nn; ++j)
-                    past_duplicate[j] = std::min(past_duplicate[j], tproc.GetPointNo() - 1);
-            }
-        }
-        for (size_t i = 0; i < past_duplicate.size(); ++i)
-        {
-            faces = tproc.GetCellFaces(past_duplicate[i]);
-            for (size_t j = 0; j < faces.size(); ++j)
-            {
-                std::pair<size_t, size_t> const &fneigh = tproc.GetFaceNeighbors(faces[j]);
-                if (fneigh.first != past_duplicate[i])
-                {
-                    if (!std::binary_search(neigh.begin(), neigh.end(), fneigh.first))
-                    {
-                        if (fneigh.first < tproc.GetPointNo() && fastabs(tproc.GetCellCM(fneigh.first) - del_.points_[point]) > 50 * tproc.GetWidth(fneigh.first))
-                            continue;
-                        to_check.push(faces[j]);
-                        continue;
-                    }
-                }
-                if (fneigh.second != past_duplicate[i])
-                {
-                    if (!std::binary_search(neigh.begin(), neigh.end(), fneigh.second))
-                    {
-                        if (fneigh.second < tproc.GetPointNo() && fastabs(tproc.GetCellCM(fneigh.second) - del_.points_[point]) > 50 * tproc.GetWidth(fneigh.second))
-                            continue;
-                        to_check.push(faces[j]);
-                    }
-                }
-            }
-        }
-    }
-
-    visited.clear();
-    skipped = true;
-    while (!to_check.empty())
-    {
-        std::size_t cur = to_check.top();
-        to_check.pop();
-        if (visited.find(cur) != visited.end())
-            continue;
-        visited.insert(cur);
-        double maxR = GetRadius(PointTetras_[point].at(0));
-        for (std::size_t j = 1; j < Ntetra; ++j)
-            maxR = std::max(maxR, GetRadius(PointTetras_[point][j]));
-        sphere.radius = 2 * maxR;
-        sphere.center = GetMeshPoint(point);
-        Face f(VectorValues(tproc.GetFacePoints(), tproc.GetPointsInFace(cur)), tproc.GetFaceNeighbors(cur).first,
-                     tproc.GetFaceNeighbors(cur).second);
-        Vector3D normal = CrossProduct(f.vertices[1] - f.vertices[0], f.vertices[2] - f.vertices[0]);
-        normal *= (1.0 / fastsqrt(ScalarProd(normal, normal)));
-
-        // Quick check if there is no intersection for sure
-        if (!FaceSphereIntersections(f, sphere, normal))
-            continue;
-
-        for (std::size_t j = 0; j < Ntetra; ++j)
-        {
-            sphere.radius = GetRadius(PointTetras_[point][j]);
-            sphere.center = tetra_centers_[PointTetras_[point][j]];
-            if (FaceSphereIntersections(f, sphere, normal))
-            {
-                res.push_back(cur);
-                if (mode == 1 || mode == 2)
-                    skipped = false;
-                if (mode == 3)
-                {
-                    if (f.neighbors.first < N && f.neighbors.first != rank)
-                    {
-                        face_vec const &faces_temp = tproc.GetCellFaces(f.neighbors.first);
-                        for (std::size_t i = 0; i < faces_temp.size(); ++i)
-                        {
-                            if (visited.find(faces_temp[i]) == visited.end())
-                            {
-                                size_t other = tproc.GetFaceNeighbors(faces_temp[i]).first == f.neighbors.first ? tproc.GetFaceNeighbors(faces_temp[i]).second : tproc.GetFaceNeighbors(faces_temp[i]).first;
-                                if (other < tproc.GetPointNo() && fastabs(tproc.GetCellCM(other) - del_.points_[point]) > 50 * tproc.GetWidth(other))
-                                    continue;
-                                to_check.push(faces_temp[i]);
-                            }
-                        }
-                    }
-                    if (f.neighbors.second < N && f.neighbors.second != rank)
-                    {
-                        face_vec const &faces_temp = tproc.GetCellFaces(f.neighbors.second);
-                        for (std::size_t i = 0; i < faces_temp.size(); ++i)
-                            if (visited.find(faces_temp[i]) == visited.end())
-                            {
-                                size_t other = tproc.GetFaceNeighbors(faces_temp[i]).first == f.neighbors.second ? tproc.GetFaceNeighbors(faces_temp[i]).second : tproc.GetFaceNeighbors(faces_temp[i]).first;
-                                if (other < tproc.GetPointNo() && fastabs(tproc.GetCellCM(other) - del_.points_[point]) > 50 * tproc.GetWidth(other))
-                                    continue;
-                                to_check.push(faces_temp[i]);
-                            }
-                    }
-                }
-                break;
-            }
-        }
-    }
-    std::sort(res.begin(), res.end());
-    res = unique(res);
-}
-#endif // RICH_MPI
-
 void Voronoi3D::GetPointToCheck(std::size_t point, vector<unsigned char> const &checked, vector<std::size_t> &res)
 {
     res.clear();
@@ -2442,127 +1795,6 @@ std::size_t Voronoi3D::GetFirstPointToCheck(void) const
     else
         throw UniversalError("Can't find first point to start boundary search");
 }
-
-#ifdef RICH_MPI
-vector<std::pair<std::size_t, std::size_t>> Voronoi3D::FindIntersections(Tessellation3D const &tproc, size_t mode,
-                                                                         vector<unsigned char> &checked_clear)
-{
-    int rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    vector<std::pair<std::size_t, std::size_t>> res;
-    if (Norg_ == 0)
-        return res;
-    Sphere sphere;
-    bool skipped = false;
-    vector<std::size_t> intersecting_faces;
-    // First attempt, only copy from neighboring cpus
-    if (mode == 1)
-    {
-        // Create faces to check for intersection
-        face_vec faces = tproc.GetCellFaces(static_cast<size_t>(rank));
-        std::vector<Face> cell_faces(faces.size());
-        for (size_t i = 0; i < cell_faces.size(); ++i)
-            cell_faces[i] = Face(VectorValues(tproc.GetFacePoints(),
-                                              tproc.GetPointsInFace(faces[i])),
-                                              tproc.GetFaceNeighbors(faces[i]).first,
-                                              tproc.GetFaceNeighbors(faces[i]).second);
-        // Search for intersections
-        for (size_t i = 0; i < Norg_; ++i)
-        {
-            FindIntersectionsFirstMPI(intersecting_faces, i, sphere, cell_faces, skipped, faces);
-            for (std::size_t j = 0; j < intersecting_faces.size(); ++j)
-                res.push_back(std::pair<std::size_t, std::size_t>(intersecting_faces[j], i));
-            if (intersecting_faces.empty())
-                checked_clear[i] = 1;
-        }
-    }
-    else
-    {
-        std::stack<size_t> intersection_check;
-        boost::container::flat_set<size_t> visited;
-        vector<size_t> past_duplicate;
-        face_vec vtemp;
-        vector<vector<size_t>> sorted_to_duplicate = duplicated_points_;
-        for (size_t i = 0; i < sorted_to_duplicate.size(); ++i)
-            std::sort(sorted_to_duplicate[i].begin(), sorted_to_duplicate[i].end());
-        vector<size_t> duplicatedprocs(duplicatedprocs_.size());
-        for (size_t i = 0; i < duplicatedprocs_.size(); ++i)
-            duplicatedprocs[i] = static_cast<size_t>(duplicatedprocs_[i]);
-        for (size_t i = 0; i < Norg_; ++i)
-        {
-            if (checked_clear[i] == 1)
-                continue;
-            GetPastDuplicate(i, past_duplicate, sorted_to_duplicate, duplicatedprocs);
-            FindIntersectionsRecursive(intersecting_faces, tproc, static_cast<std::size_t>(rank), i, sphere,
-                                       mode, visited, intersection_check, skipped, vtemp, past_duplicate);
-            for (std::size_t j = 0; j < intersecting_faces.size(); ++j)
-                res.push_back(std::pair<std::size_t, std::size_t>(intersecting_faces[j], i));
-            if (intersecting_faces.empty())
-                checked_clear[i] = 1;
-        }
-    }
-    return res;
-}
-
-void Voronoi3D::MPIFirstIntersections(Tessellation3D const &tproc, vector<std::pair<std::size_t, std::size_t>> &ghost_index)
-{
-    ghost_index.clear();
-    int rank = 0;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    vector<size_t> neigh = tproc.GetNeighbors(static_cast<size_t>(rank));
-    face_vec faces = tproc.GetCellFaces(static_cast<size_t>(rank));
-    size_t Nneigh = neigh.size();
-    vector<size_t> to_add;
-    vector<Vector3D> neigh_points(Nneigh);
-    vector<double> radii(Nneigh);
-    for (size_t i = 0; i < Nneigh; ++i)
-    {
-        neigh_points[i] = tproc.GetMeshPoint(neigh[i]);
-        radii[i] = neigh[i] >= tproc.GetPointNo() ? tproc.GetWidth(static_cast<size_t>(rank)) : tproc.GetWidth(neigh[i]);
-    }
-    size_t Ntetra = del_.tetras_.size();
-    Vector3D proc_point = tproc.GetMeshPoint(static_cast<size_t>(rank));
-    for (size_t i = 0; i < Ntetra; ++i)
-    {
-        for (size_t j = 0; j < 4; ++j)
-        {
-            if (del_.tetras_[i].points[j] >= Norg_)
-            {
-                for (size_t k = 0; k < 4; ++k)
-                {
-                    if (del_.tetras_[i].points[k] < Norg_)
-                    {
-                        to_add.clear();
-                        Vector3D const &point = del_.points_[del_.tetras_[i].points[k]];
-                        double r0 = fastabs(point - proc_point);
-                        size_t index = 0;
-                        double mind_1 = 0;
-                        for (size_t z = 0; z < Nneigh; ++z)
-                        {
-                            double r1 = fastabs(point - neigh_points[z]);
-                            double temp = r0 > r1 ? r1 / r0 : r0 / r1;
-                            if (temp > 0.75 && r1 < 2.5 * radii[z])
-                                to_add.push_back(z);
-                            if (r1 * mind_1 < 1)
-                            {
-                                mind_1 = 1.0 / r1;
-                                index = z;
-                            }
-                        }
-                        if (mind_1 * radii[index] > 0.25)
-                            to_add.push_back(index);
-                        std::sort(to_add.begin(), to_add.end());
-                        to_add = unique(to_add);
-                        for (size_t l = 0; l < to_add.size(); ++l)
-                            ghost_index.push_back(std::pair<size_t, size_t>(faces[to_add[l]], del_.tetras_[i].points[k]));
-                    }
-                }
-                break;
-            }
-        }
-    }
-}
-#endif //RICH_MPI
 
 vector<std::pair<std::size_t, std::size_t>> Voronoi3D::SerialFirstIntersections(void)
 {
@@ -3311,4 +2543,11 @@ void Voronoi3D::SetBox(Vector3D const &ll, Vector3D const &ur)
 {
     ll_ = ll;
     ur_ = ur;
+    #ifdef RICH_MPI
+        this->pointsManager = PointsManager(this->ll_, this->ur_);
+        this->radiuses.clear();
+        this->firstCall = false;
+        delete this->envAgent;
+        this->envAgent = nullptr;
+    #endif // RICH_MPI
 }

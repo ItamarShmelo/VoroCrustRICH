@@ -1,4 +1,9 @@
-//#if 0
+/**
+ * DEPRECATED
+ * \
+ * \author Maor Mizrachi
+ * \brief Implements parallel sort.
+*/
 #ifndef _RICH_PARALLEL_SORT
 #define _RICH_PARALLEL_SORT
 

@@ -1,3 +1,9 @@
+/**
+ * \author Maor Mizrachi
+ * \brief This file implements MPI balance function: each rank sends a list of elements (and a comparator function, determining the requested order
+ * between the elements), and the procedure returns a list of "borders", which are elements that should be used to divide all the elements, so
+ * that after sorting according to the borders, the elements are roughly equally distributed.
+*/
 #ifndef _RICH_BALANCE2_HPP
 #define _RICH_BALANCE2_HPP
 
