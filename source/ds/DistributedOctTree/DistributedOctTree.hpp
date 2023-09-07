@@ -3,7 +3,6 @@
 
 #ifdef RICH_MPI
 
-#include <iostream> // todo remove
 #include <vector>
 #include <assert.h>
 #include <utility>
@@ -12,6 +11,10 @@
 #include <boost/container/flat_set.hpp>
 #include <mpi.h>
 #include "ds/OctTree/OctTree.hpp"
+
+#ifdef DEBUG_MODE
+#include <iostream>
+#endif // DEBUG_MODE
 
 #define UNDEFINED_OWNER -1
 

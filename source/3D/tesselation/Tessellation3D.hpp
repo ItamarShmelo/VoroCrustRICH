@@ -25,37 +25,19 @@ using std::vector;
 class Tessellation3D
 {
 public:
-#ifdef RICH_MPI
-  /*! \brief Update meta tessellation points
-    \param vproc Meta tessellation
-    \param rank Parallel process rank
-    \param points New points
-    \param selfindex Self indices
-    \param sentproc List of processes to which points were sent
-    \param sentpoints List of sent points
-    \return Received points
-   */
-  virtual vector<Vector3D> UpdateMPIPoints(Tessellation3D const& vproc, int rank,
-					   vector<Vector3D> const& points, vector<std::size_t>& selfindex, vector<int>& sentproc,
-					   vector<vector<std::size_t> >& sentpoints) = 0;
-#endif
-
   /*! \brief Builds the tessellation
     \param points Initial position of mesh generating points
   */
   virtual void Build(vector<Vector3D> const& points) = 0;
 
-// #ifdef RICH_MPI
-//   /*! \brief Builds the tessellation
-//     \param points Initial position of mesh generating points
-//     \param tproc The tessellation of the domain decomposition
-//   */
-//   virtual void Build(vector<Vector3D> const& points, Tessellation3D const& tproc) = 0;
-// #endif // RICH_MPI
-
   #ifdef RICH_MPI
+  /*! \brief Returns true iff the given point lies inside my domain (under my responsibility).
+  */
+  virtual bool PointInMyDomain(const Vector3D &point) const = 0;
+  
+  /*! \brief Tesselation build, using hilbert curve.
+  */
   virtual void BuildHilbert(vector<Vector3D> const& points) = 0;
-  virtual void Build(vector<Vector3D> const& points, int order) = 0;
   #endif // RICH_MPI
 
   /*! \brief Get Total number of mesh generating points
@@ -137,7 +119,6 @@ public:
    */
   virtual const vector<Vector3D>& getMeshPoints(void) const = 0;
   
-
   /*!
     \brief Returns a reference to the points composing the faces vector
     \returns The reference

@@ -34,171 +34,6 @@
 
 // #define VORONOI_DEBUG
 
-#ifdef RICH_MPI
-vector<Vector3D> Voronoi3D::UpdateMPIPoints(Tessellation3D const &vproc, int rank,
-                                             vector<Vector3D> const &points,
-                                              vector<std::size_t> &selfindex, 
-                                             vector<int> &sentproc,
-                                             vector<vector<std::size_t>> &sentpoints)
-{
-    vector<Vector3D> res;
-    res.reserve(points.size());
-    selfindex.clear();
-    std::size_t npoints = points.size();
-    std::size_t nproc = vproc.GetPointNo();
-    vector<std::size_t> neighbors = vproc.GetNeighbors(static_cast<std::size_t>(rank));
-    vector<std::size_t> realneigh;
-    sentpoints.clear();
-    sentproc.clear();
-    for (std::size_t i = 0; i < neighbors.size(); ++i)
-        if (static_cast<std::size_t>(neighbors[i]) < nproc)
-        {
-            realneigh.push_back(neighbors[i]);
-            sentproc.push_back(static_cast<int>(neighbors[i]));
-        }
-    std::size_t Nreal = realneigh.size();
-    sentpoints.resize(sentproc.size());
-
-    for (std::size_t i = 0; i < npoints; ++i)
-    {
-        Vector3D temp = points[i];
-        if (PointInPoly(vproc, temp, static_cast<std::size_t>(rank)))
-        {
-            res.push_back(temp);
-            selfindex.push_back(i);
-            continue;
-        }
-        bool good = false;
-        for (std::size_t j = 0; j < Nreal; ++j)
-        {
-            if (PointInPoly(vproc, temp, realneigh[j]))
-            {
-                sentpoints[j].push_back(i);
-                good = true;
-                break;
-            }
-        }
-        if (good)
-            continue;
-        for (std::size_t j = 0; j < nproc; ++j)
-        {
-            if (std::find(realneigh.begin(), realneigh.end(), j) != realneigh.end() || j == static_cast<std::size_t>(rank))
-                continue;
-            if (PointInPoly(vproc, temp, j))
-            {
-                good = true;
-                std::size_t index = std::find(sentproc.begin(), sentproc.end(), j) - sentproc.begin();
-                if (index >= sentproc.size())
-                {
-                    sentproc.push_back(static_cast<int>(j));
-                    sentpoints.push_back(vector<std::size_t>(1, i));
-                }
-                else
-                    sentpoints[index].push_back(i);
-                break;
-            }
-        }
-        if (good)
-            continue;
-        UniversalError eo("Point is not inside any processor");
-        eo.addEntry("CPU rank", rank);
-        eo.addEntry("Point number", static_cast<double>(i));
-        eo.addEntry("Point x cor", points[i].x);
-        eo.addEntry("Point y cor", points[i].y);
-        eo.addEntry("Point z cor", points[i].z);
-        vproc.output("vproc_" + int2str(rank) + ".bin");
-        std::array<Vector3D, 4> vec;
-        face_vec faces_error = vproc.GetCellFaces(static_cast<size_t>(rank));
-        for (size_t j = 0; j < faces_error.size(); ++j)
-        {
-            point_vec_v f_points = VectorValues(vproc.GetFacePoints(), vproc.GetPointsInFace(faces_error[j]));
-            for (size_t k = 0; k < f_points.size(); ++k)
-            {
-                std::cout << "Rank " << rank << " face " << faces_error[j] << " point " << k << " cor " << f_points[k].x
-                                    << " " << f_points[k].y << " " << f_points[k].z << std::endl;
-            }
-            vec[0] = f_points[0];
-            vec[1] = f_points[1];
-            vec[2] = f_points[2];
-            vec[3] = vproc.GetMeshPoint(rank);
-            double s1 = orient3d(vec);
-            vec[3] = points[i];
-            double s2 = orient3d(vec);
-            std::cout << "s1 = " << s1 << " s2 = " << s2 << std::endl;
-        }
-        for (std::size_t l = 0; l < Nreal; ++l)
-        {
-            faces_error = vproc.GetCellFaces(static_cast<size_t>(realneigh[l]));
-            for (size_t j = 0; j < faces_error.size(); ++j)
-            {
-                point_vec_v f_points = VectorValues(vproc.GetFacePoints(), vproc.GetPointsInFace(faces_error[j]));
-                for (size_t k = 0; k < f_points.size(); ++k)
-                {
-                    std::cout << "Rank " << realneigh[l] << " face " << faces_error[j] << " point " << k << " cor " << f_points[k].x
-                                        << " " << f_points[k].y << " " << f_points[k].z << std::endl;
-                }
-                vec[0] = f_points[0];
-                vec[1] = f_points[1];
-                vec[2] = f_points[2];
-                vec[3] = vproc.GetMeshPoint(rank);
-                double s1 = orient3d(vec);
-                vec[3] = points[i];
-                double s2 = orient3d(vec);
-                std::cout << "s1 = " << s1 << " s2 = " << s2 << std::endl;
-            }
-        }
-        throw eo;
-    }
-    // Send/Recv the points
-    // Communication
-    int wsize;
-    MPI_Comm_size(MPI_COMM_WORLD, &wsize);
-    vector<int> totalk(static_cast<std::size_t>(wsize), 0);
-    vector<int> scounts(totalk.size(), 1);
-    for (std::size_t i = 0; i < sentproc.size(); ++i)
-        totalk[sentproc[i]] = 1;
-    int nrecv;
-    MPI_Reduce_scatter(&totalk[0], &nrecv, &scounts[0], MPI_INT, MPI_SUM,
-                                         MPI_COMM_WORLD);
-
-    vector<MPI_Request> req(sentproc.size());
-    std::vector<int> dummy_send(req.size());
-    for (std::size_t i = 0; i < sentproc.size(); ++i)
-        MPI_Isend(&dummy_send[i], 1, MPI_INT, sentproc[i], 3, MPI_COMM_WORLD, &req[i]);
-    vector<int> talkwithme;
-    for (int i = 0; i < nrecv; ++i)
-    {
-        MPI_Status status;
-        MPI_Recv(&wsize, 1, MPI_INT, MPI_ANY_SOURCE, 3, MPI_COMM_WORLD, &status);
-        talkwithme.push_back(status.MPI_SOURCE);
-    }
-    MPI_Waitall(static_cast<int>(req.size()), &req[0], MPI_STATUSES_IGNORE);
-    MPI_Barrier(MPI_COMM_WORLD);
-    for (std::size_t i = 0; i < talkwithme.size(); ++i)
-    {
-        if (std::find(sentproc.begin(), sentproc.end(), talkwithme[i]) == sentproc.end())
-        {
-            sentproc.push_back(talkwithme[i]);
-            sentpoints.push_back(vector<std::size_t>());
-        }
-    }
-    // Point exchange
-    vector<vector<Vector3D>> incoming;
-    if (points.empty())
-    {
-        vector<Vector3D> dummy(1);
-        incoming = MPI_exchange_data(sentproc, sentpoints, dummy);
-    }
-    else
-        incoming = MPI_exchange_data(sentproc, sentpoints, points);
-    // Combine the vectors
-    for (std::size_t i = 0; i < incoming.size(); ++i)
-        for (std::size_t j = 0; j < incoming[i].size(); ++j)
-            res.push_back(incoming[i][j]);
-    return res;
-}
-#endif //RICH_MPI
-
 bool PointInPoly(Tessellation3D const &tess, Vector3D const &point, std::size_t index)
 {
     face_vec const &faces = tess.GetCellFaces(index);
@@ -941,6 +776,14 @@ namespace
         }
     }
     #endif // VORONOI_DEBUG
+}
+
+bool Voronoi3D::PointInMyDomain(const Vector3D &point) const
+{
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    assert(this->envAgent != nullptr);
+    return this->envAgent->getOwner(point) == rank;
 }
 
 /**

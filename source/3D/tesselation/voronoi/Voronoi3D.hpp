@@ -135,22 +135,6 @@ public:
     #endif // RICH_MPI
   }
 
-  #ifdef RICH_MPI
-    /*! \brief Update meta tessellation
-      \param vproc Meta tessellation
-      \param rank Parallel process rank
-      \param points New point positions
-      \param selfindex Self indices of points
-      \param sentproc List of processes to which points were sent
-      \param sentpoints List of indices of points sent
-      \return Received points
-    */
-    vector<Vector3D> UpdateMPIPoints(Tessellation3D const& vproc, int rank,
-            vector<Vector3D> const& points, vector<std::size_t>& selfindex, vector<int>& sentproc,
-            vector<vector<std::size_t> >& sentpoints) override;
-            
-  #endif
-
   vector<int>& GetSentProcs(void) override;
 
   vector<vector<size_t> >& GetSentPoints(void) override;
@@ -182,18 +166,11 @@ public:
   /*! \brief Output extra build
     \param filename Output file name
    */
-  void output_buildextra(std::string const& filename)const;
+  void output_buildextra(std::string const& filename) const;
 
   void BuildHilbert(vector<Vector3D> const& points) override;
-  inline void Build(vector<Vector3D> const& points, int order) override{this->BuildHilbert(points);};
 
-  // void Build(vector<Vector3D> const& points, Tessellation3D const& tproc) override;
-
-  //! \param display Logging flag
-  friend void SetLoad(Voronoi3D &tproc, vector<Vector3D> &points, size_t Niter, double speed, int mode,double round, bool display);
-
-  //! \param display Logging flag
-  friend void SetLoad(Voronoi3D &tproc, vector<Vector3D> &points,vector<ComputationalCell3D> &cells, size_t Niter, double speed, int mode, double round, bool display);
+  bool PointInMyDomain(const Vector3D &point) const override;
 
 #endif // RICH_MPI
 
