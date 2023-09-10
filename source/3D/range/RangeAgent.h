@@ -106,20 +106,7 @@ private:
     _set<int> getIntersectingRanks(const Vector3D &center, coord_t radius) const;
     void sendFinish();
     int checkForFinishMessages() const;
-    inline void flushBuffer(int node)
-    {
-        int bufferIdx = this->ranksBufferIdx[node];
-        if(bufferIdx == UNDEFINED_BUFFER_IDX)
-        {
-            return;
-        }
-        if(this->buffers[bufferIdx].size() > 0)
-        {
-            this->requests.push_back(MPI_REQUEST_NULL);
-            MPI_Isend(&this->buffers[bufferIdx][0], this->buffers[bufferIdx].size(), MPI_BYTE, node, TAG_REQUEST, this->comm, &this->requests[this->requests.size() - 1]);
-        }
-        this->ranksBufferIdx[node] = UNDEFINED_BUFFER_IDX;
-    }
+    void flushBuffer(int node);
     inline void flushAll(){for(int i = 0; i < this->size; i++) this->flushBuffer(i);};
 };
 

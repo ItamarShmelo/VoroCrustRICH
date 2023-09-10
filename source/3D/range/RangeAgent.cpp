@@ -228,7 +228,21 @@ int RangeAgent::checkForFinishMessages() const
     return 0;
 }
 
-// todo: change the parallel model: each one sends a message when it finishes sending requests. Waits to `size` such messages, then answers all again
+void RangeAgent::flushBuffer(int node)
+{
+    int bufferIdx = this->ranksBufferIdx[node];
+    if(bufferIdx == UNDEFINED_BUFFER_IDX)
+    {
+        return;
+    }
+    if(this->buffers[bufferIdx].size() > 0)
+    {
+        this->requests.push_back(MPI_REQUEST_NULL);
+        MPI_Isend(&this->buffers[bufferIdx][0], this->buffers[bufferIdx].size(), MPI_BYTE, node, TAG_REQUEST, this->comm, &this->requests[this->requests.size() - 1]);
+    }
+    this->ranksBufferIdx[node] = UNDEFINED_BUFFER_IDX;
+}
+
 QueryBatchInfo RangeAgent::runBatch(std::queue<RangeQueryData> &queries)
 {
     this->receivedUntilNow = 0; // reset the receive counter
