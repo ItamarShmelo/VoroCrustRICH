@@ -2,7 +2,7 @@
 #define CONSERVED_3D_HPP 1
 
 #include <array>
-#include "../../3D/GeometryCommon/Vector3D.hpp"
+#include "3D/elementary/Vector3D.hpp"
 #include "../common/equation_of_state.hpp"
 #include "computational_cell.hpp"
 

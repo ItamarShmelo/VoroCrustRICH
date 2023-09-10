@@ -1,6 +1,6 @@
 #include "LagrangianExtensiveUpdater3D.hpp"
 #ifdef RICH_MPI
-#include "../../mpi/mpi_commands.hpp"
+#include "mpi/mpi_commands.hpp"
 #endif
 
 LagrangianExtensiveUpdater3D::LagrangianExtensiveUpdater3D(LagrangianFlux3D const & lflux, 

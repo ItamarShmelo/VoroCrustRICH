@@ -2,11 +2,7 @@
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/uniform_real_distribution.hpp>
 
-void UpdateBox(Tessellation3D &tess, HDSim3D &sim, double const min_velocity, double const volume_fraction, ComputationalCell3D const& reference_cell
-#ifdef RICH_MPI
-    , Tessellation3D &tproc
-#endif
-)
+void UpdateBox(Tessellation3D &tess, HDSim3D &sim, double const min_velocity, double const volume_fraction, ComputationalCell3D const& reference_cell)
 {
 	std::vector<ComputationalCell3D>& cells = sim.getCells();
 	std::vector<Conserved3D>& extensives = sim.getExtensives();
@@ -44,6 +40,7 @@ void UpdateBox(Tessellation3D &tess, HDSim3D &sim, double const min_velocity, do
     Vector3D const cur_max = tess.GetBoxCoordinates().second; 
 	Vector3D const cur_min = tess.GetBoxCoordinates().first;
     double const oldv = (cur_max.x - cur_min.x) * (cur_max.y - cur_min.y) * (cur_max.z - cur_min.z);
+    temprecv[0] = std::max(temprecv[0], std::pow(oldv, 0.333333333) * 0.03);
     // Do we need to resize?
     Vector3D recvmax(temprecv[1] + 5 * temprecv[0], temprecv[2] + 5 * temprecv[0],
         temprecv[3] + 5 * temprecv[0]), recvmin(-temprecv[4] - 5 * temprecv[0],
@@ -53,32 +50,32 @@ void UpdateBox(Tessellation3D &tess, HDSim3D &sim, double const min_velocity, do
 	if (recvmax.x > cur_max.x)
 	{
 		recalc = true;
-		recvmax.x = cur_max.x + 3 * temprecv[0];
+		recvmax.x = cur_max.x + 5 * temprecv[0];
 	}
 	if (recvmax.y > cur_max.y)
 	{
 		recalc = true;
-		recvmax.y = cur_max.y + 3 * temprecv[0];
+		recvmax.y = cur_max.y + 5 * temprecv[0];
 	}
 	if (recvmax.z > cur_max.z)
 	{
 		recalc = true;
-		recvmax.z = cur_max.z + 3 * temprecv[0];
+		recvmax.z = cur_max.z + 5 * temprecv[0];
 	}
 	if (recvmin.x < cur_min.x)
 	{
 		recalc = true;
-		recvmin.x = cur_min.x - 3 * temprecv[0];
+		recvmin.x = cur_min.x - 5 * temprecv[0];
 	}
 	if (recvmin.y < cur_min.y)
 	{
 		recalc = true;
-		recvmin.y = cur_min.y - 3 * temprecv[0];
+		recvmin.y = cur_min.y - 5 * temprecv[0];
 	}
 	if (recvmin.z < cur_min.z)
 	{
 		recalc = true;
-		recvmin.z = cur_min.z - 3 * temprecv[0];
+		recvmin.z = cur_min.z - 5 * temprecv[0];
 	}
 	if (recalc)
 	{
@@ -100,13 +97,6 @@ void UpdateBox(Tessellation3D &tess, HDSim3D &sim, double const min_velocity, do
 			std::cout << "Old vol " << oldv << " New vol " << newv << std::endl;
 			std::cout << "Point number " << Np << std::endl;
 		}
-#ifdef RICH_MPI
-		tproc.SetBox(recvmin, recvmax);
-		// get new points
-		std::vector<Vector3D> proc_points = tproc.getMeshPoints();
-		proc_points.resize(tproc.GetPointNo());
-		tproc.Build(proc_points);
-#endif
 		tess.SetBox(recvmin, recvmax);		
 		std::vector<Vector3D> mypoints = tess.getMeshPoints();
 		mypoints.resize(N);
@@ -135,7 +125,7 @@ void UpdateBox(Tessellation3D &tess, HDSim3D &sim, double const min_velocity, do
 		for (size_t i = 0; i < Np; ++i)
 		{
 #ifdef RICH_MPI
-			if (PointInPoly(tproc, newpoints[i], static_cast<size_t>(rank)))
+			if (tess.PointInMyDomain(newpoints[i]))
 #endif
 			{
 				mypoints.push_back(newpoints[i]);
@@ -143,23 +133,27 @@ void UpdateBox(Tessellation3D &tess, HDSim3D &sim, double const min_velocity, do
 			}
 		}
 		assert(N>0);
-		tess.Build(mypoints
+		
 #ifdef RICH_MPI
-			, tproc
-#endif
-		);
+		tess.BuildHilbert(mypoints);
+#else // RICH_MPI
+		tess.Build(mypoints);
+#endif // RICH_MPI
+
 		// deal with hydro
 		size_t Nstart = sim.GetMaxID() + 1;
 		size_t Nadded = mypoints.size() - N;
 #ifdef RICH_MPI
-		std::vector<size_t> nrecv(tproc.GetPointNo(), 0);
+		int size;
+		MPI_Comm_size(MPI_COMM_WORLD, &size);
+		std::vector<size_t> nrecv(size, 0);
 		MPI_Allgather(&Nadded, 1, MPI_UNSIGNED_LONG_LONG, &nrecv[0], 1, MPI_UNSIGNED_LONG_LONG, MPI_COMM_WORLD);
 		for (size_t i = 0; i < static_cast<size_t>(rank); ++i)
 			Nstart += nrecv[i];
 		for (size_t i = N; i < (N + Nadded); ++i)
 			cells.at(i).ID = Nstart + i - N;
 		size_t& MaxID = sim.GetMaxID();
-		for (size_t i = 0; i < tproc.GetPointNo(); ++i)
+		for (size_t i = 0; i < size; ++i)
 			MaxID += nrecv[i];
 		MPI_exchange_data(tess, cells, true, &reference_cell);
 #endif

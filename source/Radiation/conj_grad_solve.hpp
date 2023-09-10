@@ -10,13 +10,13 @@
 #include <numeric>
 #ifdef RICH_MPI
 #include <mpi.h>
-#include "source/mpi/mpi_commands.hpp"
+#include "mpi/mpi_commands.hpp"
 #endif
 #include <boost/container/small_vector.hpp>
-#include "source/3D/GeometryCommon/Tessellation3D.hpp"
-#include "source/newtonian/three_dimensional/computational_cell.hpp"
-#include "source/newtonian/three_dimensional/conserved_3d.hpp"
-#include "source/misc/utils.hpp"
+#include "3D/tesselation/Tessellation3D.hpp"
+#include "newtonian/three_dimensional/computational_cell.hpp"
+#include "newtonian/three_dimensional/conserved_3d.hpp"
+#include "misc/utils.hpp"
 
 namespace CG
 {

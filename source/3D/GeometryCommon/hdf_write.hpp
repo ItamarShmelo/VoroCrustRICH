@@ -8,7 +8,7 @@
 
 #include <H5Cpp.h>
 #include <string>
-#include "Voronoi3D.hpp"
+#include "3D/tesselation/voronoi/Voronoi3D.hpp"
 #include "../../newtonian/three_dimensional/hdsim_3d.hpp"
 
 

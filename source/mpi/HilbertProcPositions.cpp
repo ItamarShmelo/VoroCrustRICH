@@ -1,6 +1,6 @@
 #include "HilbertProcPositions.hpp"
-#include "../3D/GeometryCommon/HilbertOrder3D.hpp"
-#include "../misc/utils.hpp"
+#include "3D/hilbert/HilbertOrder3D.hpp"
+#include "misc/utils.hpp"
 #include <limits>
 #ifdef RICH_MPI
 #include <mpi.h>

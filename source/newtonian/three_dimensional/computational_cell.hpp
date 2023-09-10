@@ -7,7 +7,7 @@
 #define COMPUTATIONAL_CELL3D_HPP 1
 
 #include <array>
-#include "../../3D/GeometryCommon/Vector3D.hpp"
+#include "../../3D/elementary/Vector3D.hpp"
 #include "../two_dimensional/computational_cell_2d.hpp"
 #ifdef RICH_MPI
 #include "../../misc/serializable.hpp"

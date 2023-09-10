@@ -1,6 +1,6 @@
 #include "Intersection3D.hpp"
 #include <algorithm>
-#include "../../misc/utils.hpp"
+#include "misc/utils.hpp"
 #include <array>
 #include <iomanip>
 
