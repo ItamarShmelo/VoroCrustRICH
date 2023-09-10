@@ -72,7 +72,6 @@ public:
     using _set = boost::container::flat_set<T>;
 
     RangeAgent(const EnvironmentAgent *envAgent, RangeFinder *rangeFinder, const MPI_Comm &comm = MPI_COMM_WORLD);
-    inline ~RangeAgent(){delete this->hilbertTree;};
 
     void receiveQueries(QueryBatchInfo &batch);
     void answerQueries();
@@ -80,7 +79,6 @@ public:
     QueryBatchInfo runBatch(std::queue<RangeQueryData> &queries);
 
     inline size_t getNumPoints() const{return this->rangeFinder->size();};
-    inline void buildHilbertTree(const OctTree<Vector3D> *tree){this->hilbertTree = new DistributedOctTree(tree);};
 
     std::vector<std::vector<size_t>> &getSentPoints(){return this->sentPoints;};
     std::vector<std::vector<size_t>> &getRecvPoints(){return this->recvPoints;};
@@ -96,7 +94,6 @@ private:
     size_t shouldReceiveInTotal; // number of answers I have to receive (to know when to finish)
     const EnvironmentAgent *envAgent; // an environmental agent
     const RangeFinder *rangeFinder; // a range finder object
-    DistributedOctTree<Vector3D> *hilbertTree; // a hilbert tree, for fast ranks environment searching (knowing what ranks a particular range intersecting)
 
     std::vector<int> sentProcessorsRanks; // a vector of ranks, that we sent points to
     std::vector<int> recvProcessorsRanks;  // a vector of ranks, that we received points from

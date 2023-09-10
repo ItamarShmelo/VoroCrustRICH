@@ -3,7 +3,7 @@
 #include "RangeAgent.h"
 
 RangeAgent::RangeAgent(const EnvironmentAgent *envAgent, RangeFinder *rangeFinder, const MPI_Comm &comm):
-        comm(comm), envAgent(envAgent), rangeFinder(rangeFinder), hilbertTree(nullptr)
+        comm(comm), envAgent(envAgent), rangeFinder(rangeFinder)
 {
     MPI_Comm_rank(this->comm, &this->rank);
     MPI_Comm_size(this->comm, &this->size);
