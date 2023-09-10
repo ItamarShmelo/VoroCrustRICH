@@ -7,6 +7,7 @@ import sys
 # importing modules from this package
 from .buildutils import lmod
 from .buildutils import run_make
+import gen_version
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("build_program.main")
@@ -14,20 +15,22 @@ logger = logging.getLogger("build_program.main")
 root_dir = str(pathlib.Path(__file__).parent.parent.absolute())
 sys.path.append(root_dir)
 
-import gen_version
-
 def _run_cmake(*, build_dir, exe_name, config, SysLibsDict, test_dir, definitionOfReal=8):
 
-    common_cxx_flags = " -std=c++14 -Wextra -Wshadow -fno-common -fstack-protector-all -rdynamic -Werror "
+    # removed -Werror from:
+    # added -flto to:
+    common_cxx_flags = " -std=c++14 -Wextra -Wshadow -fno-common -fstack-protector-all -rdynamic "
     common_cxx_flags_debug = " -DDEBUG -O0 -g3 -gdwarf-3 "
-    common_cxx_flags_release = " -DNDEBUG -O3 -DOMPI_SKIP_MPICXX "
+    common_cxx_flags_release = " -DNDEBUG -g -O3 -DOMPI_SKIP_MPICXX "
 
     hdf5_lib_dir = SysLibsDict["hdf5_lib_dir"]
     hdf5_include_dir = SysLibsDict["hdf5_include"]
+    vtk_dir = SysLibsDict["vtk"]
 
     if config.startswith("gnu"):
         fortran_compiler = SysLibsDict["gfortran"]
-        cmake_fortran_flags = f" -fall-intrinsics -std=f2018 -fdec-static -finit-local-zero -finit-integer=-2147483647 -finit-real=snan -finit-logical=True -finit-derived -ffpe-trap=invalid,zero,overflow -ffree-line-length-none -cpp -fdefault-real-{definitionOfReal} {'-fdefault-double-8' if definitionOfReal==8 else ''} -fbacktrace -g -Wall -Wextra -Wsurprising -Werror -Wpedantic -Wno-uninitialized "
+        # removed -Werror from:
+        cmake_fortran_flags = f" -fall-intrinsics -std=f2018 -fdec-static -finit-local-zero -finit-integer=-2147483647 -finit-real=snan -finit-logical=True -finit-derived -ffpe-trap=invalid,zero,overflow -ffree-line-length-none -cpp -fdefault-real-{definitionOfReal} {'-fdefault-double-8' if definitionOfReal==8 else ''} -fbacktrace -g -Wall -Wextra -Wsurprising  -Wpedantic -Wno-uninitialized "
         cmake_fortran_flags_debug = " -O0 -fcheck=all -Wno-maybe-uninitialized -Wno-tabs -Wno-conversion "
         cmake_fortran_flags_release = " -O2 "
         cmake_fortran_flags += "  -mcmodel=medium -shared-libgcc "
@@ -35,8 +38,8 @@ def _run_cmake(*, build_dir, exe_name, config, SysLibsDict, test_dir, definition
         c_compiler = SysLibsDict["gcc"]
         cxx_compiler = SysLibsDict["g++"]
 
-        cmake_cxx_standard = "14"
-        cmake_cxx_flags = " -Wdouble-promotion -fstrict-aliasing -Wno-deprecated-copy "
+        cmake_cxx_standard = "17"
+        cmake_cxx_flags = " -Wdouble-promotion -fstrict-aliasing -Wno-deprecated-copy -Wno-double-promotion -Wno-shadow "
         cmake_cxx_flags_debug = " -D_GLIBCXX_DEBUG "
         cmake_cxx_flags_release = " "
     elif config.startswith("intel"):
@@ -49,8 +52,8 @@ def _run_cmake(*, build_dir, exe_name, config, SysLibsDict, test_dir, definition
         c_compiler = SysLibsDict["icc"]
         cxx_compiler = SysLibsDict["icpc"]
        
-        common_cxx_flags += " -diag-remark=13397,13401,15552 -pedantic-errors -Wall "
-        cmake_cxx_standard = "14"
+        common_cxx_flags += " -diag-remark=13397,13401,15552,2196 -pedantic-errors -Wall "
+        cmake_cxx_standard = "17"
         cmake_cxx_flags = " -ansi-alias -fimf-arch-consistency=true "
         cmake_cxx_flags_debug = " -fp-model consistent -diag-disable=openmp -Wno-unknown-pragmas "
         cmake_cxx_flags_release = " -fp-model precise -march=core-avx2 -qopenmp "
@@ -58,6 +61,7 @@ def _run_cmake(*, build_dir, exe_name, config, SysLibsDict, test_dir, definition
         logger.error(f"no known compiler was given at head of {config}")
     
     if "MPI" in config:
+        mpi = "on"
         common_cxx_flags += " -DRICH_MPI "
         if "gnu" in config:
             c_compiler = SysLibsDict["mpicc_gcc"]
@@ -65,13 +69,19 @@ def _run_cmake(*, build_dir, exe_name, config, SysLibsDict, test_dir, definition
         else:
             c_compiler = SysLibsDict["mpicc"]
             cxx_compiler = SysLibsDict["mpic++"]
-
+    else:
+        mpi = "off"
+    
     if "Release" in config:
         build_type = "Release"
     if "Debug" in config:
         build_type = "Debug"
     
+    prof = "on" if "Prof" in config else "off"
+    
     cmd = ['cmake',
+            f'-DMPI={mpi}',
+            f'-DPROF={prof}',
             f'-DCMAKE_Fortran_COMPILER={fortran_compiler}',
             f'-DCMAKE_C_COMPILER={c_compiler}',
             f'-DCMAKE_CXX_COMPILER={cxx_compiler}',
@@ -86,6 +96,7 @@ def _run_cmake(*, build_dir, exe_name, config, SysLibsDict, test_dir, definition
             f'-DEXE_NAME={exe_name}',
             f'-DHDF5_LIB_DIRECTORY={hdf5_lib_dir}',
             f'-DHDF5_INCLUDE={hdf5_include_dir}',
+            f'-DVTK_DIRECTORY={vtk_dir}',
             f'-DTEST_DIR={test_dir}',
             '-DCMAKE_VERBOSE_MAKEFILE=on',
             f'-DPROJECT_ROOT_DIR={root_dir}',
@@ -105,9 +116,8 @@ def build_program(*, configs, make_dir, src_dir, test_dir):
     from source.cppversion.generate_cppversion import generate_cppversion
     """Build the program with the desired configurations."""
     exe_name = "rich"
-    git_version = gen_version.GitVersion(root_dir)
     logger.debug(f"args:\nconfigs = {configs}\nroot_dir = {root_dir}\nmake_dir = {make_dir}\nsrc_dir = {src_dir}\ntest_dir = {test_dir}")
-
+    git_version = gen_version.GitVersion(root_dir)
     assert os.path.isdir(os.path.join(root_dir, "source")), f"Directory {root_dir} does not contain a directory named source"
 
     with open(os.path.join(root_dir, "compilation", "SystemLibsLinks.py"), "r") as f:
@@ -140,7 +150,7 @@ def build_program(*, configs, make_dir, src_dir, test_dir):
                     version=str(git_version),
                     config=config)
 
-
+        
         #run cmake for the specific config
         logger.info("Running cmake")
         cmake = _run_cmake(build_dir=build_dir,
@@ -159,11 +169,7 @@ def build_program(*, configs, make_dir, src_dir, test_dir):
         make = run_make.main(make_dir, config)
         assert make.returncode == 0, f"Running make for {config} failed"
         
-        exe_suffix = "_" + git_version.project_hash[:8] + "_"
-        if git_version.has_diff:
-            exe_suffix += "with_diff"
-        if git_version.has_untracked_files:
-            exe_suffix += "with_untracked_files"
+        exe_suffix = "_"
         exe_suffix += config
 
         exe_path_with_suffix = os.path.join(config_dir, exe_name + exe_suffix)

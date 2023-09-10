@@ -145,6 +145,47 @@ template <class T> vector<T> operator*
 		res[i] = d*v[i];
 	return res;
 }
+/*!
+\brief BiLinear Interpolation
+\param x The x vector, assumed sorted
+\param y The y vector, assumed sorted
+\param xi The x interpolation location
+\param yi The y interpolation location
+\param data data(x,y) The function to interpolate
+\return f(xi, yi)
+*/
+template <typename T>
+T BiLinearInterpolation(std::vector<T> const& x, std::vector<T> const& y, std::vector<std::vector<T>> const& data, T const xi, T const yi);
+
+template <typename T>
+T BiLinearInterpolation(std::vector<T> const& x, std::vector<T> const& y, std::vector<std::vector<T>> const& data, T const xi, T const yi)
+{
+	auto itx = std::upper_bound(x.begin(), x.end(), xi);
+	if(itx == x.end())
+	{
+		if(xi > x.back())
+			throw UniversalError("X too large in BiLinearInterpolation");
+		else
+			--itx;
+	}
+	if(itx == x.begin())
+		throw UniversalError("X too small in BiLinearInterpolation");
+	auto ity = std::upper_bound(y.begin(), y.end(), yi);
+	if(ity == y.end())
+	{
+		if(yi > y.back())
+			throw UniversalError("Y too large in BiLinearInterpolation");
+		else
+			--ity;
+	}
+	if(ity == y.begin())
+		throw UniversalError("Y too small in BiLinearInterpolation");
+	T const delta = 1.0 / ((*itx - *(itx - 1)) * (*ity - *(ity - 1)));
+	size_t const idx = static_cast<size_t>(itx - x.begin());
+	size_t const idy = static_cast<size_t>(ity - y.begin());
+	return (data[idx - 1][idy - 1] * (*itx - xi) * (*ity - yi) + data[idx][idy - 1] * (xi - *(itx - 1)) * (*ity - yi)
+		 + data[idx - 1][idy] * (*itx - xi) * (yi - *(ity -1)) + data[idx - 1][idy - 1] * (xi - *(itx - 1)) * (yi - *(ity -1))) * delta;
+}
 
 /*!
 \brief Linear Interpolation

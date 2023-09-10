@@ -1,9 +1,9 @@
 #include "AMR3D.hpp"
-#include "../../3D/GeometryCommon/Voronoi3D.hpp"
-#include "../../misc/utils.hpp"
+#include "3D/tesselation/voronoi/Voronoi3D.hpp"
+#include "misc/utils.hpp"
 #include <boost/array.hpp>
 #include <iostream>
-#include "../../3D/r3d/Intersection3D.hpp"
+#include "3D/r3d/Intersection3D.hpp"
 #include <boost/scoped_ptr.hpp>
 
 //#define debug_amr 1
@@ -180,11 +180,7 @@ namespace
 #endif //RICH_MPI
 
 	std::vector<Vector3D> GetNewPoints(Tessellation3D const& tess, std::pair<vector<size_t>,
-		vector<Vector3D> > &ToRefine
-#ifdef RICH_MPI
-		, Tessellation3D const& tproc
-#endif
-	)
+		vector<Vector3D> > &ToRefine)
 	{
 #ifdef RICH_MPI
 		int rank = 0;
@@ -237,7 +233,7 @@ namespace
 		for (size_t i = 0; i < Nrefine; ++i)
 		{
 #ifdef RICH_MPI
-			if (!PointInPoly(tproc, res[i], rank))
+			if (!tess.PointInMyDomain(res[i]))
 				bad_indeces.push_back(i);
 #else
 			if (res[i].x > bb.second.x || res[i].x<bb.first.x || res[i].y>bb.second.y || res[i].y<bb.first.y
@@ -826,11 +822,12 @@ Conserved3D SimpleAMRExtensiveUpdater3D::ConvertPrimitveToExtensive3D(const Comp
 	ComputationalCellAddMult(cell_temp, slope.yderivative, diff.y);
 	ComputationalCellAddMult(cell_temp, slope.zderivative, diff.z);
 	cell_temp.internal_energy = eos.dp2e(cell_temp.density, cell_temp.pressure, cell_temp.tracers, ComputationalCell3D::tracerNames);
-	const double mass = volume* cell_temp.density;
+	const double mass = volume * cell_temp.density;
 	res.mass = mass;
-	res.internal_energy = cell_temp.internal_energy*mass;
-	res.energy = res.internal_energy + 0.5*mass*ScalarProd(cell_temp.velocity, cell_temp.velocity);
-	res.momentum = mass* cell_temp.velocity;
+	res.internal_energy = cell_temp.internal_energy * mass;
+	res.energy = res.internal_energy + 0.5 * mass * ScalarProd(cell_temp.velocity, cell_temp.velocity);
+	res.momentum = mass * cell_temp.velocity;
+	res.Erad = mass * cell_temp.Erad;
 	size_t N = cell_temp.tracers.size();
 	//res.tracers.resize(N);
 	for (size_t i = 0; i < N; ++i)
@@ -897,6 +894,8 @@ ComputationalCell3D SimpleAMRCellUpdater3D::ConvertExtensiveToPrimitve3D(const C
 		throw;
 	}
 	res.internal_energy = extensive.internal_energy / extensive.mass;
+	res.Erad = extensive.Erad / extensive.mass;
+	res.temperature = eos.de2T(res.density, res.internal_energy);
 	size_t N = extensive.tracers.size();
 //	res.tracers.resize(N);
 	for (size_t i = 0; i < N; ++i)
@@ -1004,11 +1003,7 @@ void AMR3D::operator() (HDSim3D &sim)
 		return;
 	interp_.BuildSlopes(tess, cells, time);
 	// Get new points from refine
-	std::vector<Vector3D> new_points = GetNewPoints(tess, ToRefine
-#ifdef RICH_MPI
-		, sim.getProcTesselation()
-#endif
-	);
+	std::vector<Vector3D> new_points = GetNewPoints(tess, ToRefine);
 	// Create copy of old tess
 	boost::scoped_ptr<Tessellation3D> oldtess(tess.clone());
 	// Build new tess
@@ -1018,8 +1013,8 @@ void AMR3D::operator() (HDSim3D &sim)
 	RemoveVector(new_mesh, ToRemove.first);
 	new_mesh.insert(new_mesh.end(), new_points.begin(), new_points.end());
 #ifdef RICH_MPI
-	tess.Build(new_mesh, sim.getProcTesselation());
-#else
+	tess.BuildHilbert(new_mesh);
+#else // RICH_MPI
 	tess.Build(new_mesh);
 #endif
 	// Fix extensives for refine

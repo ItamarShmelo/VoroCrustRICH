@@ -12,6 +12,14 @@ void write_number(double num,
   f.close();
 }
 
+void write_int(int num,
+		  string const& fname)
+{
+  ofstream f(fname.c_str());
+  f << num << endl;
+  f.close();
+}
+
 void write_vector(vector<double> const& v,
 		  string const& fname,
 		  int prec)

@@ -9,9 +9,17 @@ SimpleFluxCalculator::SimpleFluxCalculator(const RiemannSolver& rs) :
 Primitive convert_to_primitive(const ComputationalCell& cell,
 	const EquationOfState& eos)
 {
-  const double energy = eos.dp2e(cell.density, cell.pressure, cell.tracers,ComputationalCell::tracerNames);
-  const double sound_speed = eos.dp2c(cell.density, cell.pressure, cell.tracers,ComputationalCell::tracerNames);
-	return Primitive(cell.density, cell.pressure, cell.velocity, energy, sound_speed);
+	try
+	{
+		const double energy = eos.dp2e(cell.density, cell.pressure, cell.tracers,ComputationalCell::tracerNames);
+		const double sound_speed = eos.dp2c(cell.density, cell.pressure, cell.tracers,ComputationalCell::tracerNames);
+		return Primitive(cell.density, cell.pressure, cell.velocity, energy, sound_speed);
+	}
+	catch(UniversalError &eo)
+	{
+		eo.addEntry("Error in convert_to_primitive", 0);
+		throw eo;
+	}
 }
 
 Primitive reflect(const Primitive& p,

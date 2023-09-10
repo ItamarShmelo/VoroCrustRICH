@@ -4,7 +4,7 @@
 #include "extensive_updater3d.hpp"
 #include "LinearGauss3D.hpp"
 #include "../common/equation_of_state.hpp"
-#include "../../misc/utils.hpp"
+#include "misc/utils.hpp"
 
 //! \brief Updates the extensives based on a series of conditions and actions. Does a normal update of all cells before going into the conditions check
 class ConditionExtensiveUpdater3D : public ExtensiveUpdater3D

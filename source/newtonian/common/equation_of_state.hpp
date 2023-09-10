@@ -82,12 +82,12 @@ public:
   virtual double sd2p(double s, double d,
 	  tvector const& tracers = tvector(), vector<string> const& tracernames = vector<string>()) const = 0;
 
-/*! \brief Calculates the heat capacity (Cv) per unit mass
+/*! \brief Calculates the heat capacity (Cv) per unit volume
     \param d Density
     \param T Temperature
     \param tracers Tracers
 	\param tracernames The names of the tracers
-    \return Heat capacity per unit mass
+    \return Heat capacity per unit volume
   */
   virtual double dT2cv(double const d, double const T,
 	  tvector const& tracers = tvector(), vector<string> const& tracernames = vector<string>()) const;

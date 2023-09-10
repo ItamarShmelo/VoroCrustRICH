@@ -7,7 +7,7 @@
 #define IO3D_HPP 1
 
 #include "simple_io.hpp"
-#include "../3D/GeometryCommon/Vector3D.hpp"
+#include "3D/elementary/Vector3D.hpp"
 
 /*! \brief Writes a binary vector of Vector3D to a file
 \param vec The vector to write

@@ -10,13 +10,13 @@
 #include <numeric>
 #ifdef RICH_MPI
 #include <mpi.h>
-#include "source/mpi/mpi_commands.hpp"
+#include "mpi/mpi_commands.hpp"
 #endif
 #include <boost/container/small_vector.hpp>
-#include "source/3D/GeometryCommon/Tessellation3D.hpp"
-#include "source/newtonian/three_dimensional/computational_cell.hpp"
-#include "source/newtonian/three_dimensional/conserved_3d.hpp"
-#include "source/misc/utils.hpp"
+#include "3D/tesselation/Tessellation3D.hpp"
+#include "newtonian/three_dimensional/computational_cell.hpp"
+#include "newtonian/three_dimensional/conserved_3d.hpp"
+#include "misc/utils.hpp"
 
 namespace CG
 {
@@ -28,6 +28,8 @@ namespace CG
     size_t constexpr max_size_t = std::numeric_limits<size_t>::max();
     double constexpr stefan_boltzman = 5.670374e-5;
     double constexpr radiation_constant = 4 * stefan_boltzman / speed_of_light;
+    double constexpr boltzmann_constant = 1.380649e-16;
+    double constexpr electron_mass = 9.1093837015e-28;
 
     //! \brief Class that build the data for the solution of the linear system A*x=b
     class MatrixBuilder
