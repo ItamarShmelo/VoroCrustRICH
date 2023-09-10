@@ -21,9 +21,9 @@ using std::string;
 typedef std::array<double, MAX_TRACERS> tvector;
 typedef std::array<bool, MAX_STICKERS> svector;
 #include <string>
-#include "../../tessellation/geometry.hpp"
+#include "tessellation/geometry.hpp"
 #ifdef RICH_MPI
-#include "../../misc/serializable.hpp"
+#include "misc/serializable.hpp"
 #endif // RICH_MPI
 
 //! \brief Computational cell

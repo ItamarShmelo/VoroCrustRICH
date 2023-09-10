@@ -5,19 +5,13 @@
 #include <fstream>
 
 vector<Vector3D> RoundGrid3D(vector<Vector3D> const& points, Vector3D const& ll, Vector3D const& ur,
-	size_t NumberIt,
-#ifdef RICH_MPI
-	Tessellation3D const* tproc,
-#endif
-	Tessellation3D *tess)
+	size_t NumberIt, Tessellation3D *tess)
 {
 	Voronoi3D default_tess(ll, ur);
 	if (tess == nullptr)
 		tess = &default_tess;
 #ifdef RICH_MPI
-	if(tproc->GetBoxFaces().size() > 0)
-		tess->ModifyBoxFaces() = tproc->GetBoxFaces();
-	tess->Build(points, *tproc);
+	tess->BuildHilbert(points);
 #else
 	tess->Build(points);
 #endif
@@ -45,7 +39,7 @@ vector<Vector3D> RoundGrid3D(vector<Vector3D> const& points, Vector3D const& ll,
 			res[i] = tess->GetMeshPoint(i) + dw;
 		}
 #ifdef RICH_MPI
-		tess->Build(res, *tproc);
+		tess->BuildHilbert(res);
 #else
 		tess->Build(res);
 #endif

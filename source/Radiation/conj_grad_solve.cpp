@@ -141,7 +141,7 @@ namespace CG
         sub_p.resize(Nlocal);
         sub_x.resize(Nlocal);
         sub_p = vector_rescale(sub_p, M);
-        std::vector<double> result1, result2, result3, p(sub_p);
+        std::vector<double> result1, result2(Nlocal, 0), result3, p(sub_p), old_result2(Nlocal, 0);
         std::vector<double> old_x = sub_x;
         size_t Ntotal = Nlocal;
 #ifdef RICH_MPI
@@ -187,11 +187,11 @@ namespace CG
 #endif
                 mat_times_vec(A, A_indeces, sub_x, sub_a_times_p);
                 sub_x.resize(Nlocal);
-                vec_lin_combo(1.0, b, -1.0, sub_a_times_p, result2);    
+                vec_lin_combo(1.0, b, -1.0, sub_a_times_p, result1);    
             }
             else
-                vec_lin_combo(1.0, sub_r, -alpha, sub_a_times_p, result2);
-            sub_r = result2;
+                vec_lin_combo(1.0, sub_r, -alpha, sub_a_times_p, result1);
+            sub_r = result1;
 
             size_t max_loc0 = 0, max_loc1 = 0;
             max_data[0].val = 0;
@@ -200,9 +200,9 @@ namespace CG
             for(size_t j = 0; j < Nlocal; ++j)
             {
                 double const local_scale = std::abs(b[j]);
-                if(std::abs(sub_r[j])  > max_data[1].val * (local_scale + maxA[1] * 0.1))
+                if(std::abs(sub_r[j]) > max_data[1].val * (std::abs(A[j][0] * (std::abs(sub_x[j]) + std::numeric_limits<double>::min() * 100 + maxA[0] * 1e-4))))
                 {
-                    max_data[1].val = std::abs(sub_r[j]) / (local_scale + maxA[1] * 0.1);
+                    max_data[1].val = std::abs(sub_r[j]) / (std::abs(A[j][0] * (std::abs(sub_x[j]) + std::numeric_limits<double>::min() * 100 + maxA[0] * 1e-4)));
                     max_loc1 = j;
                 }
                 if(std::abs(sub_x[j] - old_x[j]) > max_data[0].val * (std::abs(sub_x[j]) + std::numeric_limits<double>::min() * 100 + maxA[0] * 1e-4))
@@ -214,6 +214,7 @@ namespace CG
                     max_data[2].val = 1;
             }
             sub_r_sqrd_convergence = mpi_dot_product(sub_r, sub_r);
+            old_result2 = result2;
             result2 = vector_rescale(sub_r, M);
             sub_r_sqrd = mpi_dot_product(sub_r, result2);
 
@@ -225,7 +226,7 @@ namespace CG
             if (sub_r_sqrd < delta_init * tolerance//std::sqrt(sub_r_sqrd_convergence / Ntotal) < tolerance * maxA [1]
                 && max_data[1].val < 1e-6 && max_data[0].val < 1e-6 && max_data[2].val < 0.5) { // norm is just sqrt(dot product so don't need to use a separate norm fnc) // vector norm needs to use a all reduce!
                 if(rank == 0)
-                    std:: cout << "Converged at iter = " << i <<" error "<<std::sqrt(sub_r_sqrd_convergence / Ntotal) / maxA [1]<<" delta "<<sub_r_sqrd<<std::endl;
+                    std:: cout << "Converged at iter = " << i <<" error "<<std::sqrt(sub_r_sqrd_convergence / Ntotal) / maxA[1]<<" delta "<<sub_r_sqrd<<std::endl;
                 if(rank == max_data[0].mpi_id)
                     std::cout<<"Max0 "<<max_data[0].val<<" cell ID "<<cells[max_loc0].ID<<" density "<<cells[max_loc0].density<<" temperature "<<cells[max_loc0].temperature<<" Er "<<cells[max_loc0].Erad * cells[max_loc0].density
                     <<" X "<<tess.GetMeshPoint(max_loc0).x<<" Y "<<tess.GetMeshPoint(max_loc0).y<<" Z "<<tess.GetMeshPoint(max_loc0).z<<std::endl; 
@@ -237,7 +238,9 @@ namespace CG
                 break;
             }
             old_x = sub_x;
-            beta = sub_r_sqrd / sub_r_sqrd_old;       
+            vec_lin_combo(1.0, result2, -1.0, old_result2, result3);   
+            double const  Polak_Ribiere = mpi_dot_product(sub_r, result3);
+            beta = Polak_Ribiere / sub_r_sqrd_old;       
             
             vec_lin_combo(1.0, result2, beta, sub_p, result3);             // Next gradient
             sub_p = result3;

@@ -35,7 +35,7 @@ public:
 };
 
 namespace {
-  #if RICH_MPI
+  #ifdef RICH_MPI
   template<class T> vector<T> chunk
   (const vector<T>& source,
    size_t i_start,

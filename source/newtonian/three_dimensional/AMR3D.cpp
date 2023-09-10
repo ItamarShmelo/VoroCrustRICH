@@ -1,9 +1,9 @@
 #include "AMR3D.hpp"
-#include "../../3D/GeometryCommon/Voronoi3D.hpp"
-#include "../../misc/utils.hpp"
+#include "3D/tesselation/voronoi/Voronoi3D.hpp"
+#include "misc/utils.hpp"
 #include <boost/array.hpp>
 #include <iostream>
-#include "../../3D/r3d/Intersection3D.hpp"
+#include "3D/r3d/Intersection3D.hpp"
 #include <boost/scoped_ptr.hpp>
 
 //#define debug_amr 1
@@ -180,11 +180,7 @@ namespace
 #endif //RICH_MPI
 
 	std::vector<Vector3D> GetNewPoints(Tessellation3D const& tess, std::pair<vector<size_t>,
-		vector<Vector3D> > &ToRefine
-#ifdef RICH_MPI
-		, Tessellation3D const& tproc
-#endif
-	)
+		vector<Vector3D> > &ToRefine)
 	{
 #ifdef RICH_MPI
 		int rank = 0;
@@ -237,7 +233,7 @@ namespace
 		for (size_t i = 0; i < Nrefine; ++i)
 		{
 #ifdef RICH_MPI
-			if (!PointInPoly(tproc, res[i], rank))
+			if (!tess.PointInMyDomain(res[i]))
 				bad_indeces.push_back(i);
 #else
 			if (res[i].x > bb.second.x || res[i].x<bb.first.x || res[i].y>bb.second.y || res[i].y<bb.first.y
@@ -1007,11 +1003,7 @@ void AMR3D::operator() (HDSim3D &sim)
 		return;
 	interp_.BuildSlopes(tess, cells, time);
 	// Get new points from refine
-	std::vector<Vector3D> new_points = GetNewPoints(tess, ToRefine
-#ifdef RICH_MPI
-		, sim.getProcTesselation()
-#endif
-	);
+	std::vector<Vector3D> new_points = GetNewPoints(tess, ToRefine);
 	// Create copy of old tess
 	boost::scoped_ptr<Tessellation3D> oldtess(tess.clone());
 	// Build new tess
@@ -1021,8 +1013,8 @@ void AMR3D::operator() (HDSim3D &sim)
 	RemoveVector(new_mesh, ToRemove.first);
 	new_mesh.insert(new_mesh.end(), new_points.begin(), new_points.end());
 #ifdef RICH_MPI
-	tess.Build(new_mesh, sim.getProcTesselation());
-#else
+	tess.BuildHilbert(new_mesh);
+#else // RICH_MPI
 	tess.Build(new_mesh);
 #endif
 	// Fix extensives for refine

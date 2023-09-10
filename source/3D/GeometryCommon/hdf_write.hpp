@@ -8,7 +8,7 @@
 
 #include <H5Cpp.h>
 #include <string>
-#include "Voronoi3D.hpp"
+#include "3D/tesselation/voronoi/Voronoi3D.hpp"
 #include "../../newtonian/three_dimensional/hdsim_3d.hpp"
 
 
@@ -136,6 +136,5 @@ void WriteSnapshot3D(HDSim3D const& sim, std::string const& filename,
 #ifdef RICH_MPI
 	,bool mpi_write = true
 #endif
-, bool const write_vtu = true
 );
 #endif // HDF_WRITE

@@ -3,8 +3,7 @@
 
 #include <array>
 
-#include "../GeometryCommon/Tessellation3D.hpp"
-
+#include "../tesselation/Tessellation3D.hpp"
 
 extern "C" 
 {

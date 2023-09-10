@@ -2,7 +2,7 @@
 #define HDSIM_3D_HPP 1
 
 #include "computational_cell.hpp"
-#include "../../3D/GeometryCommon/Tessellation3D.hpp"
+#include "3D/tesselation/Tessellation3D.hpp"
 #include "conserved_3d.hpp"
 #include "../common/equation_of_state.hpp"
 #include "point_motion_3d.hpp"
@@ -10,9 +10,8 @@
 #include "flux_calculator_3d.hpp"
 #include "cell_updater_3d.hpp"
 #include "extensive_updater3d.hpp"
-#include "../../mpi/ProcessorUpdate3D.hpp"
 #include "SourceTerm3D.hpp"
-#include "source/Radiation/conj_grad_solve.hpp"
+#include "Radiation/conj_grad_solve.hpp"
 
 //! \brief Three dimensional simulation
 class HDSim3D
@@ -68,13 +67,7 @@ public:
     \param new_start Rerun indication
     \param maxload parallel directive
   */
-#ifdef RICH_MPI
-  //! \param tproc The tessellation of the domian decomposition
-#endif //RICH_MPI
   HDSim3D(Tessellation3D& tess,
-#ifdef RICH_MPI
-	  Tessellation3D& tproc,
-#endif//RICH_MPI
 	  const vector<ComputationalCell3D>& cells,
 	  const EquationOfState& eos,
 	  const PointMotion3D& pm,
@@ -84,14 +77,8 @@ public:
 	  const ExtensiveUpdater3D& eu,
 	  const	SourceTerm3D& source,
 	  const pair<vector<string>, vector<string> >& tsn,
-	  bool SR=false
-#ifdef RICH_MPI
-	  ,const ProcessorUpdate3D* proc_update = 0
-#endif
-	  ,bool new_start = true
-#ifdef RICH_MPI
-	  ,const double maxload = 4.0
-#endif // RICH_MPI
+	  bool SR=false,
+	  bool new_start = true
   );
 
   //! \brief Advances the simulation in time (first order)
@@ -119,18 +106,6 @@ public:
     \return Tessellation
    */
   const Tessellation3D& getTesselation(void) const;
-
-  /*! \brief Access to processor tessellation
-  \return Tessellation
-  */
-#ifdef RICH_MPI
-  const Tessellation3D& getProcTesselation(void) const;
-
-  /*! \brief Get meta tessellation
-    \return Reference to meta tessellation
-   */
-  Tessellation3D& getProcTesselation(void);
-#endif
 
   /*! \brief Access to computational cells
     \return Computational cells
@@ -182,9 +157,6 @@ public:
 
 private:
   Tessellation3D& tess_;
-#ifdef RICH_MPI
-  Tessellation3D& tproc_;
-#endif
   const EquationOfState& eos_;
   vector<ComputationalCell3D> cells_;
   vector<Conserved3D> extensive_;
@@ -195,13 +167,7 @@ private:
   const ExtensiveUpdater3D& eu_;
   const	SourceTerm3D &source_;
   ProgressTracker pt_;
-#ifdef RICH_MPI
-  const ProcessorUpdate3D* proc_update_;
-#endif
   size_t Max_ID_;
-#ifdef RICH_MPI
-  const double maxload_;
-#endif // RICH_MPI
   double dt_;
 };
 

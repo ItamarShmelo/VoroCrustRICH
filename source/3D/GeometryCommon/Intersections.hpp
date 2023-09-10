@@ -1,7 +1,7 @@
 #ifndef INTERSECTIONS_HPP
 #define INTERSECTIONS_HPP 1
 
-#include "Face.hpp"
+#include "../elementary/Face.hpp"
 
 //! \brief Sphere data
 struct Sphere
@@ -12,7 +12,8 @@ struct Sphere
 	double radius;
 
   //! \brief Default constructor
-	Sphere():center(Vector3D()),radius(0){}
+	Sphere(): center(Vector3D()), radius(0){}
+	Sphere(const Vector3D &center, double radius): center(center), radius(radius){}
 };
 
 bool FaceSphereIntersections(Face const& face, Sphere const& sphere,Vector3D const& normal);
