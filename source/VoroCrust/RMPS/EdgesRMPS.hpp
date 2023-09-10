@@ -37,7 +37,7 @@ class EdgesRMPS {
         EdgesRMPS(double const maxRadius_, double const L_Lipschitz_, double const alpha_, double const sharpTheta_, std::shared_ptr<PL_Complex> const& plc_);
 
         //! \brief loads the sharp edges vector to the eligble edge vector
-        void loadEdges(std::vector<Edge> const& sharp_edges);
+        void loadEdges(std::vector<VoroCrust::Edge> const& sharp_edges);
 
         //! \brief do the RMPS sampling stage until there are no more eligble edges 
         bool doSampling(VoroCrust_KD_Tree_Ball &edges_ball_tree, Trees const& tree);

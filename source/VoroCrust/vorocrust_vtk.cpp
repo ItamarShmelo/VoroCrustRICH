@@ -86,7 +86,7 @@ namespace vorocrust_vtk {
         
         for(unsigned int p_index=0; p_index < patches.size(); ++p_index){
             SurfacePatch const& patch = patches[p_index];
-            for(Face const& face : patch){
+            for(VoroCrust::Face const& face : patch){
                 data->SetValue(face->index, p_index);
             }
         }

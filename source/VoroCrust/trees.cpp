@@ -28,7 +28,7 @@ void Trees::loadPLC(PL_Complex const& plc, std::size_t const Nsample_edges, std:
 }
 
 std::tuple<std::vector<Vector3D>, std::vector<std::size_t>> 
-Trees::pointsFromVertices(std::vector<Vertex> const& vertices){
+Trees::pointsFromVertices(std::vector<VoroCrust::Vertex> const& vertices){
     std::size_t const Npoints = vertices.size();
     std::vector<Vector3D> points(Npoints, {0, 0, 0});
     std::vector<std::size_t> plc_index(Npoints, 0);
@@ -42,7 +42,7 @@ Trees::pointsFromVertices(std::vector<Vertex> const& vertices){
 }
 
 std::tuple<std::vector<Vector3D>, std::vector<Vector3D>, std::vector<std::size_t>, std::vector<std::size_t>> 
-Trees::superSampleEdges(std::vector<Edge> const& edges, std::size_t const Nsample){
+Trees::superSampleEdges(std::vector<VoroCrust::Edge> const& edges, std::size_t const Nsample){
     // if there are no sharp edges
     if(edges.empty()){
         return std::tuple(std::vector<Vector3D>(), std::vector<Vector3D>(), std::vector<std::size_t>(), std::vector<std::size_t>());
@@ -59,7 +59,7 @@ Trees::superSampleEdges(std::vector<Edge> const& edges, std::size_t const Nsampl
     // i.e. the total length up to it. 
     double total_len = 0;
     for(std::size_t i=0; i<edges.size(); ++i){
-        Edge const& edge = edges[i];
+        VoroCrust::Edge const& edge = edges[i];
         start_len[i] = total_len;
 
         double const edge_len = abs(edge->vertex2->vertex - edge->vertex1->vertex);
@@ -87,7 +87,7 @@ Trees::superSampleEdges(std::vector<Edge> const& edges, std::size_t const Nsampl
         }
 
         // find point on edge
-        Edge const& edge = edges[edge_index];
+        VoroCrust::Edge const& edge = edges[edge_index];
         Vector3D const& edge_vec = (edge->vertex2->vertex - edge->vertex1->vertex);
         double const factor = (sample - start_len[edge_index]) / abs(edge_vec);
         Vector3D const& point = edge->vertex1->vertex + factor*edge_vec;
@@ -102,7 +102,7 @@ Trees::superSampleEdges(std::vector<Edge> const& edges, std::size_t const Nsampl
 }
 
 std::tuple<std::vector<Vector3D>, std::vector<Vector3D>, std::vector<std::size_t>, std::vector<std::size_t>> 
-Trees::superSampleFaces(std::vector<Face> const& faces, std::size_t const Nsample){
+Trees::superSampleFaces(std::vector<VoroCrust::Face> const& faces, std::size_t const Nsample){
     // generate a random number generator
     boost::mt19937 rng(std::time(nullptr));
     boost::random::uniform_01<> zeroone;
@@ -114,7 +114,7 @@ Trees::superSampleFaces(std::vector<Face> const& faces, std::size_t const Nsampl
     // i.e. the total area up to the face
     double total_area = 0.0;
     for(std::size_t i=0; i<faces.size(); ++i){
-        Face const& face = faces[i];
+        VoroCrust::Face const& face = faces[i];
         start_area[i] = total_area;
 
         double const face_area = face->calcArea();
@@ -134,7 +134,7 @@ Trees::superSampleFaces(std::vector<Face> const& faces, std::size_t const Nsampl
         auto const iter_lower_bound = std::lower_bound(start_area.begin(), start_area.end(), sample_area);
         auto face_index = std::distance(start_area.begin(), iter_lower_bound) - 1;
 
-        Face const& face = faces[face_index];
+        VoroCrust::Face const& face = faces[face_index];
         
         if(face->vertices.size() != 3){
             std::cout << "ERROR: Algorithm supports only triangular meshes for now" << std::endl;

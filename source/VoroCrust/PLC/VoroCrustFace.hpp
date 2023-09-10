@@ -11,9 +11,9 @@ class VoroCrustFace
 {
     public:
         //! \brief Vertices defining the face
-        std::vector<Vertex> vertices;
+        std::vector<VoroCrust::Vertex> vertices;
         //! \brief Edges on the boundary of the Face
-        std::vector<Edge> edges;
+        std::vector<VoroCrust::Edge> edges;
         
         //! \brief index in the PLC Faces vector
         std::size_t index;
@@ -30,10 +30,10 @@ class VoroCrustFace
         //! \brief patch index in the PL_Complex `patches` vector
         std::size_t patch_index;
 
-        VoroCrustFace(std::vector<Vertex> const& vertices_, std::size_t const index_);
+        VoroCrustFace(std::vector<VoroCrust::Vertex> const& vertices_, std::size_t const index_);
         
         //! \brief adds an Edge to the Face's Edges vector.
-        void addEdge(Edge const& edge);
+        void addEdge(VoroCrust::Edge const& edge);
 
         /*! \brief calculate the normal to the surface defined by the vectors `vertices[2] - vertices[1]` X `vertices[1]-vertices[0]`*/
         Vector3D calcNormal();
@@ -57,7 +57,7 @@ class VoroCrustFace
         void flipOrientation();
 
         //! \brief orient `this` with respect to `face` (normals scalar product is positive) 
-        void orientWithRespectTo(Face const& face);
+        void orientWithRespectTo(VoroCrust::Face const& face);
 
         /*! \brief finds the intersection of the ray coming out of `point` in the positive z direction with the plane defined by the face.
             \return a pair <success, point> where `success` is a flag indicating if there exists such an intersection point, and `point` is the intersection point with the plane (assuming success) 

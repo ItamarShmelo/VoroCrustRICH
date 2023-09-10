@@ -3,8 +3,8 @@
 #include <sstream>
 #include <cmath>
 
-VoroCrustEdge::VoroCrustEdge(Vertex const& v1, 
-                             Vertex const& v2, 
+VoroCrustEdge::VoroCrustEdge(VoroCrust::Vertex const& v1, 
+                             VoroCrust::Vertex const& v2, 
                              std::size_t const index_) : vertex1(v1), 
                                                          vertex2(v2), 
                                                          faces(),
@@ -14,7 +14,7 @@ VoroCrustEdge::VoroCrustEdge(Vertex const& v1,
                                                          isCreased(false),
                                                          crease_index(-1) {}
 
-bool VoroCrustEdge::checkIfEqual(Vertex const& v1, Vertex const& v2){
+bool VoroCrustEdge::checkIfEqual(VoroCrust::Vertex const& v1, VoroCrust::Vertex const& v2){
     if (v1->index == vertex1->index && v2->index == vertex2->index){
         return true;
     }
@@ -26,7 +26,7 @@ bool VoroCrustEdge::checkIfEqual(Vertex const& v1, Vertex const& v2){
     return false;
 }
 
-void VoroCrustEdge::addFace(Face const& new_face){
+void VoroCrustEdge::addFace(VoroCrust::Face const& new_face){
     faces.push_back(new_face);
 }
 
@@ -80,7 +80,7 @@ double VoroCrustEdge::calcDihedralAngle(){
     return CalcAngle(b0_X_b1, b0_X_b2);
 }
 
-void VoroCrustEdge::orientWithRespectTo(Edge const& edge){
+void VoroCrustEdge::orientWithRespectTo(VoroCrust::Edge const& edge){
     //! WARNING: this assumes that one of the vertices are shared by the edge
     if(edge->vertex2->index == vertex2->index || edge->vertex1->index == vertex1->index){
         // flip orientation of edge

@@ -14,13 +14,13 @@ EdgesRMPS::EdgesRMPS(double const maxRadius_,
                           eligble_edges(), 
                           isDeleted() {}
 
-void EdgesRMPS::loadEdges(std::vector<Edge> const& sharp_edges){
+void EdgesRMPS::loadEdges(std::vector<VoroCrust::Edge> const& sharp_edges){
     if(not eligble_edges.empty()){
         std::cout << "eligble edges is not empty when loading edges" << std::endl;
         exit(1);
     }
 
-    for(Edge const& edge : sharp_edges){
+    for(VoroCrust::Edge const& edge : sharp_edges){
         eligble_edges.push_back(EligbleEdge(edge->vertex1->vertex, edge->vertex2->vertex, edge->crease_index, edge->index));
     }
 
@@ -176,7 +176,7 @@ double EdgesRMPS::calculateSmoothnessLimitation(Vector3D const& p, EligbleEdge c
         patches_to_exclude.push_back(patch_index);
         
         normals.resize(0);
-        for(Face const& face : patch_faces){
+        for(VoroCrust::Face const& face : patch_faces){
             normals.push_back(face->getNormal()); 
         }
 

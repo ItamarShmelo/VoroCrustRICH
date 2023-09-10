@@ -26,14 +26,14 @@ PL_Complex::PL_Complex(std::vector<Vector3D> const &vertices_) : vertices(),
     }
 }
 
-Edge PL_Complex::addEdge(Vertex const &v1, Vertex const &v2)
+VoroCrust::Edge PL_Complex::addEdge(VoroCrust::Vertex const &v1, VoroCrust::Vertex const &v2)
 {
     // first check if edge was already created by a different face.
     constexpr double TOL = 1e-5;
     if(not edges_tree_vertex1.empty()){
         auto const& suspects = edges_tree_vertex1.radiusSearch(v1->vertex, TOL);
         for(auto const index : suspects){
-            Edge const& edge = edges[edges_tree_vertex1.plc_index[index]];
+            VoroCrust::Edge const& edge = edges[edges_tree_vertex1.plc_index[index]];
 
             if(edge->checkIfEqual(v1, v2)){
                 return edge;
@@ -44,7 +44,7 @@ Edge PL_Complex::addEdge(Vertex const &v1, Vertex const &v2)
     if(not edges_tree_vertex2.empty()){
         auto const& suspects = edges_tree_vertex2.radiusSearch(v1->vertex, TOL);
         for(auto const index : suspects){
-            Edge const& edge = edges[edges_tree_vertex2.plc_index[index]];
+            VoroCrust::Edge const& edge = edges[edges_tree_vertex2.plc_index[index]];
 
             if(edge->checkIfEqual(v1, v2)){
                 return edge;
@@ -82,16 +82,16 @@ void PL_Complex::addFace(std::vector<std::size_t> const &indices)
         exit(1);
     }
 
-    std::vector<Vertex> face_vertices;
+    std::vector<VoroCrust::Vertex> face_vertices;
 
     for (auto const index : indices){
         face_vertices.push_back(vertices[index]);
     }
 
-    Face new_face_ptr = std::make_shared<VoroCrustFace>(face_vertices, faces.size());
+    VoroCrust::Face new_face_ptr = std::make_shared<VoroCrustFace>(face_vertices, faces.size());
 
     // add new face to the vertices constucting it
-    for (Vertex& vertex_ptr : face_vertices)
+    for (VoroCrust::Vertex& vertex_ptr : face_vertices)
     {
         vertex_ptr->addFace(new_face_ptr);
     }
@@ -191,7 +191,7 @@ void PL_Complex::detectFeatures(double const sharpTheta, double const flatTheta)
     /* Detect Sharp Corners */
     for (auto &vertex : vertices)
     {
-        std::vector<Edge> vertex_sharp_edges;
+        std::vector<VoroCrust::Edge> vertex_sharp_edges;
 
         // find sharp Edges incident to Vertex
         for (auto const& edge : vertex->edges){
@@ -274,7 +274,7 @@ void PL_Complex::buildCreases()
         Crease const &new_crease = createCrease(edge);
         creases.push_back(new_crease);
 
-        for (Edge const &crease_edge : new_crease)
+        for (VoroCrust::Edge const &crease_edge : new_crease)
         {
             crease_edge->crease_index = creases.size() - 1;
         }
@@ -282,7 +282,7 @@ void PL_Complex::buildCreases()
 }
 
 void PL_Complex::orderCrease(Crease &crease){
-    Edge start;
+    VoroCrust::Edge start;
     bool foundStart;
     
     // look for the start of the crease (if crease is a circle it will take the last element as the start)
@@ -323,18 +323,18 @@ void PL_Complex::orderCrease(Crease &crease){
     crease = orderedCrease;
 }
 
-Crease PL_Complex::createCrease(Edge const &edge)
+Crease PL_Complex::createCrease(VoroCrust::Edge const &edge)
 {
     /* Creates the Creases using the flood fill algorithm across vertices which are not sharp corners */
 
     Crease crease;
-    std::queue<Edge> queue;
+    std::queue<VoroCrust::Edge> queue;
 
     queue.push(edge);
 
     while (not queue.empty())
     {
-        Edge const &curr_edge = queue.front();
+        VoroCrust::Edge const &curr_edge = queue.front();
         queue.pop();
 
         if (not curr_edge->isCreased)
@@ -345,7 +345,7 @@ Crease PL_Complex::createCrease(Edge const &edge)
             // if vertex1 is not sharp flood through its common edge
             if (not curr_edge->vertex1->isSharp)
             {
-                for (Edge const &vertex_edge : curr_edge->vertex1->edges)
+                for (VoroCrust::Edge const &vertex_edge : curr_edge->vertex1->edges)
                 {
                     if (vertex_edge->isSharp && not vertex_edge->isCreased)
                     {
@@ -359,7 +359,7 @@ Crease PL_Complex::createCrease(Edge const &edge)
             // if vertex2 is not sharp flood through its common edge
             if (not curr_edge->vertex2->isSharp)
             {
-                for (Edge const &vertex_edge : curr_edge->vertex2->edges)
+                for (VoroCrust::Edge const &vertex_edge : curr_edge->vertex2->edges)
                 {
                     if (vertex_edge->isSharp && not vertex_edge->isCreased)
                     {
@@ -379,7 +379,7 @@ Crease PL_Complex::createCrease(Edge const &edge)
 
 void PL_Complex::buildSurfacePatches()
 {   
-    for (Face &face : faces)
+    for (VoroCrust::Face &face : faces)
     {
         if (face->isPatched) 
             continue;
@@ -388,15 +388,15 @@ void PL_Complex::buildSurfacePatches()
 
         patches.push_back(new_patch);
 
-        for(Face const& patch_face : new_patch){
+        for(VoroCrust::Face const& patch_face : new_patch){
             patch_face->patch_index = patches.size()-1;
         }
     }
 }
 
 void SurfacePatch::findCreasesAndCorners(){
-    for(Face const& face : this->patch){
-        for(Edge const& edge : face->edges){
+    for(VoroCrust::Face const& face : this->patch){
+        for(VoroCrust::Edge const& edge : face->edges){
             if(not edge->isSharp) continue;
 
             // if edge->crease_index was not added to patch_creases add it
@@ -406,7 +406,7 @@ void SurfacePatch::findCreasesAndCorners(){
             }
         }
 
-        for(Vertex const& vertex : face->vertices){
+        for(VoroCrust::Vertex const& vertex : face->vertices){
             if(not vertex->isSharp) continue;
 
             // if vertex->index was not added to patch_corners add it
@@ -417,26 +417,26 @@ void SurfacePatch::findCreasesAndCorners(){
     }
 }
 
-SurfacePatch PL_Complex::createSurfacePatch(Face const &face)
+SurfacePatch PL_Complex::createSurfacePatch(VoroCrust::Face const &face)
 {
     /* Create Surface Patch using the flood fill algorithm across Faces which share a flat Edge */
     SurfacePatch patch;
-    std::queue<Face> queue;
+    std::queue<VoroCrust::Face> queue;
 
     queue.push(face);
 
     while(not queue.empty()){
-        Face const& curr_face = queue.front();
+        VoroCrust::Face const& curr_face = queue.front();
         queue.pop();
 
         if(not curr_face->isPatched){
             patch.push_back(curr_face);
             curr_face->isPatched = true;
 
-            for(Edge const& edge : curr_face->edges){
+            for(VoroCrust::Edge const& edge : curr_face->edges){
                 if(edge->isSharp) continue;
 
-                for(Face const& edge_face : edge->faces){
+                for(VoroCrust::Face const& edge_face : edge->faces){
                     if(not edge_face->isPatched){
                         edge_face->orientWithRespectTo(curr_face);
                         queue.push(edge_face);
@@ -457,7 +457,7 @@ std::array<double, 6> PL_Complex::getBoundingBox() const {
     ll_x = ll_y = ll_z = std::numeric_limits<double>::max();
     ur_x = ur_y = ur_z = -std::numeric_limits<double>::max();
 
-    for(Vertex const& vertex : vertices){
+    for(VoroCrust::Vertex const& vertex : vertices){
         Vector3D const& p = vertex->vertex;
 
         ll_x = std::min(p.x, ll_x);
@@ -484,7 +484,7 @@ PL_Complex::Location PL_Complex::determineLocation(Vector3D const& p) const {
     auto const& suspects = centeroids_z.radiusSearch(Vector3D(p.x, p.y, 0.0), centeroids_z.getMaxRadius());
 
     for(auto const index : suspects) {
-        Face const& face = faces[centeroids_z.plc_index[index]];
+        VoroCrust::Face const& face = faces[centeroids_z.plc_index[index]];
         // simple check if the point is even relevent
         if(face->isPointCompletelyOffFace(p)) continue;
         
@@ -501,29 +501,29 @@ PL_Complex::Location PL_Complex::determineLocation(Vector3D const& p) const {
 }
 
 void PL_Complex::divideFacesOfVerticesAndEdgesToPatches(){
-    for(Vertex const& vertex : vertices){
+    for(VoroCrust::Vertex const& vertex : vertices){
         vertex->divided_faces = divideFacesToPatches(vertex->faces);
     }
 
-    for(Edge const& edge : edges){
+    for(VoroCrust::Edge const& edge : edges){
         edge->divided_faces = divideFacesToPatches(edge->faces);
     }
 }
 
-std::vector<std::vector<Face>> divideFacesToPatches(std::vector<Face> const& faces) {
-    std::vector<std::vector<Face>> faces_divided;
+std::vector<std::vector<VoroCrust::Face>> divideFacesToPatches(std::vector<VoroCrust::Face> const& faces) {
+    std::vector<std::vector<VoroCrust::Face>> faces_divided;
     
     std::set<std::size_t> surface_patch_indices;
 
     // surface_patch_indices is a set so it deals with to faces on the same patch
-    for(Face const& face : faces){
+    for(VoroCrust::Face const& face : faces){
         surface_patch_indices.insert(face->patch_index);
     }
 
     for(std::size_t const patch_index : surface_patch_indices){
-        std::vector<Face> patch_faces;
+        std::vector<VoroCrust::Face> patch_faces;
 
-        for(Face const& face : faces){
+        for(VoroCrust::Face const& face : faces){
             if(face->patch_index == patch_index){
                 patch_faces.push_back(face);
             }
@@ -536,7 +536,7 @@ std::vector<std::vector<Face>> divideFacesToPatches(std::vector<Face> const& fac
 }
 
 void PL_Complex::calcNormalsAndCenteroidsOfAllFaces() {
-    for(Face const& face : faces){
+    for(VoroCrust::Face const& face : faces){
         face->calcNormal();
         face->calcCenteroid();
     }

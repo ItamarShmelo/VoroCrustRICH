@@ -42,7 +42,7 @@ class FacesRMPS {
     public:
         FacesRMPS(double const maxRadius_, double const L_Lipschitz_, double const alpha_, double const sharpTheta_, std::shared_ptr<PL_Complex> const& plc_);
 
-        void loadFaces(std::vector<Face> const& faces);
+        void loadFaces(std::vector<VoroCrust::Face> const& faces);
         
         bool doSampling(VoroCrust_KD_Tree_Ball &faces_ball_tree, Trees const& trees);
 

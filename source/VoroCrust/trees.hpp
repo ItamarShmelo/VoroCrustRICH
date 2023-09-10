@@ -36,19 +36,19 @@ class Trees {
         //! \brief create a point arrey from a given vector of vertices
         //! \param vertices vector of Vertex to be turned into a point array
         std::tuple<std::vector<Vector3D>, std::vector<std::size_t>> 
-        pointsFromVertices(std::vector<Vertex> const& vertices);
+        pointsFromVertices(std::vector<VoroCrust::Vertex> const& vertices);
 
         //! \brief creates a point array by super sampling edges in a given edges vector
         //! \param edges vector of Eace to be super sampled for points
         //! \param Nsample number of points to sample
         std::tuple<std::vector<Vector3D>, std::vector<Vector3D>, std::vector<std::size_t>, std::vector<std::size_t>> 
-        superSampleEdges(std::vector<Edge> const& edges, std::size_t const Nsample);
+        superSampleEdges(std::vector<VoroCrust::Edge> const& edges, std::size_t const Nsample);
         
         //! \brief creates a point array by super sampling faces
         //! \param faces vector of Face to be super sampled for points
         //! \param Nsample number of points to sample
         std::tuple<std::vector<Vector3D>, std::vector<Vector3D>, std::vector<std::size_t>, std::vector<std::size_t>> 
-        superSampleFaces(std::vector<Face> const& faces, std::size_t const Nsample);
+        superSampleFaces(std::vector<VoroCrust::Face> const& faces, std::size_t const Nsample);
 
         void dump(std::filesystem::path const& dirname) const;
 

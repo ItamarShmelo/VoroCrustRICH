@@ -18,13 +18,13 @@ class VoroCrustVertex
         Vector3D vertex; 
         
         //! \brief Edges incident to the Vertex.
-        std::vector<Edge> edges;
+        std::vector<VoroCrust::Edge> edges;
 
         //! \brief Faces incident to the Vertex.
-        std::vector<Face> faces;
+        std::vector<VoroCrust::Face> faces;
 
         //! \brief group faces to surface patches
-        std::vector<std::vector<Face>> divided_faces;
+        std::vector<std::vector<VoroCrust::Face>> divided_faces;
 
         //! \brief index of Vertex in PLC vertices vector.
         std::size_t index;
@@ -35,10 +35,10 @@ class VoroCrustVertex
         VoroCrustVertex(Vector3D const& vertex_, std::size_t const index_);
 
         //! \brief adds a Face to Vertex's `faces` vector.
-        void addFace(Face const& new_face);
+        void addFace(VoroCrust::Face const& new_face);
         
         //! \brief adds a Face to Vertex's `edges` vector.
-        void addEdge(Edge const& new_edge);
+        void addEdge(VoroCrust::Edge const& new_edge);
 
         std::string repr() const;
 };

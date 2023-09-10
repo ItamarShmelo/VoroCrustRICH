@@ -9,12 +9,12 @@ VoroCrustVertex::VoroCrustVertex(Vector3D const& vertex_,
                                                              index(index_),
                                                              isSharp(false){}
 
-void VoroCrustVertex::addFace(Face const& new_face){
+void VoroCrustVertex::addFace(VoroCrust::Face const& new_face){
     //! TODO: CHECK if Face is really defined by Vertex.
     faces.push_back(new_face);
 }
 
-void VoroCrustVertex::addEdge(Edge const& new_edge) {
+void VoroCrustVertex::addEdge(VoroCrust::Edge const& new_edge) {
     //! TODO: CHECK if Edge is really defined by Vertex.
     edges.push_back(new_edge);
 }

@@ -7,7 +7,7 @@
 #include "../VoroCrust_kd_tree/VoroCrust_kd_tree.hpp"
 #include <list>
 
-using EligbleCorner = Vertex;
+using EligbleCorner = VoroCrust::Vertex;
 
 class CornersRMPS {
     public:
@@ -16,7 +16,7 @@ class CornersRMPS {
 
         //! \brief loads the sharp corners from the plc
         //! should probably use the plc shared ptr instead of the explicit external input
-        void loadCorners(std::vector<Vertex> const& sharp_corners);
+        void loadCorners(std::vector<VoroCrust::Vertex> const& sharp_corners);
 
         //! run the corner ball sampling
         void doSampling(VoroCrust_KD_Tree_Ball &corner_ball_tree, Trees const& trees);

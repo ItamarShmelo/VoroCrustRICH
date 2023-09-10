@@ -4,6 +4,7 @@
 #include <memory>
 #include <vector>
 #include <algorithm>
+#include <iostream>
 #include "../../../source/3D/GeometryCommon/Vector3D.hpp"
 
 #define DIM 3
@@ -199,7 +200,6 @@ class VoroCrust_KD_Tree_Ball : public VoroCrust_KD_Tree_Boundary {
 
         bool isContainedInBall(Vector3D const& p) const {
             auto const& suspects = radiusSearch(p, max_radius*1.1);
-
             for(auto const index : suspects){
                 auto const& [center, radius] = getBall(index);
 

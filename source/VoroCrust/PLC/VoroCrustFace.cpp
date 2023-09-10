@@ -6,7 +6,7 @@
 
 bool sameSide(Vector3D const& p1, Vector3D const& p2, Vector3D const& a, Vector3D const& b);
 
-VoroCrustFace::VoroCrustFace(std::vector<Vertex> const &vertices_,
+VoroCrustFace::VoroCrustFace(std::vector<VoroCrust::Vertex> const &vertices_,
                              std::size_t const index_) : vertices(vertices_),
                                                          edges(),
                                                          index(index_),
@@ -15,7 +15,7 @@ VoroCrustFace::VoroCrustFace(std::vector<Vertex> const &vertices_,
                                                          isPatched(false), 
                                                          patch_index(0) {}
 
-void VoroCrustFace::addEdge(Edge const& edge)
+void VoroCrustFace::addEdge(VoroCrust::Edge const& edge)
 {
     //! TODO: CHECK if edge is really on the boundary.
     edges.push_back(edge);
@@ -56,7 +56,7 @@ void VoroCrustFace::flipOrientation(){
     std::reverse(vertices.begin(), vertices.end());
 }
 
-void VoroCrustFace::orientWithRespectTo(Face const& face){
+void VoroCrustFace::orientWithRespectTo(VoroCrust::Face const& face){
     Vector3D const& n1 = this->calcNormal();
     Vector3D const& n2 = face->calcNormal();
     

@@ -12,21 +12,21 @@
 #include "../VoroCrust_kd_tree/VoroCrust_kd_tree.hpp"
 
 //! \brief a Crease is a chain of sharp edges, ends in a sharp corner or forms a cycle. 
-using Crease = std::vector<Edge>;
+using Crease = std::vector<VoroCrust::Edge>;
 
 //! \brief a Surface patch is the connected componnent containing no sharp features. A Surface patch is enveloped by Creases.
 struct SurfacePatch {
-    std::vector<Face> patch;
+    std::vector<VoroCrust::Face> patch;
     std::vector<std::size_t> patch_creases;
     std::vector<std::size_t> patch_corners;
 
     SurfacePatch() : patch(), patch_creases(), patch_corners() {}
 
     void findCreasesAndCorners();
-    void push_back(Face const& new_face) { patch.push_back(new_face); }
+    void push_back(VoroCrust::Face const& new_face) { patch.push_back(new_face); }
 
-    Face const& operator[](std::size_t const index) const { return patch[index]; }
-    Face& operator[](std::size_t const index)  { return patch[index]; }
+    VoroCrust::Face const& operator[](std::size_t const index) const { return patch[index]; }
+    VoroCrust::Face& operator[](std::size_t const index)  { return patch[index]; }
 
     // so it can be used in the range for loops
     auto begin() { return patch.begin();}
@@ -47,20 +47,20 @@ class PL_Complex
         };
 
         //! \brief the PLC mesh vertices.
-        std::vector<Vertex> vertices;
+        std::vector<VoroCrust::Vertex> vertices;
         //! \brief the PLC mesh edges.
-        std::vector<Edge> edges;
+        std::vector<VoroCrust::Edge> edges;
         //! \brief holds the edges vertices in a kd-tree to speed up the search for already defined edges
         VoroCrust_KD_Tree_Boundary edges_tree_vertex1, edges_tree_vertex2;
         //! \brief the PLC mesh faces.
-        std::vector<Face> faces;
+        std::vector<VoroCrust::Face> faces;
         //! \brief holds the x, y va;ue of the centeroid of the face
         VoroCrust_KD_Tree_Ball centeroids_z;
 
         //! \brief holds the sharp edges of the PLC.
-        std::vector<Edge> sharp_edges;
+        std::vector<VoroCrust::Edge> sharp_edges;
         //! \brief holds the sharp corners (sharp vertices) of the PLC.
-        std::vector<Vertex> sharp_corners;
+        std::vector<VoroCrust::Vertex> sharp_corners;
 
         //! \brief holds the Creases of the PLC.
         std::vector<Crease> creases;
@@ -76,7 +76,7 @@ class PL_Complex
             \param v1 first Vertex of Edge.
             \param v2 second Vertex of Edge.
         */
-        Edge addEdge(Vertex const& v1, Vertex const& v2);
+        VoroCrust::Edge addEdge(VoroCrust::Vertex const& v1, VoroCrust::Vertex const& v2);
         
         /*! \brief adds a face to the PLC
             \param indices vector of indices of the `vertices` of the Face.
@@ -101,7 +101,7 @@ class PL_Complex
         /*! \brief builds a Crease s.t. `edge` is in it.
             \param edge 
         */
-        Crease createCrease(Edge const& edge);
+        Crease createCrease(VoroCrust::Edge const& edge);
         
         /*! \brief builds the Surface Patches */
         void buildSurfacePatches();
@@ -109,7 +109,7 @@ class PL_Complex
         /*! \brief create a Surface Patch s.t. face is in it 
             \param face
         */
-        SurfacePatch createSurfacePatch(Face const& face);
+        SurfacePatch createSurfacePatch(VoroCrust::Face const& face);
 
         /*! \brief returns the bounding box of the PL_Complex
             \return array of 6 {ll_x, ll_y , ll_z, ur_x, ur_y, ur_z} where ll := 'lower left', ur := 'upper right'
@@ -138,6 +138,6 @@ class PL_Complex
     \param faces vector of faces
     \return vector<vector<Face>> each face in vector<Face> is on the same surface patch
 */
-std::vector<std::vector<Face>> divideFacesToPatches(std::vector<Face> const& faces);
+std::vector<std::vector<VoroCrust::Face>> divideFacesToPatches(std::vector<VoroCrust::Face> const& faces);
 
 #endif /* PL_Complex_HPP */

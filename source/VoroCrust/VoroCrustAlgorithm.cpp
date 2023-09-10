@@ -204,15 +204,43 @@ void VoroCrustAlgorithm::load_dump(std::filesystem::path const& dirname) {
     trees.load_dump(dirname);
 }
 
+bool VoroCrustAlgorithm::pointOutSidePLC(PL_Complex const& plc, Vector3D const& p){
+    if(plc.determineLocation(p) != PL_Complex::Location::OUT)
+        return false;
+    bool in_boundary_ball = false;
+    if(not trees.ball_kd_vertices.empty()) in_boundary_ball = in_boundary_ball || trees.ball_kd_vertices.isContainedInBall(p);
+    if(not trees.ball_kd_edges.empty()) in_boundary_ball = in_boundary_ball || trees.ball_kd_edges.isContainedInBall(p);
+    if(not trees.ball_kd_faces.empty()) in_boundary_ball = in_boundary_ball || trees.ball_kd_faces.isContainedInBall(p);
+
+    if(in_boundary_ball)
+        return false;
+    return true;
+}
+
+bool VoroCrustAlgorithm::pointInSidePLC(PL_Complex const& plc, Vector3D const& p){
+    if(plc.determineLocation(p) == PL_Complex::Location::OUT)
+        return false;
+
+    bool in_boundary_ball = false;
+    if(not trees.ball_kd_vertices.empty()) in_boundary_ball = in_boundary_ball || trees.ball_kd_vertices.isContainedInBall(p);
+    if(not trees.ball_kd_edges.empty()) in_boundary_ball = in_boundary_ball || trees.ball_kd_edges.isContainedInBall(p);
+    if(not trees.ball_kd_faces.empty()) in_boundary_ball = in_boundary_ball || trees.ball_kd_faces.isContainedInBall(p);
+
+    if(in_boundary_ball)
+        return false;
+    return true;
+}
+
 std::vector<std::vector<Seed>> VoroCrustAlgorithm::randomSampleSeeds(std::vector<PL_Complex> const& zones_plcs, std::vector<std::vector<Seed>> const& zones_boundary_seeds, double const maxSize) {
     std::size_t const num_of_zones = zones_plcs.size();
 
     Vector3D const empty_vec(0.0, 0.0, 0.0);
-    if(num_of_zones != zones_boundary_seeds.size()){
-        std::cout << "ERROR: zones_plcs and zones_boundary_seeds size differ!" << std::endl;
-        exit(1);
-    }
+    // if(num_of_zones != zones_boundary_seeds.size()){
+    //     std::cout << "ERROR: zones_plcs and zones_boundary_seeds size differ! " <<num_of_zones<<" "<< zones_boundary_seeds.size()<<std::endl;
+    //     exit(1);
+    // }
 
+    return std::vector<std::vector<Seed>>();
     std::vector<std::vector<Seed>> zone_seeds;
 
     for(std::size_t zone_num=0; zone_num<num_of_zones; ++zone_num){

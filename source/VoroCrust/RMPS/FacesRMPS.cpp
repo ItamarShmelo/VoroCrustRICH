@@ -14,15 +14,15 @@ FacesRMPS::FacesRMPS(double const maxRadius_,
                                     eligble_faces(),
                                     isDeleted() {}
 
-void FacesRMPS::loadFaces(std::vector<Face> const& faces) {
+void FacesRMPS::loadFaces(std::vector<VoroCrust::Face> const& faces) {
     if(not eligble_faces.empty()){
         std::cout << "eligble faces is not empty when loading faces" << std::endl;
         exit(1);
     }
 
-    for(Face const& face : faces){
+    for(VoroCrust::Face const& face : faces){
         std::vector<Vector3D> vertices;
-        for(Vertex const& vertex : face->vertices) {
+        for(VoroCrust::Vertex const& vertex : face->vertices) {
             vertices.push_back(vertex->vertex);
         }
 
@@ -184,7 +184,7 @@ void FacesRMPS::discardEligbleFacesContainedInCornerBalls(Trees const& trees) {
 
         for(std::size_t const corner_index : patch.patch_corners) {
             //! WARNING: notice that the corner index is of the vertices vector and not the corner vector
-            Vertex const& corner = plc->vertices[corner_index];
+            VoroCrust::Vertex const& corner = plc->vertices[corner_index];
 
             auto const& [center, r] = corners_ball_tree.getBallNearestNeighbor(corner->vertex);
 
@@ -250,7 +250,7 @@ double FacesRMPS::calculateSmoothnessLimitation(Vector3D const& p, EligbleFace c
     // Faces
     VoroCrust_KD_Tree_Boundary const& faces_boundary_tree = trees.VC_kd_faces;
     
-    Face const& plc_face = plc->faces[face_sampled.plc_index];
+    VoroCrust::Face const& plc_face = plc->faces[face_sampled.plc_index];
     std::vector<Vector3D> normal({plc_face->calcNormal()});
 
     min_dist = faces_boundary_tree.distanceToNearestNonCosmoothPoint(p, normal, face_sampled.patch_index, sharpTheta, min_dist);
@@ -401,7 +401,7 @@ bool FacesRMPS::doSampling(VoroCrust_KD_Tree_Ball &faces_ball_tree, Trees const&
             exit(1);
         }
 
-        Face const& plc_face = plc->faces[face.plc_index];
+        VoroCrust::Face const& plc_face = plc->faces[face.plc_index];
         faces_ball_tree.insert(p, plc_face->getNormal(), radius, face.patch_index, face.plc_index);
         
         if(faces_ball_tree.size() % 50000 == 0) std::cout << "num of samples: " << faces_ball_tree.size() << ", miss_counter: " << miss_counter << ", radius: " << radius << std::endl;

@@ -4,9 +4,9 @@
 CornersRMPS::CornersRMPS(double const maxRadius_, double const L_Lipschitz_, double const sharpTheta_, std::shared_ptr<PL_Complex> const& plc_) : maxRadius(maxRadius_), L_Lipschitz(L_Lipschitz_), sharpTheta(sharpTheta_), plc(plc_), eligble_corners() {}
 
 
-void CornersRMPS::loadCorners(std::vector<Vertex> const& sharp_corners){
+void CornersRMPS::loadCorners(std::vector<VoroCrust::Vertex> const& sharp_corners){
     eligble_corners.clear();
-    for(Vertex const& corner_ptr : sharp_corners)
+    for(VoroCrust::Vertex const& corner_ptr : sharp_corners)
         eligble_corners.push_back(corner_ptr);
 }
 
@@ -82,7 +82,7 @@ double CornersRMPS::calculateSmoothnessLimitation(EligbleCorner const& corner, T
 
     // find neareset non cosmooth point on the creases current corner is part of 
     std::vector<std::size_t> creases_exclude;
-    for(Edge const& edge : corner->edges){
+    for(VoroCrust::Edge const& edge : corner->edges){
         if(not edge->isSharp) continue;
 
         std::size_t const crease_index = edge->crease_index;
@@ -104,7 +104,7 @@ double CornersRMPS::calculateSmoothnessLimitation(EligbleCorner const& corner, T
         
         std::vector<Vector3D> normals;
         normals.reserve(patch_faces.size());        
-        for(Face const& face : patch_faces){
+        for(VoroCrust::Face const& face : patch_faces){
             normals.push_back(face->getNormal());
         }
 

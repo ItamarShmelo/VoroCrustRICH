@@ -40,6 +40,10 @@ class VoroCrustAlgorithm {
 
         void load_dump(std::filesystem::path const& dirname);
 
+        bool pointOutSidePLC(PL_Complex const& plc, Vector3D const& p);
+
+        bool pointInSidePLC(PL_Complex const& plc, Vector3D const& p);
+        
     private:
         double const sharpTheta;
         double const flatTheta;
