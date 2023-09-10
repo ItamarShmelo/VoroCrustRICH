@@ -865,11 +865,7 @@ void Voronoi3D::BringGhostPointsToBuild(const std::vector<Vector3D> &points)
     //KDTreeFinder rangeFinder(this->del_.points_.begin(), this->del_.points_.begin() + this->Norg_, this->ll_, this->ur_);
     //GroupRangeTreeFinder<256> rangeFinder(this->del_.points_.begin(), this->del_.points_.begin() + this->Norg_);
     
-    OctTree<Vector3D> pointsTree(this->ll_, this->ur_, points);
     RangeAgent rangeAgent(this->envAgent, &rangeFinder);
-    
-    // todo: is there any need to build the tree again?
-    rangeAgent.buildHilbertTree(&pointsTree);
 
     std::vector<std::pair<size_t, size_t>> allMirrored;
 
