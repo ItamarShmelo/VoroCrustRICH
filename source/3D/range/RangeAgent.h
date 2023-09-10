@@ -16,7 +16,7 @@
 #include <unordered_set>
 
 #include "ds/DistributedOctTree/DistributedOctTree.hpp"
-#include "../hilbert/HilbertAgent.h"
+#include "../environment/EnvironmentAgent.h"
 #include "finders/RangeFinder.hpp"
 
 #define TAG_REQUEST 200
@@ -28,7 +28,7 @@
 
 #define QUERY_AUTOFLUSH_NUM 100
 #define RECEIVE_AUTOFLUSH_NUM 15
-#define FINISH_AUTOFLUSH_NUM 50
+#define FINISH_AUTOFLUSH_NUM 100
 #define MAX_RECEIVE_IN_CYCLE 20
 #define MAX_ANSWER_IN_CYCLE 20
 
@@ -60,24 +60,26 @@ typedef struct QueryBatchInfo
 } QueryBatchInfo;
 
 
+/**
+ * The range agent is responsible for running batches of range queries. A batch is a collection of queries, and a range query is an instance of the `RangeQueryData` class, containing a point and a requested radius.
+ * The range agent switches between roles - sending queries, receiving answers, and answering for incoming queries. It also supports duplications removal, and returns the results rearranged by processes (what are the points that were received from each one, and what points I sent to each one).
+ * In order to answer for incoming requests, a range finder is required. A range finder is an object which holds a list of points, and can answer for range queries.
+*/
 class RangeAgent
 {
 public:
     template<typename T>
     using _set = boost::container::flat_set<T>;
 
-    RangeAgent(MPI_Comm comm, const HilbertAgent &hilbertAgent, RangeFinder *rangeFinder);
-    inline RangeAgent(const HilbertAgent &hilbertAgent, RangeFinder *rangeFinder): RangeAgent(MPI_COMM_WORLD, hilbertAgent, rangeFinder){};
-    inline RangeAgent(MPI_Comm comm, const Vector3D &origin, const Vector3D &corner, int order, RangeFinder *rangeFinder): RangeAgent(comm, HilbertAgent(origin, corner, order), rangeFinder){};
-    inline RangeAgent(const Vector3D &origin, const Vector3D &corner, int order, RangeFinder *rangeFinder): RangeAgent(MPI_COMM_WORLD, origin, corner, order, rangeFinder){};
-    inline ~RangeAgent(){/*delete this->hilbertTree;*/};
+    RangeAgent(const EnvironmentAgent *envAgent, RangeFinder *rangeFinder, const MPI_Comm &comm = MPI_COMM_WORLD);
+    inline ~RangeAgent(){delete this->hilbertTree;};
 
     void receiveQueries(QueryBatchInfo &batch);
     void answerQueries();
     void sendQuery(const QueryInfo &query);
     QueryBatchInfo runBatch(std::queue<RangeQueryData> &queries);
 
-    inline size_t getNumPoints(){return this->rangeFinder->size();};
+    inline size_t getNumPoints() const{return this->rangeFinder->size();};
     inline void buildHilbertTree(const OctTree<Vector3D> *tree){this->hilbertTree = new DistributedOctTree(tree);};
 
     std::vector<std::vector<size_t>> &getSentPoints(){return this->sentPoints;};
@@ -89,19 +91,19 @@ private:
     MPI_Comm comm;
     int rank, size;
     std::vector<MPI_Request> requests;
-    std::vector<std::vector<char>> buffers;
-    size_t receivedUntilNow;
-    size_t shouldReceiveInTotal;
-    HilbertAgent hilbertAgent;
-    RangeFinder *rangeFinder;
-    DistributedOctTree<Vector3D> *hilbertTree;
+    std::vector<std::vector<char>> buffers; // send buffers, so that they will not be allocated on the stack
+    size_t receivedUntilNow; // number of answers I received until now
+    size_t shouldReceiveInTotal; // number of answers I have to receive (to know when to finish)
+    const EnvironmentAgent *envAgent; // an environmental agent
+    const RangeFinder *rangeFinder; // a range finder object
+    DistributedOctTree<Vector3D> *hilbertTree; // a hilbert tree, for fast ranks environment searching (knowing what ranks a particular range intersecting)
 
-    std::vector<int> sentProcessorsRanks;
-    std::vector<int> recvProcessorsRanks;
-    std::vector<std::vector<size_t>> recvPoints; 
-    std::vector<std::vector<size_t>> sentPoints; 
-    std::vector<_set<size_t>> sentPointsSet; 
-    std::vector<int> ranksBufferIdx;
+    std::vector<int> sentProcessorsRanks; // a vector of ranks, that we sent points to
+    std::vector<int> recvProcessorsRanks;  // a vector of ranks, that we received points from
+    std::vector<std::vector<size_t>> recvPoints; // a vector of vectors. The vector in index `i` contains the points indices (relatively to my final answer of the batch) that sent to `this->sentProcessorsRanks[i]`.
+    std::vector<std::vector<size_t>> sentPoints; // a vector of vectors. The vector in index `i` contains the points indices (relatively to my own points in the finder) that sent to `this->sentProcessorsRanks[i]`.
+    std::vector<_set<size_t>> sentPointsSet; // same as `this->sentPoints`, but uses set for quick search.
+    std::vector<size_t> ranksBufferIdx; // maps each rank to an index `i`, where this->buffers[i] contains the prepared buffer for sending to the rank (requests are sent in chunks).
 
     std::vector<Vector3D> getRangeResult(const SubQueryData &query, int rank);
     _set<int> getIntersectingRanks(const Vector3D &center, coord_t radius) const;
@@ -117,10 +119,7 @@ private:
         if(this->buffers[bufferIdx].size() > 0)
         {
             this->requests.push_back(MPI_REQUEST_NULL);
-            /*
             MPI_Isend(&this->buffers[bufferIdx][0], this->buffers[bufferIdx].size(), MPI_BYTE, node, TAG_REQUEST, this->comm, &this->requests[this->requests.size() - 1]);
-            */
-            MPI_Send(&this->buffers[bufferIdx][0], this->buffers[bufferIdx].size(), MPI_BYTE, node, TAG_REQUEST, this->comm);
         }
         this->ranksBufferIdx[node] = UNDEFINED_BUFFER_IDX;
     }

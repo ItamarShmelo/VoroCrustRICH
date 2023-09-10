@@ -81,7 +81,7 @@ void MPI_exchange_data(const Tessellation& tess, vector<T>& cells,bool ghost_or_
 		else
 		{
 			if (status.MPI_TAG != 4)
-				throw UniversalError("Recv bad mpi tag");
+				throw UniversalError("Recv bad mpi tag (" + std::to_string(status.MPI_TAG) + ")");
 		}
 	}
 	for (size_t i = 0; i < correspondents.size(); ++i)
@@ -170,7 +170,7 @@ void MPI_exchange_data(const Tessellation3D& tess, vector<T>& cells, bool ghost_
 		else
 		{
 			if (status.MPI_TAG != 4)
-				throw UniversalError("Recv bad mpi tag");
+				throw UniversalError("Recv bad mpi tag (" + std::to_string(status.MPI_TAG) + ")");
 		}
 	}
 	for (size_t i = 0; i < correspondents.size(); ++i)
@@ -242,7 +242,7 @@ vector<vector<T> > MPI_exchange_data(const vector<int>& totalkwith,vector<vector
 		else
 		{
 			if (status.MPI_TAG != 4)
-				throw UniversalError("Recv bad mpi tag");
+				throw UniversalError("Recv bad mpi tag (" + std::to_string(status.MPI_TAG) + ")");
 		}
 	}
 	if (!req.empty())
@@ -250,7 +250,6 @@ vector<vector<T> > MPI_exchange_data(const vector<int>& totalkwith,vector<vector
 	MPI_Barrier(MPI_COMM_WORLD);
 	return torecv;
 }
-
 
 /*!
 \brief Sends and revs data
@@ -282,7 +281,7 @@ vector<vector<T> > MPI_exchange_data(const vector<int>& totalkwith, vector<vecto
 			MPI_Isend(&temp, 1, MPI_DOUBLE, totalkwith[i], 4, MPI_COMM_WORLD, &req[i]);
 		else
 			MPI_Isend(&tempsend[i][0], size, MPI_DOUBLE, totalkwith[i], 5, MPI_COMM_WORLD, &req[i]);
-	}
+	} 
 	vector<vector<T> > torecv(totalkwith.size());
 	for (size_t i = 0; i < totalkwith.size(); ++i)
 	{
@@ -303,7 +302,7 @@ vector<vector<T> > MPI_exchange_data(const vector<int>& totalkwith, vector<vecto
 		else
 		{
 			if (status.MPI_TAG != 4)
-				throw UniversalError("Recv bad mpi tag");
+				throw UniversalError("Recv bad mpi tag (" + std::to_string(status.MPI_TAG) + ")");
 		}
 	}
 	if(!req.empty())
@@ -353,7 +352,7 @@ vector<vector<T> > MPI_exchange_data(const vector<int>& totalkwith, vector<vecto
 		else
 		{
 			if (status.MPI_TAG != 4)
-				throw UniversalError("Recv bad mpi tag");
+				throw UniversalError("Recv bad mpi tag (" + std::to_string(status.MPI_TAG) + ")");
 		}
 	}
 	if (!req.empty())

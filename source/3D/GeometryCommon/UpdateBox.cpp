@@ -2,11 +2,7 @@
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/uniform_real_distribution.hpp>
 
-void UpdateBox(Tessellation3D &tess, HDSim3D &sim, double const min_velocity, double const volume_fraction, ComputationalCell3D const& reference_cell
-#ifdef RICH_MPI
-    , Tessellation3D &tproc
-#endif
-)
+void UpdateBox(Tessellation3D &tess, HDSim3D &sim, double const min_velocity, double const volume_fraction, ComputationalCell3D const& reference_cell)
 {
 	std::vector<ComputationalCell3D>& cells = sim.getCells();
 	std::vector<Conserved3D>& extensives = sim.getExtensives();
@@ -101,13 +97,6 @@ void UpdateBox(Tessellation3D &tess, HDSim3D &sim, double const min_velocity, do
 			std::cout << "Old vol " << oldv << " New vol " << newv << std::endl;
 			std::cout << "Point number " << Np << std::endl;
 		}
-#ifdef RICH_MPI
-		tproc.SetBox(recvmin, recvmax);
-		// get new points
-		std::vector<Vector3D> proc_points = tproc.getMeshPoints();
-		proc_points.resize(tproc.GetPointNo());
-		tproc.Build(proc_points);
-#endif
 		tess.SetBox(recvmin, recvmax);		
 		std::vector<Vector3D> mypoints = tess.getMeshPoints();
 		mypoints.resize(N);
@@ -136,7 +125,7 @@ void UpdateBox(Tessellation3D &tess, HDSim3D &sim, double const min_velocity, do
 		for (size_t i = 0; i < Np; ++i)
 		{
 #ifdef RICH_MPI
-			if (PointInPoly(tproc, newpoints[i], static_cast<size_t>(rank)))
+			if (tess.PointInMyDomain(newpoints[i]))
 #endif
 			{
 				mypoints.push_back(newpoints[i]);
@@ -144,25 +133,27 @@ void UpdateBox(Tessellation3D &tess, HDSim3D &sim, double const min_velocity, do
 			}
 		}
 		assert(N>0);
-		tess.Build(mypoints
+		
 #ifdef RICH_MPI
-			, 3
-			// , tproc
-	#warning "[MAOR] Should change UpdateBox.cpp, line 149-151"
-#endif
-		);
+		tess.BuildHilbert(mypoints);
+#else // RICH_MPI
+		tess.Build(mypoints);
+#endif // RICH_MPI
+
 		// deal with hydro
 		size_t Nstart = sim.GetMaxID() + 1;
 		size_t Nadded = mypoints.size() - N;
 #ifdef RICH_MPI
-		std::vector<size_t> nrecv(tproc.GetPointNo(), 0);
+		int size;
+		MPI_Comm_size(MPI_COMM_WORLD, &size);
+		std::vector<size_t> nrecv(size, 0);
 		MPI_Allgather(&Nadded, 1, MPI_UNSIGNED_LONG_LONG, &nrecv[0], 1, MPI_UNSIGNED_LONG_LONG, MPI_COMM_WORLD);
 		for (size_t i = 0; i < static_cast<size_t>(rank); ++i)
 			Nstart += nrecv[i];
 		for (size_t i = N; i < (N + Nadded); ++i)
 			cells.at(i).ID = Nstart + i - N;
 		size_t& MaxID = sim.GetMaxID();
-		for (size_t i = 0; i < tproc.GetPointNo(); ++i)
+		for (size_t i = 0; i < size; ++i)
 			MaxID += nrecv[i];
 		MPI_exchange_data(tess, cells, true, &reference_cell);
 #endif

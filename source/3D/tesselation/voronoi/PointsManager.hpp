@@ -13,7 +13,7 @@
 #include "3D/environment/EnvironmentAgent.h"
 #include "3D/hilbert/hilbertTypes.h"
 
-#define BALANCE_FACTOR 1.2
+#define BALANCE_FACTOR 1.1
 
 /**
  * \author Maor Mizrachi
@@ -38,6 +38,7 @@ public:
     inline PointsManager(const Vector3D &ll, const Vector3D &ur, const MPI_Comm &comm = MPI_COMM_WORLD): ll(ll), ur(ur), comm(comm)
     {
         MPI_Comm_size(this->comm, &this->size);
+        MPI_Comm_rank(this->comm, &this->rank);
     };
 
     bool checkForRebalance(const std::vector<Vector3D> &points) const
@@ -50,6 +51,10 @@ public:
         int I_say = (mySize >= (BALANCE_FACTOR * static_cast<double>(ideal)))? 1 : 0; // if I say 'rebalance' or not
         int rebalance = 0; // if someone says 'rebalance' or not
         MPI_Allreduce(&I_say, &rebalance, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+        if((rebalance > 0) and (this->rank == 0))
+        {
+            std::cout << "Doing load rebalance" << std::endl;
+        }
         return (rebalance > 0);
     };
 
@@ -121,6 +126,7 @@ public:
 private:
     MPI_Comm comm;
     int size;
+    int rank;
     Vector3D ll, ur;
 };
 

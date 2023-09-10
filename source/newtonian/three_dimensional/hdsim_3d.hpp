@@ -107,18 +107,6 @@ public:
    */
   const Tessellation3D& getTesselation(void) const;
 
-  /*! \brief Access to processor tessellation
-  \return Tessellation
-  */
-#ifdef RICH_MPI
-  const Tessellation3D& getProcTesselation(void) const;
-
-  /*! \brief Get meta tessellation
-    \return Reference to meta tessellation
-   */
-  Tessellation3D& getProcTesselation(void);
-#endif
-
   /*! \brief Access to computational cells
     \return Computational cells
    */

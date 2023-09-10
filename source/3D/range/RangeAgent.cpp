@@ -2,8 +2,8 @@
 
 #include "RangeAgent.h"
 
-RangeAgent::RangeAgent(MPI_Comm comm, const HilbertAgent &hilbertAgent, RangeFinder *rangeFinder):
-        comm(comm), hilbertAgent(hilbertAgent), rangeFinder(rangeFinder), hilbertTree(nullptr)
+RangeAgent::RangeAgent(const EnvironmentAgent *envAgent, RangeFinder *rangeFinder, const MPI_Comm &comm):
+        comm(comm), envAgent(envAgent), rangeFinder(rangeFinder), hilbertTree(nullptr)
 {
     MPI_Comm_rank(this->comm, &this->rank);
     MPI_Comm_size(this->comm, &this->size);
@@ -27,9 +27,11 @@ void RangeAgent::receiveQueries(QueryBatchInfo &batch)
 
     while(receivedAnswer and (received < MAX_RECEIVE_IN_CYCLE))
     {
+        // received a message
         ++this->receivedUntilNow;
         ++received;
 
+        // prepare the reading buffer for receiving
         int count;
         MPI_Get_count(&status, MPI_BYTE, &count);
         if(buffer.size() < static_cast<size_t>(count))
@@ -37,30 +39,28 @@ void RangeAgent::receiveQueries(QueryBatchInfo &batch)
             buffer.resize(count);
         }
 
+        // receive
         MPI_Recv(&buffer[0], count, MPI_BYTE, status.MPI_SOURCE, TAG_RESPONSE, this->comm, MPI_STATUS_IGNORE);
+
+        // decode the message - id first, then length, then the data itself
         long int id;
         long int length;
         int pos = 0;
 
-        /*
-        MPI_Unpack(&(*(buffer.begin())), count, &pos, &id, 1, MPI_LONG, this->comm);
-        MPI_Unpack(&(*(buffer.begin())), count, &pos, &length, 1, MPI_LONG, this->comm);
-        */
-        id = *reinterpret_cast<long int*>(buffer.data());
-        length = *reinterpret_cast<long int*>(buffer.data() + sizeof(long int));
+        id = *reinterpret_cast<long int*>(buffer.data()); // decode id
+        length = *reinterpret_cast<long int*>(buffer.data() + sizeof(long int)); // decode length
 
         if(length > 0)
         {
             // insert the results to the points received by rank `status.MPI_SOURCE` and to the queries result
             queries[id].finalResults.resize(queries[id].finalResults.size() + length);
 
+            // base pointers for points data
             _3DPoint* base = reinterpret_cast<_3DPoint*>(buffer.data() + 2 * sizeof(long int));
-            // MPI_Unpack(&(*(buffer.begin())), count, &pos, &(*(queries[id].finalResults.end() - length)), length * sizeof(_3DPoint), MPI_BYTE, this->comm);
             for(size_t i = 0; i < static_cast<size_t>(length); i++)
             {
-                _3DPoint &point = base[i]; // *(queries[id].finalResults.end() - length + i);
-                Vector3D vector(point.x, point.y, point.z);
-                batch.newPointsRanks[status.MPI_SOURCE].emplace_back(vector);
+                _3DPoint &point = base[i]; // same as `*(queries[id].finalResults.end() - length + i)`;
+                batch.newPointsRanks[status.MPI_SOURCE].emplace_back(Vector3D(point.x, point.y, point.z));
             }
         }
         else
@@ -72,7 +72,7 @@ void RangeAgent::receiveQueries(QueryBatchInfo &batch)
 }
 
 /**
- * gets a query, and who requests it, and returns the answer that should be sent.
+ * gets a query, and who requests it, and returns the answer that should be sent (the result should be clean from duplications, that is, points we sent before).
 */
 std::vector<Vector3D> RangeAgent::getRangeResult(const SubQueryData &query, int rank)
 {
@@ -93,7 +93,6 @@ std::vector<Vector3D> RangeAgent::getRangeResult(const SubQueryData &query, int 
         for(const size_t &pointIdx : nonFilteredResult)
         {
             // check if the point wasn't already sent to node, only after that, add it to the result
-            //if(std::find(this->sentPoints[rankIndex].begin(), this->sentPoints[rankIndex].end(), pointIdx) == this->sentPoints[rankIndex].end())
             if(this->sentPointsSet[rankIndex].find(pointIdx) == this->sentPointsSet[rankIndex].end())
             {
                 // point haven't been sent, send it
@@ -172,43 +171,9 @@ void RangeAgent::answerQueries()
     }
 }
 
-/**
- * gets a center and a radius, and returns all the ranks which the sphere with cener `center` and radius `radius`, intersects with their areas.
-*/
-typename RangeAgent::_set<int> RangeAgent::getIntersectingRanks(const Vector3D &center, coord_t radius) const
-{
-    _set<int> possibleNodes;
-
-    
-    if(this->hilbertTree == nullptr)
-    {
-        auto intersectionHilbertCells = this->hilbertAgent.getIntersectingCircle(center, radius);
-        for(const hilbert_index_t &index : intersectionHilbertCells)
-        {
-            possibleNodes.insert(this->hilbertAgent.getCellOwner(index));
-        }
-    }
-    else
-    {
-        for(const int &rank : this->hilbertTree->getIntersectingRanks(center, radius))
-        {
-            possibleNodes.insert(rank);
-        }
-    }/*
-   for(int _rank = 0; _rank < this->size; _rank++)
-   {
-    if(_rank != this->rank)
-    {
-        possibleNodes.insert(_rank);
-    }
-   }
-    */
-    return possibleNodes;
-}
-
 void RangeAgent::sendQuery(const QueryInfo &query)
 {
-    _set<int> possibleNodes = this->getIntersectingRanks(Vector3D(query.data.center.x, query.data.center.y, query.data.center.z), query.data.radius);
+    _set<int> possibleNodes = this->envAgent->getIntersectingRanks(Vector3D(query.data.center.x, query.data.center.y, query.data.center.z), query.data.radius);
     for(const int &node : possibleNodes)
     {
         if(node == this->rank)
@@ -275,7 +240,7 @@ QueryBatchInfo RangeAgent::runBatch(std::queue<RangeQueryData> &queries)
 
     this->buffers.clear();
     size_t originalQueriesNum = queries.size();
-    this->buffers.reserve(2 * originalQueriesNum); // heuristic
+    this->buffers.reserve(4 * originalQueriesNum); // heuristic
     this->requests.clear();
     QueryBatchInfo queriesBatch;
     std::vector<QueryInfo> &queriesInfo = queriesBatch.queriesAnswers;
@@ -328,7 +293,8 @@ QueryBatchInfo RangeAgent::runBatch(std::queue<RangeQueryData> &queries)
     {
         MPI_Waitall(this->requests.size(), &(*(this->requests.begin())), MPI_STATUSES_IGNORE); // make sure any query was indeed received
     }
-    
+
+    // add to the list the processors that sent us a message for the first time
     for(int _rank = 0; _rank < this->size; _rank++)
     {
         if(_rank == this->rank)
@@ -337,7 +303,7 @@ QueryBatchInfo RangeAgent::runBatch(std::queue<RangeQueryData> &queries)
         }
         if(queriesBatch.newPointsRanks[_rank].empty())
         {
-            continue;
+            continue; // the rank `_rank` did not send us any message
         }
         size_t rankIndex = std::find(this->recvProcessorsRanks.begin(), this->recvProcessorsRanks.end(), _rank) - this->recvProcessorsRanks.begin();
         if(rankIndex == this->recvProcessorsRanks.size())
@@ -348,18 +314,19 @@ QueryBatchInfo RangeAgent::runBatch(std::queue<RangeQueryData> &queries)
         }
     }
 
+    // make receive, by the order of the recv array
     for(size_t i = 0; i < this->recvProcessorsRanks.size(); i++)
     {
         int _rank = this->recvProcessorsRanks[i];
-        std::vector<size_t> &rankRecvPoints = this->recvPoints[i];
-        rankRecvPoints.reserve(queriesBatch.newPointsRanks[_rank].size());
+        std::vector<size_t> &rankRecvPoints = this->recvPoints[i]; // indices vector
+        std::vector<Vector3D> &newPointsFromRank = queriesBatch.newPointsRanks[_rank]; // the points themself
+        rankRecvPoints.reserve(newPointsFromRank.size());
         queriesBatch.newPoints.reserve(queriesBatch.newPoints.size() + rankRecvPoints.size());
-        for(const Vector3D &_point : queriesBatch.newPointsRanks[_rank])
+        for(const Vector3D &_point : newPointsFromRank)
         {
-            rankRecvPoints.push_back(queriesBatch.newPoints.size());
+            rankRecvPoints.push_back(queriesBatch.newPoints.size()); // the index of the point received by this rank
             queriesBatch.newPoints.emplace_back(_point);
-        }
-        
+        }        
     }
     return queriesBatch;
 }
