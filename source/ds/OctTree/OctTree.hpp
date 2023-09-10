@@ -4,7 +4,7 @@
 #include <vector>
 #include <assert.h>
 #include <utility>
-#include "geometry_utils.hpp"
+#include "../geometry_utils.hpp"
 
 #define DIM 3
 #define CHILDREN 8 // 2^DIM
@@ -15,13 +15,13 @@ typedef double coord_t;
 template<typename T>
 class OctTree
 {
+    // todo: necessary?
     template<typename U>
     class DistributedOctTree;
     template<typename U>
     friend class DistributedOctTree;
 
 public:
-    // todo: fast build methods?
     class OctTreeNode
     {
         friend class OctTree;
@@ -34,6 +34,7 @@ public:
                 this->children[i] = nullptr;
             }
         }
+
         inline OctTreeNode(const T &point): isValue(true), value(point), boundingBox(_BoundingBox(point, point)), parent(nullptr), height(0), depth(0)
         {
             for(int i = 0; i < CHILDREN; i++)
@@ -42,7 +43,6 @@ public:
             }
         }
 
-        OctTreeNode(OctTreeNode *parent, int childNumber);
         inline OctTreeNode(OctTreeNode &&other): isValue(other.isValue), value(other.value), boundingBox(other.boundingBox)
         {
             for(int i = 0; i < CHILDREN; i++)
@@ -54,17 +54,19 @@ public:
             other.parent = nullptr;
         }
 
+        OctTreeNode(OctTreeNode *parent, int childNumber);
+
         OctTreeNode *createChild(int childNumber);
         int getChildNumberContaining(const T &point) const;
         const OctTreeNode *getChildContaining(const T &point) const{return this->children[this->getChildNumberContaining(point)];};
-
+        
         bool isValue;
         T value; // if a leaf, that's a point value, otherwise, thats the value for partition
-        _BoundingBox<T> boundingBox;
+        _BoundingBox<T> boundingBox; // the bounding box this node induces
         OctTreeNode *children[CHILDREN];
         OctTreeNode *parent;
-        int height;
-        int depth;
+        int height; // height of a leaf is 0
+        int depth; // depth of the root is 0
     
     private:
         void fixHeightsRecursively();
@@ -97,7 +99,7 @@ private:
     size_t treeSize;
 
 public:
-    OctTree(const T &ll, const T &ur): root(new OctTreeNode(ll, ur)), treeSize(0){};
+    OctTree(const T &ll, const T &ur): root(nullptr), treeSize(0){this->setBounds(ll, ur);};
     template<typename InputIterator>
     OctTree(const T &ll, const T &ur, const InputIterator &first, const InputIterator &last): OctTree(ll, ur)
     {
@@ -107,9 +109,9 @@ public:
         }
     };
     template<typename Container>
-    OctTree(const T &ll, const T &ur, Container container): OctTree(ll, ur, container.begin(), container.end()){};
-    explicit OctTree(): root(nullptr), treeSize(0){};
-    ~OctTree(){this->deleteSubtree(this->root);};
+    inline OctTree(const T &ll, const T &ur, Container container): OctTree(ll, ur, container.begin(), container.end()){};
+    inline explicit OctTree(): root(nullptr), treeSize(0){};
+    inline ~OctTree(){this->deleteSubtree(this->root);};
 
     inline bool insert(const T &point)
     {
@@ -121,14 +123,16 @@ public:
         return false;
     };
     inline bool find(const T &point) const{return this->tryFind(point) != nullptr;};
-    
+
     inline OctTreeNode *getRoot(){return this->root;};
     inline const OctTreeNode *getRoot() const{return this->root;};
     inline void setRoot(OctTreeNode *other){this->root = other;};
     void setBounds(const T &ll, const T &ur);
+
     #ifdef DEBUG_MODE
     void print() const{this->printHelper(this->getRoot(), 0);};
     #endif // DEBUG_MODE
+
     inline int getDepth() const{assert(this->getRoot() != nullptr); return this->getRoot()->height;};
     inline size_t getSize() const{return this->treeSize;};
     inline std::vector<T> range(const _Sphere<T> &sphere) const{std::vector<T> result; this->rangeHelper(this->getRoot(), sphere, result); return result;};
@@ -292,7 +296,7 @@ void OctTree<T>::OctTreeNode::splitNode()
     }
 
     // this node is the `i`th child of its parent
-        // replace it with a new (non-value) node, which will be our parent
+    // replace it with a new (non-value) node, which will be our parent
     this->parent->children[i] = nullptr;
     this->parent->createChild(i);
     
@@ -442,8 +446,8 @@ void OctTree<T>::rangeHelper(const OctTreeNode *node, const _Sphere<T> &sphere, 
     }
     if(node->isValue)
     {
-        // DO NOT CHANGE THIS LINE TO "if `node->value` in in sphere"
-        // that is because a leaf not necessarily has to be a point (it can be a box, as in `DistributedOctTree`)
+        // DO NOT CHANGE THIS LINE TO "if `node->value` is in `sphere`"
+        // that is because a leaf does not necessarily has to be a point (it can be a box, as in `DistributedOctTree`)
         if(SphereBoxIntersection(node->boundingBox, sphere))
         {
             result.push_back(node->value);

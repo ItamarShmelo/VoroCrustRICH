@@ -177,6 +177,8 @@ public:
 		return (std::abs(x - v.x) < EPSILON) && (std::abs(y - v.y) < EPSILON) && (std::abs(z - v.z) < EPSILON);
 	}
 
+	inline bool operator!=(Vector3D const& v) const{return !this->operator==(v);}
+
 	/*! \brief Rotates the vector around the X axes
 	\param a Angle of rotation (in radians)
 	*/
