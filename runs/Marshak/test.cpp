@@ -153,8 +153,8 @@ int main(void)
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 	MPI_Comm_size(MPI_COMM_WORLD, &ws);
 #endif
-	std::string eos_location("/home/elads/EOS/");
-	std::string STA_location("/home/elads/STA/");
+	std::string eos_location("/home/esternberg/RICH/data/EOS/");
+	std::string STA_location("/home/esternberg/RICH/data/STA/");
 	double const dmin_eos = -22;
 	double const dmax_eos = 1.1;
 	double const dd_eos = 0.05;
@@ -225,7 +225,15 @@ int main(void)
 
 	Lagrangian3D bpm;
 	RoundCells3D pm(bpm, eos, 3.75, 0.01, false, 1.25);
-	DefaultCellUpdater cu;
+	
+	DiffusionSideBoundary D_boundary(1.1605e7);
+	Diffusion matrix_builder(opacity, D_boundary, eos, std::vector<std::string> (), true, false);
+	matrix_builder.length_scale_ = lscale;
+	matrix_builder.time_scale_ = tscale;
+	matrix_builder.mass_scale_ = mscale;
+	DiffusionForce force(matrix_builder, eos);
+
+	DefaultCellUpdater cu(false, 0, true, &matrix_builder);
 
 	RigidWallFlux3D rigidflux(rs);
 	RegularFlux3D *regular_flux = new RegularFlux3D(rs);
@@ -239,12 +247,7 @@ int main(void)
 	vector<pair<const ConditionExtensiveUpdater3D::Condition3D *, const ConditionExtensiveUpdater3D::Action3D *>> eu_sequence;
 	ConditionExtensiveUpdater3D eu(eu_sequence);
 
-	DiffusionSideBoundary D_boundary(1.1605e7);
-	Diffusion matrix_builder(opacity, D_boundary, eos, std::vector<std::string> (), true, false);
-	matrix_builder.length_scale_ = lscale;
-	matrix_builder.time_scale_ = tscale;
-	matrix_builder.mass_scale_ = mscale;
-	DiffusionForce force(matrix_builder, eos);
+
 
 	CourantFriedrichsLewy tsf(0.25, 1, force);
 #ifdef RICH_MPI
