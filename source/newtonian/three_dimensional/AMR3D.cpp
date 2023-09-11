@@ -875,7 +875,7 @@ Conserved3D SimpleAMRExtensiveUpdaterSR3D::ConvertPrimitveToExtensive3D(const Co
 
 SimpleAMRCellUpdater3D::SimpleAMRCellUpdater3D(const vector<string>& toskip) :toskip_(toskip) {}
 
-ComputationalCell3D SimpleAMRCellUpdater3D::ConvertExtensiveToPrimitve3D(const Conserved3D& extensive, const EquationOfState& eos,
+ComputationalCell3D SimpleAMRCellUpdater3D::ConvertExtensiveToPrimitve3D(Conserved3D& extensive, const EquationOfState& eos,
 	double volume, ComputationalCell3D const& old_cell) const
 {
 	for (size_t i = 0; i < toskip_.size(); ++i)
@@ -914,12 +914,19 @@ ComputationalCell3D SimpleAMRCellUpdater3D::ConvertExtensiveToPrimitve3D(const C
 	for (size_t i = 0; i < N; ++i)
 		res.tracers[i] = extensive.tracers[i] / extensive.mass;
 	res.stickers = old_cell.stickers;
+	auto entropy_it = binary_find(ComputationalCell3D::tracerNames.begin(), ComputationalCell3D::tracerNames.end(), "Entropy");
+	if(entropy_it != ComputationalCell3D::tracerNames.end())
+	{
+		size_t const entropy_index = static_cast<size_t>(entropy_it - ComputationalCell3D::tracerNames.begin());
+		res.tracers[entropy_index] = eos.dp2s(res.density, res.pressure, res.tracers, ComputationalCell3D::tracerNames);
+		extensive.tracers[entropy_index] = res.tracers[entropy_index] * extensive.mass;
+	}
 	return res;
 }
 
 SimpleAMRCellUpdaterSR3D::SimpleAMRCellUpdaterSR3D(double G, const vector<string>& toskip) : G_(G), toskip_(toskip) {}
 
-ComputationalCell3D SimpleAMRCellUpdaterSR3D::ConvertExtensiveToPrimitve3D(const Conserved3D& extensive, const EquationOfState& /*eos*/,
+ComputationalCell3D SimpleAMRCellUpdaterSR3D::ConvertExtensiveToPrimitve3D(Conserved3D& extensive, const EquationOfState& /*eos*/,
 	double volume, ComputationalCell3D const& old_cell) const
 {
 	for (size_t i = 0; i < toskip_.size(); ++i)
