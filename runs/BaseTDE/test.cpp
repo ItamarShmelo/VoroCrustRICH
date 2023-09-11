@@ -42,6 +42,7 @@ namespace fs = std::filesystem;
 
 typedef std::array<double, 4> state_type;
 
+#define smooth_factor 0.6
 namespace
 {
 	class PaczynskiOrbit
@@ -303,20 +304,21 @@ namespace
 			double const apocenter = Rstar_ * std::pow(Mbh_ / Mstar_, 2.0 / 3.0);
 			double const Rt = Rstar_ * std::pow(Mbh_ / Mstar_, 1.0 / 3.0);
 			double const min_cell_size = Rt * 1e-2;
-			double const apocenter_time = std::sqrt(apocenter * apocenter * apocenter / Mbh_);
+			double const apocenter_time = 1.25 * std::sqrt(apocenter * apocenter * apocenter / Mbh_);
 
 			for (size_t i = 0; i < Norg; ++i)
 			{
 				if (fastabs(tess.GetCellCM(i) - tess.GetMeshPoint(i)) > (tess.GetWidth(i) * 0.15))
 					continue;
-				if (tess.GetWidth(i) < min_cell_size)
+				double r_dist = std::max(fastabs(tess.GetMeshPoint(i)), Rt * smooth_factor);
+				if (tess.GetWidth(i) < min_cell_size * (r_dist < 0.65 * Rt ? smooth_factor / 0.6 : 1))
 					continue;
-				double r_dist = fastabs(tess.GetMeshPoint(i));
-				if (r_dist < 2 * Rt || r_dist > 0.5 * apocenter)
+				
+				if ((r_dist > 0.65 * Rt && r_dist < 2 * Rt) || r_dist > apocenter || r_dist < smooth_factor * Rt)
 					continue;
 
 				double MaxMass2 = (tess.GetMeshPoint(i).x > (-apocenter * 2.5)) ? MaxMass : MaxMass * 30;
-				MaxMass2 *= std::min(1.0, std::pow(std::abs(time) / apocenter_time, 3.0));
+				MaxMass2 *= std::max(1e-1, std::min(1.0, std::pow(std::abs(time) / apocenter_time, 3.0)));
 
 				double V = tess.GetVolume(i);
 				tess.GetNeighbors(i, neigh);
@@ -385,7 +387,7 @@ namespace
 			double const Rt = Rstar_ * std::pow(Mbh_ / Mstar_, 1.0 / 3.0);
 			double const time_Rt = std::sqrt(Rt * Rt * Rt / Mbh_);
 			double const min_cell_size = Rt * 1e-2;
-			double const apocenter_time = std::sqrt(apocenter * apocenter * apocenter / Mbh_);
+			double const apocenter_time = 1.25 * std::sqrt(apocenter * apocenter * apocenter / Mbh_);
 
 			double MaxMass = 3e-8;
 			for (size_t i = 0; i < Norg; ++i)
@@ -397,11 +399,14 @@ namespace
 				double Vol = tess.GetVolume(i);
 				double w = tess.GetWidth(i);
 				double MaxMass2 = (tess.GetMeshPoint(i).x > -Rt * apocenter * 2.5) ? MaxMass : MaxMass * 30;
-				double r_i = fastabs(tess.GetMeshPoint(i));
-				MaxMass2 *= std::min(1.0, std::pow(std::abs(time) / apocenter_time, 3.0));
+				double const r_org = fastabs(tess.GetMeshPoint(i));
+				double r_i = std::max(Rt * smooth_factor, r_org);
+				MaxMass2 *= std::max(1e-1, std::min(1.0, std::pow(std::abs(time) / apocenter_time, 3.0)));
 				MaxMass2 = MaxMass2 * std::min(r_i * r_i / (50 * Rt * Rt), 1.0);
 				double const dt = w / eos_.dp2c(cells[i].density, cells[i].pressure, cells[i].tracers);
-				if (Vol * cells[i].density > MaxMass2 && w > 0.7 * min_cell_size && dt > 0.03 * time_Rt)
+				double const in_factor = r_i < 0.65 * Rt ? smooth_factor / 0.6 : 1;
+				MaxMass2 *= std::max(1.0, std::pow(r_i / r_org, 2.0));
+				if (Vol * cells[i].density > MaxMass2 && w > (in_factor * 0.7 * min_cell_size) && dt > (0.02 * time_Rt * in_factor))
 					continue;
 				if (Vol > domain_size_ * 0.5e-5)
 					continue;
@@ -540,9 +545,9 @@ namespace
 			// Calc the force on the CM
 			Vector3D Acm, Rcm;
 			double Rg = 4.21 * Mbh_ / 1e6;
+			double const Rt = R_ * std::pow(Mbh_ / M_, 0.333333333);
 			if (tide_on_)
 			{
-				double Rt = R_ * std::pow(Mbh_ / M_, 0.333333333);
 				double Rp = Rt / beta_;
 				state_type x0 = GetTrueAnomaly(time, Mbh_, Rp);
 				double r = std::sqrt(x0[0] * x0[0] + x0[1] * x0[1]);
@@ -553,7 +558,7 @@ namespace
 			double mindensity = std::max(1e-20, 1e-5 * M_ / ((box.second.x - box.first.x) * (box.second.z - box.first.z) * (box.second.y - box.first.y)));
 			// Calc the tidal force
 			size_t N = acc.size();
-			double smooth = Rg * 14;
+			double smooth = Rt * smooth_factor;
 			for (size_t i = 0; i < N; ++i)
 			{
 				Vector3D const &point = tess.GetCellCM(i);
@@ -591,7 +596,7 @@ int main(void)
 	double const Mbh = read_number("Mbh.txt");
 	double const beta =  read_number("beta.txt");
 	std::stringstream ss;
-	ss<<"R"<<R<<"M"<<M<<"BH"<<Mbh<<"beta"<<beta;
+	ss<<"R"<<R<<"M"<<M<<"BH"<<Mbh<<"beta"<<beta<<"S"<<static_cast<size_t>(smooth_factor*100);
 	std::string const run_name = ss.str();
 	run_directory += run_name + "/";
 	fs::create_directory(run_directory.c_str());
@@ -600,14 +605,16 @@ int main(void)
 	double const apocenter = Rp * std::pow(Mbh / M, 0.333333);
 	std::string file_name = run_directory + "snap_";
 	std::string restart_name = run_directory + "restart.h5";
-	bool const restart = fs::exists(restart_name);
+	std::string counter_name = run_directory + "counter.txt";
+	bool const restart = fs::exists(restart_name) || fs::exists(counter_name);
 	if(rank == 0)
 		std::cout<<"restart "<<restart<<std::endl;
-	std::string counter_name = run_directory + "counter.txt";
 	std::string gravity_name = run_directory + "gravity.txt";
 	std::string eos_location("/home/esternberg/RICH/data/EOS/");
 	std::string STA_location("/home/esternberg/RICH/data/STA/");
 	bool const full_gravity = fs::exists(gravity_name);
+	if(full_gravity)
+		file_name += "full_";
 	if(rank == 0)
 		std::cout<<"Full gravity "<<full_gravity<<std::endl;
 	double const dmin_eos = -22;
@@ -667,16 +674,19 @@ int main(void)
 		, true
 #endif
 		);
-		++counter;
 		t_restart = snap.time;
-		auto last_time_restart = std::filesystem::last_write_time(restart_name);
-		auto last_time_snap = std::filesystem::last_write_time(file_name + int2str(counter) + ".h5");
-		if(last_time_snap < last_time_restart)
-			snap = ReadSnapshot3D(restart_name
-	#ifdef RICH_MPI
-				, true
-	#endif
-			);
+		if(fs::exists(restart_name))
+		{
+			auto last_time_restart = std::filesystem::last_write_time(restart_name);
+			auto last_time_snap = std::filesystem::last_write_time(file_name + int2str(counter) + ".h5");
+			if(last_time_snap < last_time_restart)
+				snap = ReadSnapshot3D(restart_name
+		#ifdef RICH_MPI
+					, true
+		#endif
+				);
+		}
+		++counter;
 		ll = snap.ll;
 		ur = snap.ur;
 #ifdef RICH_MPI
@@ -742,8 +752,15 @@ int main(void)
 	double Tmin = 1e3;
 
 	Lagrangian3D bpm;
-	RoundCells3D pm(bpm, eos, 3.75, 0.01, false, 1.25);
-	DefaultCellUpdater cu;
+	RoundCells3D pm(bpm, eos, 3.75, 0.01, false, 1.5);
+
+	DiffusionOpenBoundary D_boundary;
+	Diffusion matrix_builder(opacity, D_boundary, eos);
+	matrix_builder.length_scale_ = lscale;
+	matrix_builder.time_scale_ = tscale;
+	matrix_builder.mass_scale_ = mscale;
+	std::shared_ptr<DiffusionForce> rad_force = std::make_shared<DiffusionForce>(matrix_builder, eos);
+	DefaultCellUpdater cu(false, 0, true, &matrix_builder);
 
 	RigidWallFlux3D rigidflux(rs);
 	RegularFlux3D *regular_flux = new RegularFlux3D(rs);
@@ -764,17 +781,11 @@ int main(void)
 	TDEGravity acc(Mbh, M, R, beta, sg, not full_gravity);
 	std::shared_ptr<ConservativeForce3D> gravity_force = std::make_shared<ConservativeForce3D>(acc, false);
 	std::vector<std::shared_ptr<SourceTerm3D>> forces;
-	DiffusionClosedBox D_boundary;
-	Diffusion matrix_builder(opacity, D_boundary, eos);
-	matrix_builder.length_scale_ = lscale;
-	matrix_builder.time_scale_ = tscale;
-	matrix_builder.mass_scale_ = mscale;
-	std::shared_ptr<DiffusionForce> rad_force = std::make_shared<DiffusionForce>(matrix_builder, eos);
 
 	forces.push_back(gravity_force);
 	forces.push_back(rad_force);
 	SeveralSources3D force(forces);
-	CourantFriedrichsLewy tsf(0.25, 1, force);
+	CourantFriedrichsLewy tsf(0.225, 1, force, std::vector<std::string> (),	false);
 #ifdef RICH_MPI
 	ConstNumberPerProc3D procupdate(0.00005, 0.275, 2);
 #endif
@@ -802,7 +813,7 @@ else
 		, true);
 	sim->SetTime(tstart);
 }
-	double init_dt = 1e-5;
+	double init_dt = 1e-4;
 	tsf.SetTimeStep(init_dt);
 	if (rank == 0)
 		std::cout << "Restart time " << sim->getTime() << std::endl;
@@ -816,7 +827,7 @@ else
 	RemoveBig remove(8 * width * width * width, eos, Mbh, M, R);
 	MassRefine refine(8 * width * width * width, Mbh, M, R);
 	PCM3D ainterp(ghost);
-	AMR3D amr(eos, refine, remove, ainterp);
+	AMR3D amr(eos, refine, remove, interp);
 	std::pair<Vector3D, Vector3D> box2 = sim->getTesselation().GetBoxCoordinates();
 	double newvol2 = (box2.second.x - box2.first.x) * (box2.second.y - box2.first.y) * (box2.second.z - box2.first.z);
 	refine.SetSize(newvol2);
@@ -885,7 +896,12 @@ else
 			}
 			double step_tstart = MPI_Wtime();
 #endif
-			double new_dt = sim->RadiationTimeStep(old_dt, matrix_builder);
+			// sim->RadiationTimeStep(old_dt * 1e-2, matrix_builder);
+			// sim->RadiationTimeStep(old_dt * 1e-1, matrix_builder);
+			// double new_dt = sim->RadiationTimeStep(old_dt * 0.89, matrix_builder);
+			// sim->RadiationTimeStep(old_dt * 1e-3, matrix_builder);
+			// sim->RadiationTimeStep(old_dt * 1e-3, matrix_builder);
+			double new_dt = sim->RadiationTimeStep(old_dt * 1, matrix_builder);
 			tsf.SetTimeStep(new_dt);
 			if (rank == 0)
 				std::cout << "Finished rad step" << std::endl;
@@ -905,7 +921,7 @@ else
 			reference_cell = GetReferenceCell(eos, tess, sim->getTime());
 			if (sim->getCycle() % 7 == 0)
 			{
-				UpdateBox(sim->getTesselation(), *sim, 0.5, 1e-4, reference_cell
+				UpdateBox(sim->getTesselation(), *sim, 0.5, 1e-5, reference_cell
 #ifdef RICH_MPI
 				, sim->getProcTesselation()
 #endif

@@ -2,7 +2,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=128
 #SBATCH --partition=thin
-#SBATCH --time=10:00:00
+#SBATCH --time=4:00:00
 #SBATCH --output=output
 #SBATCH --error=error
  
