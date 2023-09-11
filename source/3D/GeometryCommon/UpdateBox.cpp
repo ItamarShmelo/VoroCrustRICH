@@ -44,7 +44,6 @@ void UpdateBox(Tessellation3D &tess, HDSim3D &sim, double const min_velocity, do
     Vector3D const cur_max = tess.GetBoxCoordinates().second; 
 	Vector3D const cur_min = tess.GetBoxCoordinates().first;
     double const oldv = (cur_max.x - cur_min.x) * (cur_max.y - cur_min.y) * (cur_max.z - cur_min.z);
-    temprecv[0] = std::max(temprecv[0], std::pow(oldv, 0.333333333) * 0.03);
     // Do we need to resize?
     Vector3D recvmax(temprecv[1] + 5 * temprecv[0], temprecv[2] + 5 * temprecv[0],
         temprecv[3] + 5 * temprecv[0]), recvmin(-temprecv[4] - 5 * temprecv[0],
@@ -54,32 +53,32 @@ void UpdateBox(Tessellation3D &tess, HDSim3D &sim, double const min_velocity, do
 	if (recvmax.x > cur_max.x)
 	{
 		recalc = true;
-		recvmax.x = cur_max.x + 5 * temprecv[0];
+		recvmax.x = cur_max.x + 3 * temprecv[0];
 	}
 	if (recvmax.y > cur_max.y)
 	{
 		recalc = true;
-		recvmax.y = cur_max.y + 5 * temprecv[0];
+		recvmax.y = cur_max.y + 3 * temprecv[0];
 	}
 	if (recvmax.z > cur_max.z)
 	{
 		recalc = true;
-		recvmax.z = cur_max.z + 5 * temprecv[0];
+		recvmax.z = cur_max.z + 3 * temprecv[0];
 	}
 	if (recvmin.x < cur_min.x)
 	{
 		recalc = true;
-		recvmin.x = cur_min.x - 5 * temprecv[0];
+		recvmin.x = cur_min.x - 3 * temprecv[0];
 	}
 	if (recvmin.y < cur_min.y)
 	{
 		recalc = true;
-		recvmin.y = cur_min.y - 5 * temprecv[0];
+		recvmin.y = cur_min.y - 3 * temprecv[0];
 	}
 	if (recvmin.z < cur_min.z)
 	{
 		recalc = true;
-		recvmin.z = cur_min.z - 5 * temprecv[0];
+		recvmin.z = cur_min.z - 3 * temprecv[0];
 	}
 	if (recalc)
 	{
