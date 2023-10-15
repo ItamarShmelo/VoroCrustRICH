@@ -606,15 +606,22 @@ int main(void)
 	std::string file_name = run_directory + "snap_";
 	std::string restart_name = run_directory + "restart.h5";
 	std::string counter_name = run_directory + "counter.txt";
-	bool const restart = fs::exists(restart_name) || fs::exists(counter_name);
+	int counter = 0;
+	bool const restart = fs::exists(counter_name);
 	if(rank == 0)
 		std::cout<<"restart "<<restart<<std::endl;
+	if(restart)
+		counter = read_int(counter_name);
 	std::string gravity_name = run_directory + "gravity.txt";
 	std::string eos_location("/home/esternberg/RICH/data/EOS/");
 	std::string STA_location("/home/esternberg/RICH/data/STA/");
 	bool const full_gravity = fs::exists(gravity_name);
-	if(full_gravity)
+	if(restart && full_gravity && (not fs::exists(file_name + int2str(counter) + ".h5")))
+	{
 		file_name += "full_";
+		if(rank == 0)
+			std::cout<<"Adding full to filename"<<std::endl;
+	}
 	if(rank == 0)
 		std::cout<<"Full gravity "<<full_gravity<<std::endl;
 	double const dmin_eos = -22;
@@ -635,26 +642,6 @@ int main(void)
 	STAopacity opacity(STA_location);
 	if (rank == 0)
 		std::cout << "end sta" << std::endl;
-	// This is just a test
-	ComputationalCell3D c_dummy;
-	c_dummy.density = 1e-8;
-	c_dummy.temperature = 1.1e5;
-	double temp_res = opacity.CalcDiffusionCoefficient(c_dummy);
-	if (rank == 0)
-		std::cout << "D " << temp_res<<std::endl;
-	c_dummy.density = 1e-18;
-	temp_res = opacity.CalcDiffusionCoefficient(c_dummy);
-	if (rank == 0)
-		std::cout << "D " << temp_res<<std::endl;
-	c_dummy.temperature = 1e8;
-	temp_res = opacity.CalcDiffusionCoefficient(c_dummy);
-	if (rank == 0)
-		std::cout << "D " << temp_res<<std::endl;
-	c_dummy.temperature = 1e3;
-	temp_res = opacity.CalcDiffusionCoefficient(c_dummy);
-	if (rank == 0)
-		std::cout << "D " << temp_res<<std::endl;
-
 
 	const double width = 5;
 	Vector3D ll(-width, -width, -width), ur(width, width, width);
@@ -662,13 +649,12 @@ int main(void)
 #ifdef RICH_MPI
 	Voronoi3D tproc(ll, ur);
 #endif
-	int counter = 0;
+
 	vector<ComputationalCell3D> cells;
 	double tstart = 0, t_restart = -100;
 	Snapshot3D snap;
 	if (restart)
 	{
-		counter = read_int(counter_name);
 		snap = ReadSnapshot3D(file_name + int2str(counter) + ".h5"
 #ifdef RICH_MPI
 		, true
@@ -686,6 +672,8 @@ int main(void)
 		#endif
 				);
 		}
+		if (full_gravity && file_name.find(std::string("full")) == std::string::npos)
+			file_name += "full_";
 		++counter;
 		ll = snap.ll;
 		ur = snap.ur;
@@ -752,7 +740,7 @@ int main(void)
 	double Tmin = 1e3;
 
 	Lagrangian3D bpm;
-	RoundCells3D pm(bpm, eos, 3.75, 0.01, false, 1.5);
+	RoundCells3D pm(bpm, eos, 3.25, 0.01, false, 1.25);
 
 	DiffusionOpenBoundary D_boundary;
 	Diffusion matrix_builder(opacity, D_boundary, eos);
@@ -908,7 +896,7 @@ else
 			sim->timeAdvance2();
 			if (rank == 0)
 				std::cout << "Finished hydro step" << std::endl;
-			if (full_gravity && sim->getCycle() % 8 == 0)
+			if (full_gravity && sim->getCycle() % 10 == 0)
 			{
 				if(rank == 0)
 					std::cout<<"Doing AMR"<<std::endl;
