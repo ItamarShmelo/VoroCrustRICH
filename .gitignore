@@ -16,3 +16,14 @@ VoroCrust/cmake_install.cmake
 VoroCrust/CMakeCache.txt
 VoroCrust/VoroCrust.out
 VoroCrust/Makefile
+.vscode/*
+r3d/*
+.gitignore
+*/.vscode/*
+tests/hilbert
+results/*
+input*/*
+toy_input*/*
+validation*/*
+.gitignore
+.vscode*/*

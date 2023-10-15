@@ -442,15 +442,18 @@ void Diffusion::PostCG(Tessellation3D const& tess, std::vector<Conserved3D>& ext
             extensives[i].internal_energy += fleck_factor[i] * relativity_term;
         }
         Vector3D dP;
+        double Erad_dE = 0;
         if(hydro_on_)
         {
             double const old_Ek = 0.5 * ScalarProd(extensives[i].momentum, extensives[i].momentum) / extensives[i].mass;
             dP = (cell_flux_limiter[i] * dt * time_scale_ / 3) * gradE * (time_scale_ / (length_scale_ * mass_scale_));
-            double const Erad_dE = ScalarProd(dP, extensives[i].momentum) / extensives[i].mass;
+            Erad_dE = ScalarProd(dP, extensives[i].momentum) / extensives[i].mass;
             extensives[i].momentum += dP;
             double const new_Ek = 0.5 * ScalarProd(extensives[i].momentum, extensives[i].momentum) / extensives[i].mass;
             double const dE = -new_Ek + old_Ek + Erad_dE;
             extensives[i].Erad += dE;
+            if(extensives[i].Erad < 0 && dE < 0 && std::abs(dE) < extensives[i].energy * 0.01)
+                 extensives[i].Erad -= dE;
             extensives[i].energy = extensives[i].internal_energy +  ScalarProd(extensives[i].momentum, extensives[i].momentum) / (2 * extensives[i].mass);
         }
         if(extensives[i].Erad < 0 || extensives[i].internal_energy < 0 || !std::isfinite(extensives[i].internal_energy) || cells[i].Erad < 0)
@@ -459,6 +462,7 @@ void Diffusion::PostCG(Tessellation3D const& tess, std::vector<Conserved3D>& ext
                 " T "<<T<<" CG_result "<<CG_result[i]<<" v "<<fastabs(cells[i].velocity)<<" sigma_planck "<<
                 sigma_planck[i]<<" sigma_r "<<CG::speed_of_light / (3 * Dcell)<<" E_init "<<cells[i].Erad*cells[i].density* mass_scale_ / (time_scale_ * time_scale_ * length_scale_)
                 <<" volume "<<tess.GetVolume(i)<<" Erad "<<extensives[i].Erad<<" mass "<<extensives[i].mass<<" dP "<<dP.x<<","<<dP.y<<","<<dP.z<<" momentum "<<extensives[i].momentum.x<<","<<extensives[i].momentum.y<<","<<extensives[i].momentum.z<<std::endl;
+            std::cout<<"Erad_dE "<<Erad_dE<<std::endl;
             for(size_t j = 0; j < Nneigh; ++j)
             {
                 size_t const neighbor_j = neighbors[j];

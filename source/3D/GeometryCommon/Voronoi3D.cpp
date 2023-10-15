@@ -44,6 +44,7 @@ bool PointInPoly(Tessellation3D const &tess, Vector3D const &point, std::size_t 
       V1 = points[InFace[(counter + 1) % NinFace]] - points[InFace[0]];
       ++N1;
     }
+    N1 = N1 % NinFace;
     V2 = points[InFace[(counter + 2) % NinFace]] - points[InFace[N1]];
     N2 = (counter + 2) % NinFace;
     while (fastabs(V2) < 0.01 * R || fastabs(CrossProduct(V1, V2)) < 0.0001 * tess.GetArea(faces[i]))

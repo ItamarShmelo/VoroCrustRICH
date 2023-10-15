@@ -144,7 +144,9 @@ void DiffusionForce::operator()(const Tessellation3D& tess, const vector<Computa
     size_t max_loc = 0;
     for(size_t i = 0; i < N; ++i)
     {
-        double const diff = std::abs(extensives[i].Erad - old_extensives[i].Erad) / (tess.GetVolume(i) * (new_Er[i] + 0.005 * max_Er));
+        double diff = std::abs(extensives[i].Erad - old_extensives[i].Erad) / (tess.GetVolume(i) * (new_Er[i] + 0.005 * max_Er));
+        if(extensives[i].internal_energy > 10 * extensives[i].Erad)
+            diff *= 0.5;
         if(diff > max_diff)
         {
             max_diff = diff;
@@ -163,8 +165,8 @@ void DiffusionForce::operator()(const Tessellation3D& tess, const vector<Computa
     max_diff = max_data.val;
 #endif
     if(rank == max_data.mpi_id)
-        std::cout<<"DiffusionForce dt ID "<<cells[max_loc].ID<<" new Er "<<extensives[max_loc].Erad / tess.GetVolume(max_loc) <<" old Er "<<new_Er[max_loc]<<" max diff "<<max_diff<<" next dt "<<dt * std::min(0.15 / max_diff, 1.1)<<std::endl;
-	next_dt_ = dt * std::min(0.15 / max_diff, 1.1);
+        std::cout<<"DiffusionForce dt ID "<<cells[max_loc].ID<<" new Er "<<extensives[max_loc].Erad / tess.GetVolume(max_loc) <<" old Er "<<new_Er[max_loc]<<" max diff "<<max_diff<<" next dt "<<dt * std::min(0.2 / max_diff, 1.1)<<" density "<<cells[max_loc].density<<" T "<<cells[max_loc].temperature<<std::endl;
+	next_dt_ = dt * std::min(0.2 / max_diff, 1.25);
 }   
 
 
