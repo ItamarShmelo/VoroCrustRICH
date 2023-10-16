@@ -1,3 +1,0 @@
-void write_snapshot_to_hdf5
-(const HDSim3D& sim,
- const string& fname);
