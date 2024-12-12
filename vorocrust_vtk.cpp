@@ -1,6 +1,6 @@
 #include "vorocrust_vtk.hpp"
+#include "miscellaneous/utils.hpp"
 
-#include "../../source/misc/utils.hpp"
 #include <vtkUnstructuredGrid.h>
 #include <vtkCellData.h>
 #include <vtkPointData.h>

@@ -4,7 +4,7 @@
 
 #include <vector>
 #include <string>
-#include "source/3D/elementary/Vector3D.hpp"
+#include "../miscellaneous/Vector3D.hpp"
 
 #include "VoroCrustUsing.hpp"
 #include "VoroCrustFace.hpp"
