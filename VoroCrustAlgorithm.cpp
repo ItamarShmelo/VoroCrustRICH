@@ -240,7 +240,6 @@ std::vector<std::vector<Seed>> VoroCrustAlgorithm::randomSampleSeeds(std::vector
     //     exit(1);
     // }
 
-    return std::vector<std::vector<Seed>>();
     std::vector<std::vector<Seed>> zone_seeds;
 
     for(std::size_t zone_num=0; zone_num<num_of_zones; ++zone_num){
