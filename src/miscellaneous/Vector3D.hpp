@@ -61,8 +61,7 @@ public:
 	/*! \brief Class copy constructor
 	\param other Other vector
 	*/
-	template<typename VectorType>
-	inline Vector3D(const VectorType &other): Vector3D(other[0], other[1], other[2]){}
+	inline Vector3D(const Vector3D &other): Vector3D(other.x, other.y, other.z){}
 
 	/*! \brief Set vector components
 	\param ix x Component
@@ -481,13 +480,6 @@ inline void Split(vector<Vector3D> const & vIn, vector<double> & vX, vector<doub
 	return;
 }
 
-template<>
-#ifdef __INTEL_COMPILER
-#pragma omp declare simd
-#endif
-inline Vector3D::Vector3D(const Vector3D &v): Vector3D(v.x, v.y, v.z)
-{}
-
 /*! \brief Assignment operator
 \param v Vector to be copied
 \return The assigned value
@@ -503,8 +495,5 @@ inline Vector3D& Vector3D::operator=<Vector3D>(const Vector3D& v)
 	z = v.z;
 	return *this;
 }
-
-template<>
-inline Vector3D::Vector3D(const double &x): Vector3D(x, x, x){}
 
 #endif // Vector3D_HPP
