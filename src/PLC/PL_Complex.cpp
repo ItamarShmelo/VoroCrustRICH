@@ -5,7 +5,7 @@
 #include <functional>
 #include <queue>
 #include <set>
-#include "../unsorted_unique.hpp"
+#include "../miscellaneous/unsorted_unique.hpp"
 
 PL_Complex::PL_Complex(std::vector<Vector3D> const &vertices_) : vertices(),
                                                                  edges(),

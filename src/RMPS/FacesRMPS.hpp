@@ -7,7 +7,7 @@
 #include "../PLC/PL_Complex.hpp"
 #include "../miscellaneous/Vector3D.hpp"
 #include "../VoroCrust_kd_tree/VoroCrust_kd_tree.hpp"
-#include "../trees.hpp"
+#include "../trees/trees.hpp"
 
 struct EligbleFace {
     std::vector<Vector3D> face;

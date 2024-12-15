@@ -1,5 +1,5 @@
 
-#include "trees.hpp"
+#include "trees/trees.hpp"
 #include <boost/random.hpp>
 #include <algorithm>
 #include <fstream>

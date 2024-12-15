@@ -1,7 +1,7 @@
 #ifndef SLIVER_DRIVER
 #define SLIVER_DRIVER
 
-#include "../trees.hpp"
+#include "../trees/trees.hpp"
 #include <array>
 
 enum class Dim {

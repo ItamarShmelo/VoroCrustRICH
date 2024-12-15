@@ -3,7 +3,7 @@
 
 #include "PLC/PL_Complex.hpp"
 #include "VoroCrust_kd_tree/VoroCrust_kd_tree.hpp"
-#include "trees.hpp"
+#include "trees/trees.hpp"
 #include <filesystem>
 #include "miscellaneous/Vector3D.hpp"
 #include <memory>

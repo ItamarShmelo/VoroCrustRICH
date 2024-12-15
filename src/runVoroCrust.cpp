@@ -1,5 +1,5 @@
 #include "runVoroCrust.hpp"
-#include "vorocrust_vtk.hpp"
+#include "vorocrust_vtk/vorocrust_vtk.hpp"
 #include <iostream>
 #include <string>
 #include <fstream>

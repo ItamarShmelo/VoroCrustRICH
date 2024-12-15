@@ -1,8 +1,8 @@
 #ifndef TREES
 #define TREES
 
-#include "VoroCrust_kd_tree/VoroCrust_kd_tree.hpp"
-#include "PLC/PL_Complex.hpp"
+#include "../VoroCrust_kd_tree/VoroCrust_kd_tree.hpp"
+#include "../PLC/PL_Complex.hpp"
 #include <memory>
 #include <filesystem>
 #include <iostream>

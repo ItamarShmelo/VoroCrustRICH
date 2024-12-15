@@ -2,7 +2,7 @@
 #define VOROCRUST_ALGORITHM
 
 #include "PLC/PL_Complex.hpp"
-#include "trees.hpp"
+#include "trees/trees.hpp"
 #include "RMPS/CornersRMPS.hpp"
 #include "RMPS/EdgesRMPS.hpp"
 #include "RMPS/FacesRMPS.hpp"
