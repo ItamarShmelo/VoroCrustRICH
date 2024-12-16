@@ -2,6 +2,9 @@ message("In src file ${CPP_PYBIND_MODULES_DIRECTORY}")
 
 add_subdirectory(miscellaneous)
 add_subdirectory(PLC)
+add_subdirectory(vorocrust_vtk)
+add_subdirectory(VoroCrust_kd_tree)
+add_subdirectory(trees)
 
 set(VOROCRUST_ALGORITHM_SRC "VoroCrustAlgorithm.cpp" 
                             "VoroCrust_kd_tree/VoroCrust_kd_tree.cpp" 
