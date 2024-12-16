@@ -1,5 +1,5 @@
 #include "vorocrust_vtk.hpp"
-#include "miscellaneous/utils.hpp"
+#include "../miscellaneous/utils.hpp"
 
 #include <vtkUnstructuredGrid.h>
 #include <vtkCellData.h>
@@ -25,12 +25,14 @@
 #include <vtkGlyph3D.h>
 
 namespace vorocrust_vtk {
-    void write_vtu_PL_Complex(std::filesystem::path const& filename, 
-                              PL_Complex const& plc){
-        if(filename.extension() != ".vtu"){
+    void write_vtu_PL_Complex(std::string const& filename, 
+                              PL_ComplexPtr const plc_ptr){
+        std::filesystem::path filepath{filename};
+        if(filepath.extension() != ".vtu"){
             std::cout << "file extension for `filename` in `write_vtu_PL_Complex` must be '.vtu'!!!" << std::endl;
             exit(1);
         }
+        auto const& plc = *plc_ptr;
         auto const& vertices = plc.vertices;
         auto const& faces = plc.faces;
 
@@ -213,10 +215,12 @@ namespace vorocrust_vtk {
         writer->Write();
     }
 
-    void write_vtu_trees(std::filesystem::path const& filename, 
-                         Trees const& trees){
-                            
-        if(filename.extension() != ".vtu"){
+    void write_vtu_trees(std::string const& filename, 
+                         TreesPtr const trees_ptr){
+        
+        Trees const& trees = *trees_ptr;
+        std::filesystem::path filepath(filename);            
+        if(filepath.extension() != ".vtu"){
             std::cout << "file extension for `filename` in `write_vtu_trees` must be '.vtu'!!!" << std::endl;
             exit(1);
         }
@@ -600,19 +604,21 @@ void write_nearestNeighborToSegment(std::filesystem::path const& filename,
     writer->Write();
 }
 
-void write_ballTree(std::filesystem::path const& filename, 
+void write_ballTree(std::string const& filename, 
                     VoroCrust_KD_Tree_Ball const& b_tree){
-                        
-    if(filename.extension() != ".vtp"){
-        std::cout << "file extension for `filename` in `write_ballTree` must be '.vtp'!!!" << std::endl;
-        exit(1);
+    // auto const& b_tree = *b_tree_ptr;
+    std::filesystem::path filepath(filename);
+    std::cout << "1" << std::endl;
+    if(filepath.extension() != ".vtp"){
+        throw std::runtime_error("File extension for `filename` in `write_ballTree` must be '.vtp'!!!");
     }
 
     if(b_tree.empty()) return;
-
+    std::cout << "2" << std::endl;
     std::vector<Vector3D> const& centers = b_tree.points;
     std::vector<double> const& ball_radii = b_tree.ball_radii;
 
+    std::cout << "3" << std::endl;
 
     vtkNew<vtkAppendPolyData> appender;
     
@@ -629,7 +635,7 @@ void write_ballTree(std::filesystem::path const& filename,
     data_first->SetName("radius");
     data_first->SetNumberOfComponents(1);
     sphere->Update();
-
+    std::cout << "4" << std::endl;
     std::size_t num_of_cells = sphere->GetOutput()->GetNumberOfCells();
     for(std::size_t j = 0; j<num_of_cells; ++j)
         data_first->InsertNextValue(ball_radii[0]);
@@ -660,7 +666,7 @@ void write_ballTree(std::filesystem::path const& filename,
         appender->AddInputData(sphere_input->GetOutput());
     }
     appender->Update();
-
+    std::cout << "4" << std::endl;
     vtkNew<vtkXMLPolyDataWriter> writer;
     writer->SetCompressionLevel(1);
     writer->SetFileName(filename.c_str());
