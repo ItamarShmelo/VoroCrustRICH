@@ -1,12 +1,14 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include <memory>
 
 #include "Vector3D.hpp"
 
 void bind_vector_3d(pybind11::module& m) {
     using namespace pybind11::literals;
-
-    pybind11::class_<Vector3D, std::shared_ptr<Vector3D>>(m, "Vector3D")
+    using Vector3DPtr = std::shared_ptr<Vector3D>;
+    
+    pybind11::class_<Vector3D, Vector3DPtr>(m, "Vector3D")
         .def(pybind11::init<>())
         .def(pybind11::init<double, double, double>(), pybind11::kw_only(), "x"_a, "y"_a, "z"_a)
         .def(pybind11::init<Vector3D const&>(), pybind11::kw_only(), "other"_a)

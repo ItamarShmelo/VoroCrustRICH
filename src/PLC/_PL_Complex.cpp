@@ -6,7 +6,7 @@
 void bind_pl_complex(pybind11::module& m) {
     using namespace pybind11::literals;
 
-    pybind11::class_<PL_Complex, std::shared_ptr<PL_Complex>>(m, "PL_Complex")
+    pybind11::class_<PL_Complex, PL_ComplexPtr>(m, "PL_Complex")
         .def(pybind11::init<std::vector<Vector3D> const&>(), pybind11::kw_only(), "vertices"_a)
         .def("addFace", &PL_Complex::addFace, pybind11::kw_only(), "indices"_a)
         .def("checkAllVerticesAreUnique", &PL_Complex::checkAllVerticesAreUnique)

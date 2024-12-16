@@ -6,7 +6,7 @@
 void bind_vorocrust_algorithm(pybind11::module& m) {
     using namespace pybind11::literals;
     
-    pybind11::class_<VoroCrustAlgorithm, std::shared_ptr<VoroCrustAlgorithm>>(m, "VoroCrustAlgorithm")
+    pybind11::class_<VoroCrustAlgorithm, VoroCrustAlgorithmPtr>(m, "VoroCrustAlgorithm")
         .def(pybind11::init<PL_Complex const&, 
                             double const,
                             double const, 

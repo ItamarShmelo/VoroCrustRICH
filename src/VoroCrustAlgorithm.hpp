@@ -64,6 +64,7 @@ class VoroCrustAlgorithm {
 
         bool sliverElimination();
 };
+using VoroCrustAlgorithmPtr = std::shared_ptr<VoroCrustAlgorithm>;
 
 VoroCrust_KD_Tree_Ball makeSeedBallTree(std::vector<Seed> const& seeds);
 
