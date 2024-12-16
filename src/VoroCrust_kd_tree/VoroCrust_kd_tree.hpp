@@ -104,6 +104,7 @@ class VoroCrust_KD_Tree {
         //! \brief checks if two trees are equal recursively
         bool equalRecursive(NodePtr const& node1, NodePtr const& node2, VoroCrust_KD_Tree const& t) const;
 };
+using VoroCrust_KD_TreePtr = std::shared_ptr<VoroCrust_KD_Tree>;
 
 //! \brief a boundary tree for F_C, F_E and T_S
 class VoroCrust_KD_Tree_Boundary : public VoroCrust_KD_Tree {
@@ -164,6 +165,7 @@ class VoroCrust_KD_Tree_Boundary : public VoroCrust_KD_Tree {
                                                        long &guess, 
                                                        double &minDist) const;
 };
+using VoroCrust_KD_Tree_BoundaryPtr = std::shared_ptr<VoroCrust_KD_Tree_Boundary>;
 
 class VoroCrust_KD_Tree_Ball : public VoroCrust_KD_Tree_Boundary {
     public:
@@ -216,7 +218,7 @@ class VoroCrust_KD_Tree_Ball : public VoroCrust_KD_Tree_Boundary {
     private:
         double max_radius;
 };
-
+using VoroCrust_KD_Tree_BallPtr = std::shared_ptr<VoroCrust_KD_Tree_Ball>;
 
 
 #endif /* VOROCRUST_KD_TREE */
