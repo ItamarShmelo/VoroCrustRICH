@@ -89,14 +89,13 @@ class PL_Complex
         /*! \brief Checks if all vertices are unique. */
         bool checkAllVerticesAreUnique();
 
-        /*! \brief Checks if all the vertices are assigned at least on face.*/
+        /*! \brief Checks if all the vertices are assigned to at least one face.*/
         bool checkAllVerticesAreOnFace();
 
         /*! \brief Determines the sharp features of the PLC (sharp_edges, sharp_corners) and using them build the Creases and Surface Patches.
             \param sharpTheta determins the sharp features.
-            \param flatTheta constraint on the flatness of the non-sharp features.
         */
-        void detectFeatures(double const sharpTheta, double const flatTheta);
+        void detectFeatures(double const sharpTheta);
 
         /*! \brief builds the Creases */
         void buildCreases();

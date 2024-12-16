@@ -191,7 +191,7 @@ bool PL_Complex::checkAllVerticesAreOnFace()
     return true;
 }
 
-void PL_Complex::detectFeatures(double const sharpTheta, double const flatTheta)
+void PL_Complex::detectFeatures(double const sharpTheta)
 {
     /* Detect Sharp Edges */
     for (auto &edge : edges)
@@ -212,13 +212,6 @@ void PL_Complex::detectFeatures(double const sharpTheta, double const flatTheta)
             sharp_edges.push_back(edge);
             edge->isSharp = true;
             continue;
-        }
-
-        // if dihedral angle is between PI-sharpTheta and PI-flatTheta then we have a problem
-        if (dihedralAngle < (M_PI - flatTheta))
-        {
-            std::cout << "ERROR: dihedral angle of edge" << edge->index << " is not sharp nor flat!!!!!" << std::endl;
-            exit(1);
         }
 
         edge->isSharp = false;

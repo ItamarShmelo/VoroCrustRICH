@@ -128,7 +128,7 @@ namespace
             plc.addFace(indices);
         }
 
-        VoroCrustAlgorithm alg(plc, theta, theta, maxRadius, L_lip, alpha, max_num_iter, static_cast<std::size_t>(1e5), static_cast<std::size_t>(1e6));
+        VoroCrustAlgorithm alg(plc, theta, maxRadius, L_lip, alpha, max_num_iter, static_cast<std::size_t>(1e5), static_cast<std::size_t>(1e6));
 
         std::filesystem::create_directories(output_path);
         vorocrust_vtk::write_vtu_PL_Complex(output_path / "all.vtu", *alg.plc);
@@ -161,7 +161,7 @@ namespace
             plc.addFace(indices);
         }
 
-        VoroCrustAlgorithm alg(plc, theta, theta, maxRadius, L_lip, alpha, max_num_iter, static_cast<std::size_t>(1e5), static_cast<std::size_t>(1e6));
+        VoroCrustAlgorithm alg(plc, theta, maxRadius, L_lip, alpha, max_num_iter, static_cast<std::size_t>(1e5), static_cast<std::size_t>(1e6));
 
         alg.load_dump(dirdump);
 
@@ -222,7 +222,7 @@ namespace
             plc.addFace(indices);
         }
 
-        plc.detectFeatures(theta, theta);
+        plc.detectFeatures(theta);
         vorocrust_vtk::write_vtu_PL_Complex(output_path / "determine.vtu", plc);
 
         zones_plcs.push_back(plc);
@@ -242,7 +242,7 @@ namespace
         zones_seeds.push_back(load_dumpSeeds(dirdump / "zone_in_seeds"));
         zones_seeds.push_back(load_dumpSeeds(dirdump / "zone_out_seeds"));
 
-        alg = new VoroCrustAlgorithm(zones_plcs[0], theta, theta, maxRadius, L_lip, alpha, max_num_iter, static_cast<std::size_t>(1e5), static_cast<std::size_t>(1e6));
+        alg = new VoroCrustAlgorithm(zones_plcs[0], theta, maxRadius, L_lip, alpha, max_num_iter, static_cast<std::size_t>(1e5), static_cast<std::size_t>(1e6));
         std::cout<<"Done VoroCrustAlgorithm build"<<std::endl;
         alg->load_dump(dirdump);
         std::cout<<"Done VoroCrustAlgorithm load"<<std::endl;
@@ -306,7 +306,7 @@ std::pair<std::vector<std::vector<Vector3D> >, std::vector<std::vector<Vector3D>
     {
         plc.addFace(indices);
     }
-    plc.detectFeatures(theta, theta);
+    plc.detectFeatures(theta);
     zones_plcs.clear();
     zones_plcs.push_back(plc);
 

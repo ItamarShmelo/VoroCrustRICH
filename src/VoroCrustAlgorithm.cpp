@@ -5,7 +5,6 @@
 
 VoroCrustAlgorithm::VoroCrustAlgorithm( PL_Complex const& plc_, 
                                         double const sharpTheta_, 
-                                        double const flatTheta_, 
                                         double const maxRadius_,
                                         double const L_Lipschitz_,
                                         double const alpha_,
@@ -14,7 +13,6 @@ VoroCrustAlgorithm::VoroCrustAlgorithm( PL_Complex const& plc_,
                                         std::size_t const num_of_samples_faces_): plc(std::make_shared<PL_Complex>(plc_)), 
                                                               trees(),
                                                               sharpTheta(sharpTheta_),
-                                                              flatTheta(flatTheta_),
                                                               maxRadius(maxRadius_),
                                                               L_Lipschitz(L_Lipschitz_),
                                                               alpha(alpha_),
@@ -46,7 +44,7 @@ VoroCrustAlgorithm::VoroCrustAlgorithm( PL_Complex const& plc_,
 
     if(not plc->checkAllVerticesAreOnFace()) exit(1);
 
-    plc->detectFeatures(sharpTheta, flatTheta);
+    plc->detectFeatures(sharpTheta);
 }
 
 void VoroCrustAlgorithm::run() {
