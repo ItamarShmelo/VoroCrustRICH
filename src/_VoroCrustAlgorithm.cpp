@@ -25,7 +25,10 @@ void bind_vorocrust_algorithm(pybind11::module& m) {
                             "num_of_samples_edges"_a,
                             "num_of_samples_faces"_a)
         .def("run", &VoroCrustAlgorithm::run)
-        .def_readonly("plc", &VoroCrustAlgorithm::plc);
+        .def("dump", &VoroCrustAlgorithm::dump, pybind11::kw_only(), "dirname"_a)
+        .def("load_dump", &VoroCrustAlgorithm::load_dump, pybind11::kw_only(), "dirname"_a)
+        .def_readonly("plc", &VoroCrustAlgorithm::plc)
+        .def_readonly("trees", &VoroCrustAlgorithm::trees);
 }
 
 PYBIND11_MODULE(_VoroCrustAlgorithm, m) {

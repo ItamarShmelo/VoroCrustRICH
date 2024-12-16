@@ -35,9 +35,9 @@ class VoroCrustAlgorithm {
 
         std::vector<std::vector<Seed>> randomSampleSeeds(std::vector<PL_Complex> const& zones_plcs, std::vector<std::vector<Seed>> const& zones_boundary_seeds, double const maxSize);
 
-        void dump(std::filesystem::path const& dirname) const;
+        void dump(std::string const& dirname) const;
 
-        void load_dump(std::filesystem::path const& dirname);
+        void load_dump(std::string const& dirname);
 
         bool pointOutSidePLC(PL_Complex const& plc, Vector3D const& p);
 

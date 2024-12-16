@@ -182,18 +182,13 @@ std::vector<std::vector<Seed>> determineZoneOfSeeds(std::vector<Seed> const& see
     return zone_seeds;
 }
 
-void VoroCrustAlgorithm::dump(std::filesystem::path const& dirname) const {
-    //
-    //
-    //
-    //
-
+void VoroCrustAlgorithm::dump(std::string const& dirname) const {
     std::filesystem::create_directories(dirname);
 
     trees.dump(dirname);
 }
 
-void VoroCrustAlgorithm::load_dump(std::filesystem::path const& dirname) {
+void VoroCrustAlgorithm::load_dump(std::string const& dirname) {
     if(not std::filesystem::is_directory(dirname)){
         std::cout << "ERROR: dump directory does not exist" << std::endl;
         exit(1);
