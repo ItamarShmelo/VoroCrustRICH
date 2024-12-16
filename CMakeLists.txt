@@ -47,11 +47,6 @@ if (NOT VTK_FOUND)
 endif()
 
 include_directories(${PROJECT_SOURCE_DIR})
-include_directories(${BOOST_INCLUDE})
-
-message("Boost Path ${BOOST_INCLUDE}")
-
-message("proj_dir ${proj_dir}")
 
 set(EXE_NAME "VoroCrust.out")
 message("executable name ${EXE_NAME}")
