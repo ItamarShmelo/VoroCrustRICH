@@ -26,6 +26,42 @@ PL_Complex::PL_Complex(std::vector<Vector3D> const &vertices_) : vertices(),
     }
 }
 
+PL_Complex::~PL_Complex(){
+    // explicitly resets all pointers to avoid memory leaks
+    for(auto& vertex : vertices){
+        for(auto& edge : vertex->edges){
+            edge.reset();
+        }
+        for(auto& face : vertex->faces){
+            face.reset();
+        }
+        vertex.reset();
+    }
+
+    for(auto& edge : edges){
+        edge->vertex1.reset();
+        edge->vertex2.reset();
+
+        for(auto& face : edge->faces){
+            face.reset();
+        }
+
+        edge.reset();
+    }
+
+    for(auto& face : faces){
+        for(auto& vertex : face->vertices){
+            vertex.reset();
+        }
+
+        for(auto& edge : face->edges){
+            edge.reset();
+        }
+
+        face.reset();
+    }
+}
+
 VoroCrust::Edge PL_Complex::addEdge(VoroCrust::Vertex const &v1, VoroCrust::Vertex const &v2)
 {
     // first check if edge was already created by a different face.
