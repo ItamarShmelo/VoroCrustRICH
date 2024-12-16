@@ -54,6 +54,7 @@ class Trees {
 
         void load_dump(std::filesystem::path const& dirname);
 };
+using TreesPtr = std::shared_ptr<Trees>;
 
 void dump_boundary_tree(std::filesystem::path const& dirname, VoroCrust_KD_Tree_Boundary const& boundary_tree);
 void dump_ball_tree(std::filesystem::path const& dirname, VoroCrust_KD_Tree_Ball const& ball_tree);
