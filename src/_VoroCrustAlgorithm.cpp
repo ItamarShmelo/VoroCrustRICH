@@ -27,8 +27,14 @@ void bind_vorocrust_algorithm(pybind11::module& m) {
         .def("run", &VoroCrustAlgorithm::run)
         .def("dump", &VoroCrustAlgorithm::dump, pybind11::kw_only(), "dirname"_a)
         .def("load_dump", &VoroCrustAlgorithm::load_dump, pybind11::kw_only(), "dirname"_a)
+        .def("getSeeds", &VoroCrustAlgorithm::getSeeds)
+        .def("randomSampleSeeds", &VoroCrustAlgorithm::randomSampleSeeds, pybind11::kw_only(), "zones_plcs"_a, "zones_boundary_seeds"_a, "maxSize"_a)
         .def_readonly("plc", &VoroCrustAlgorithm::plc)
         .def_readonly("trees", &VoroCrustAlgorithm::trees);
+    
+    m.def("dumpSeeds", &dumpSeeds, pybind11::kw_only(), "dirname"_a, "seeds"_a);
+    
+    m.def("determineZoneOfSeeds", &determineZoneOfSeeds, pybind11::kw_only(), "seeds"_a, "zone_plcs"_a);
 }
 
 PYBIND11_MODULE(_VoroCrustAlgorithm, m) {
