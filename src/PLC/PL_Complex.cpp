@@ -27,6 +27,7 @@ PL_Complex::PL_Complex(std::vector<Vector3D> const &vertices_) : vertices(),
 }
 
 PL_Complex::~PL_Complex(){
+    std::cout << "PL COMPLEX IS DESTROYED" << std::endl;
     // explicitly resets all pointers to avoid memory leaks
     for(auto& vertex : vertices){
         for(auto& edge : vertex->edges){
