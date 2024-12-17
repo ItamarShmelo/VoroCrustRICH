@@ -21,6 +21,7 @@ struct Seed {
     Seed(Vector3D const& p_, double radius_) : p(p_), radius(radius_) {}
     Seed(Ball const& ball) : p(ball.first), radius(ball.second) {}
 };
+using SeedPtr = std::shared_ptr<Seed>;
 
 struct BallInfo {
     std::size_t index;

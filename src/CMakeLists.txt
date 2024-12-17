@@ -5,6 +5,7 @@ add_subdirectory(PLC)
 add_subdirectory(vorocrust_vtk)
 add_subdirectory(VoroCrust_kd_tree)
 add_subdirectory(trees)
+add_subdirectory(RMPS)
 
 set(VOROCRUST_ALGORITHM_SRC "VoroCrustAlgorithm.cpp" 
                             "VoroCrust_kd_tree/VoroCrust_kd_tree.cpp" 
