@@ -599,17 +599,13 @@ void write_ballTree(std::string const& filename,
                     VoroCrust_KD_Tree_Ball const& b_tree){
     // auto const& b_tree = *b_tree_ptr;
     std::filesystem::path filepath(filename);
-    std::cout << "1" << std::endl;
     if(filepath.extension() != ".vtp"){
         throw std::runtime_error("File extension for `filename` in `write_ballTree` must be '.vtp'!!!");
     }
 
     if(b_tree.empty()) return;
-    std::cout << "2" << std::endl;
     std::vector<Vector3D> const& centers = b_tree.points;
     std::vector<double> const& ball_radii = b_tree.ball_radii;
-
-    std::cout << "3" << std::endl;
 
     vtkNew<vtkAppendPolyData> appender;
     
@@ -626,7 +622,6 @@ void write_ballTree(std::string const& filename,
     data_first->SetName("radius");
     data_first->SetNumberOfComponents(1);
     sphere->Update();
-    std::cout << "4" << std::endl;
     std::size_t num_of_cells = sphere->GetOutput()->GetNumberOfCells();
     for(std::size_t j = 0; j<num_of_cells; ++j)
         data_first->InsertNextValue(ball_radii[0]);
@@ -657,7 +652,6 @@ void write_ballTree(std::string const& filename,
         appender->AddInputData(sphere_input->GetOutput());
     }
     appender->Update();
-    std::cout << "4" << std::endl;
     vtkNew<vtkXMLPolyDataWriter> writer;
     writer->SetCompressionLevel(1);
     writer->SetFileName(filename.c_str());
