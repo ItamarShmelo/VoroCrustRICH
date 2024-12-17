@@ -13,6 +13,8 @@ void bind_vorocrust_vtk(pybind11::module& m){
     m.def("write_vtu_trees", &write_vtu_trees, pybind11::kw_only(), "filename"_a, "trees"_a);
     
     m.def("write_ballTree", &write_ballTree, pybind11::kw_only(), "filename"_a, "ball_tree"_a);
+
+    m.def("write_points", &write_points, pybind11::kw_only(), "filename"_a, "points"_a);
 }
 
 } // namespace vorocrust_vtk
