@@ -68,11 +68,11 @@ using VoroCrustAlgorithmPtr = std::shared_ptr<VoroCrustAlgorithm>;
 
 VoroCrust_KD_Tree_Ball makeSeedBallTree(std::vector<Seed> const& seeds);
 
-std::vector<std::vector<Seed>> determineZoneOfSeeds(std::vector<Seed> const& seeds, std::vector<PL_Complex> const& zone_plcs);
+std::vector<std::vector<Seed>> determineZoneOfSeeds(std::vector<Seed> const& seeds, std::vector<PL_ComplexPtr> const& zone_plcs);
 
 std::vector<Seed> getSeedsFromBallTree(VoroCrust_KD_Tree_Ball const& ball_tree);
 
-void dumpSeeds(std::filesystem::path const& dirname, std::vector<Seed> const& seeds);
+void dumpSeeds(std::string const& dirname, std::vector<Seed> const& seeds);
 
 std::vector<Seed> load_dumpSeeds(std::filesystem::path const& dirname);
 

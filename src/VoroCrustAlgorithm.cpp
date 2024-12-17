@@ -150,7 +150,7 @@ std::string VoroCrustAlgorithm::repr() const {
     return s.str();
 }
 
-std::vector<std::vector<Seed>> determineZoneOfSeeds(std::vector<Seed> const& seeds, std::vector<PL_Complex> const& zone_plcs) {
+std::vector<std::vector<Seed>> determineZoneOfSeeds(std::vector<Seed> const& seeds, std::vector<PL_ComplexPtr> const& zone_plcs) {
     if(seeds.empty()){
         throw std::runtime_error("determineZoneOfSeeds: seeds is empty");
     }
@@ -171,7 +171,7 @@ std::vector<std::vector<Seed>> determineZoneOfSeeds(std::vector<Seed> const& see
         if(seed_num % 100000 == 0) std::cout << ++seed_num << std::endl;
         std::size_t i = 0;
         for(i=0; i < zone_plcs.size(); ++i){
-            auto const& zone_plc = zone_plcs[i];
+            auto const& zone_plc = *zone_plcs[i];
 
             if(zone_plc.determineLocation(seed.p) == PL_Complex::Location::IN) {
                 zone_seeds[i].push_back(seed);
@@ -337,8 +337,9 @@ std::vector<Seed> getSeedsFromBallTree(VoroCrust_KD_Tree_Ball const& ball_tree){
     return seeds;
 }
 
-void dumpSeeds(std::filesystem::path const& dirname, std::vector<Seed> const& seeds){
-    std::filesystem::create_directory(dirname);
+void dumpSeeds(std::string const& dirname, std::vector<Seed> const& seeds){
+    std::filesystem::path dirpath(dirname);
+    std::filesystem::create_directory(dirpath);
 
     auto const num_of_seeds = seeds.size();
 
@@ -357,10 +358,10 @@ void dumpSeeds(std::filesystem::path const& dirname, std::vector<Seed> const& se
         r.push_back(seed.radius);
     }
 
-    dump_vector(dirname / "x.txt", x);
-    dump_vector(dirname / "y.txt", y);
-    dump_vector(dirname / "z.txt", z);
-    dump_vector(dirname / "r.txt", r);
+    dump_vector(dirpath / "x.txt", x);
+    dump_vector(dirpath / "y.txt", y);
+    dump_vector(dirpath / "z.txt", z);
+    dump_vector(dirpath / "r.txt", r);
 }
 
 std::vector<Seed> load_dumpSeeds(std::filesystem::path const& dirname){
