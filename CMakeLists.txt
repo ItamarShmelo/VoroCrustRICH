@@ -13,7 +13,10 @@ message("Fortran Compiler: " ${CMAKE_Fortran_COMPILER})
 message("CXX Standard: " ${CMAKE_CXX_STANDARD})
 message("Build Type: " ${CMAKE_BUILD_TYPE})
 
-set(CMAKE_CXX_FLAGS_DEBUG "-DDEBUG -O0 -g3 -gdwarf-3 -Wall -Wextra -Wpedantic -Wcast-align -Wunused -Wold-style-cast -Wpointer-arith -Wcast-qual -Wno-missing-braces -Wmissing-declarations -Wno-long-long -Wfatal-errors")
+# set(CMAKE_CXX_FLAGS_DEBUG "-DDEBUG -O0 -g3 -gdwarf-3 -Wall -Wextra -Wpedantic -Wcast-align -Wunused -Wold-style-cast -Wpointer-arith -Wcast-qual -Wno-missing-braces -Wmissing-declarations -Wno-long-long -Wfatal-errors")
+set(CMAKE_CXX_FLAGS_DEBUG "-DDEBUG -O0 -g3 -gdwarf-3")
+# set(CMAKE_CXX_FLAGS_DEBUG "-DDEBUG -g -O0")
+# set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS_DEBUG})
 
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fopenmp")
 
@@ -22,9 +25,19 @@ message("CMAKE_CXX_FLAGS_RELEASE = " ${CMAKE_CXX_FLAGS_RELEASE})
 message("CMAKE_CXX_FLAGS_DEBUG = " ${CMAKE_CXX_FLAGS_DEBUG})
 message("Root_dir = " ${PROJECT_ROOT_DIR})
 
-set(proj_dir "${PROJECT_SOURCE_DIR}")
-
-file(GLOB SRC_CPP "${PROJECT_SOURCE_DIR}/PLC/PL_Complex.cpp" "${PROJECT_SOURCE_DIR}/PLC/VoroCrustEdge.cpp" "${PROJECT_SOURCE_DIR}/PLC/VoroCrustFace.cpp" "${PROJECT_SOURCE_DIR}/PLC/VoroCrustVertex.cpp" "${PROJECT_SOURCE_DIR}/RMPS/*.cpp" "${PROJECT_SOURCE_DIR}/VoroCrust_kd_tree/*.cpp" "main.cpp" "${PROJECT_SOURCE_DIR}/runVoroCrust.cpp" "${PROJECT_SOURCE_DIR}/trees/trees.cpp" "${PROJECT_SOURCE_DIR}/vorocrust_vtk/vorocrust_vtk.cpp" "${PROJECT_SOURCE_DIR}/VoroCrustAlgorithm.cpp")
+file(GLOB SRC_CPP "${PROJECT_SOURCE_DIR}/PLC/PL_Complex.cpp" 
+                  "${PROJECT_SOURCE_DIR}/PLC/VoroCrustEdge.cpp" 
+                  "${PROJECT_SOURCE_DIR}/PLC/VoroCrustFace.cpp" 
+                  "${PROJECT_SOURCE_DIR}/PLC/VoroCrustVertex.cpp" 
+                  "${PROJECT_SOURCE_DIR}/RMPS/SliverDriver.cpp" 
+                  "${PROJECT_SOURCE_DIR}/RMPS/CornersRMPS.cpp" 
+                  "${PROJECT_SOURCE_DIR}/RMPS/EdgesRMPS.cpp" 
+                  "${PROJECT_SOURCE_DIR}/RMPS/FacesRMPS.cpp" 
+                  "${PROJECT_SOURCE_DIR}/VoroCrust_kd_tree/VoroCrust_kd_tree.cpp" 
+                  "main.cpp" "${PROJECT_SOURCE_DIR}/runVoroCrust.cpp" 
+                  "${PROJECT_SOURCE_DIR}/trees/trees.cpp" 
+                  "${PROJECT_SOURCE_DIR}/vorocrust_vtk/vorocrust_vtk.cpp" 
+                  "${PROJECT_SOURCE_DIR}/VoroCrustAlgorithm.cpp")
 
 set(VTK_DIRECTORY "/software/x86_64/5.14.0/vtk/9.3.0/Intel/OneApi/2024.0.1/with_mesa")
 
