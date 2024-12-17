@@ -33,6 +33,8 @@ def run_voro_crust(*, input_dir, output_dir, theta, maxRadius, L_lip, alpha, max
     logger.info("Building PL_Complex")
     plc = PL_Complex(vertices=vertices)
 
+    logger.info(f"PLC bounding box = {plc.getBoundingBox()}, maxRadius = {maxRadius:g}")
+
     for indices in faces_data:
         plc.addFace(indices=indices)
 
