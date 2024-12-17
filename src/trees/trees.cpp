@@ -137,8 +137,7 @@ Trees::superSampleFaces(std::vector<VoroCrust::Face> const& faces, std::size_t c
         VoroCrust::Face const& face = faces[face_index];
         
         if(face->vertices.size() != 3){
-            std::cout << "ERROR: Algorithm supports only triangular meshes for now" << std::endl;
-            exit(1);
+            throw std::runtime_error("ERROR: Algorithm supports only triangular meshes for now");
         }
 
         // sample a point in a triangle
@@ -273,8 +272,7 @@ void Trees::load_dump(std::filesystem::path const& dirname){
 
 std::vector<Vector3D> load_dump_points(std::filesystem::path const& dirname){
     if(not std::filesystem::is_directory(dirname)){
-        std::cout << "ERROR: in load_dump_points no such directory: " << dirname.string() << std::endl;
-        exit(1);
+        throw std::runtime_error("ERROR: in load_dump_points no such directory: " + dirname.string());
     }
 
     std::vector<double> x = load_dump_vector<double>(dirname / "x.txt");
@@ -286,8 +284,7 @@ std::vector<Vector3D> load_dump_points(std::filesystem::path const& dirname){
     std::size_t num_points = x.size();
 
     if(num_points != y.size() || num_points != z.size()){
-        std::cout << "ERROR: in load_dump_points x, y, z have different sizes" << std::endl;
-        exit(1);
+        throw std::runtime_error("ERROR: in load_dump_points x, y, z have different sizes");
     }
 
     points.reserve(x.size());

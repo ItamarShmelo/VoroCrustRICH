@@ -16,8 +16,7 @@ FacesRMPS::FacesRMPS(double const maxRadius_,
 
 void FacesRMPS::loadFaces(std::vector<VoroCrust::Face> const& faces) {
     if(not eligble_faces.empty()){
-        std::cout << "eligble faces is not empty when loading faces" << std::endl;
-        exit(1);
+        throw std::runtime_error("loadFaces: eligble faces is not empty when loading faces");
     }
 
     for(VoroCrust::Face const& face : faces){
@@ -395,10 +394,12 @@ bool FacesRMPS::doSampling(VoroCrust_KD_Tree_Ball &faces_ball_tree, Trees const&
         }
 
         if(radius < 1e-8){
-            std::cout << "trying to create a ball which is too small" << std::endl;
-            std::cout << "at p = " << p.x << ", " << p.y << ", " << p.z << std::endl;
-            std::cout << "radius = " << radius << std::endl;
-            exit(1);
+            std::ostringstream s;
+
+            s << "FacesRMPS: trying to create a ball which is too small" << std::endl;
+            s << "at p = " << p.x << ", " << p.y << ", " << p.z << std::endl;
+            s << "radius = " << radius << std::endl;
+            throw std::runtime_error(s.str());
         }
 
         VoroCrust::Face const& plc_face = plc->faces[face.plc_index];

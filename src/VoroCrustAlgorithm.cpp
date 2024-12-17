@@ -25,24 +25,25 @@ VoroCrustAlgorithm::VoroCrustAlgorithm( PL_Complex const& plc_,
                                                               sliverDriver(L_Lipschitz_) {
 
     if(sharpTheta > M_PI_2){
-        std::cout << "ERROR: sharpTheta > pi/2" << std::endl;
-        exit(1);
+        throw std::runtime_error("ERROR: Sharp Theta > pi/2");
     }           
 
     if(L_Lipschitz >= 1){
-        std::cout << "ERROR: L_Lipschitz >= 1" << std::endl;
-        exit(1);
+        throw std::runtime_error("ERROR: L_Lipschitz >= 1");
     }
 
     if(L_Lipschitz <= 0){
-        std::cout << "ERROR: L_Lipschitz <= 0 " << std::endl;
-        exit(1);
+        throw std::runtime_error("ERROR: L_Lipschitz <= 0");
     }
 
     //! TODO: Maybe all this need to be in the plc under detect features?
-    if(not plc->checkAllVerticesAreUnique()) exit(1);
+    if(not plc->checkAllVerticesAreUnique()) {
+        throw std::runtime_error("ERROR: Not all vertices are unique");
+    }
 
-    if(not plc->checkAllVerticesAreOnFace()) exit(1);
+    if(not plc->checkAllVerticesAreOnFace()) {
+        throw std::runtime_error("ERROR: Not all vertices are on a face");
+    }
 
     plc->detectFeatures(sharpTheta);
 }
@@ -151,8 +152,11 @@ std::string VoroCrustAlgorithm::repr() const {
 
 std::vector<std::vector<Seed>> determineZoneOfSeeds(std::vector<Seed> const& seeds, std::vector<PL_Complex> const& zone_plcs) {
     if(seeds.empty()){
-        std::cout << "ERROR: seeds is empty" << std::endl;
-        exit(1);
+        throw std::runtime_error("determineZoneOfSeeds: seeds is empty");
+    }
+
+    if(zone_plcs.empty()){
+        throw std::runtime_error("determineZoneOfSeeds: zone_plcs is empty");
     }
 
     // the last index is for the outside seeds
@@ -190,8 +194,7 @@ void VoroCrustAlgorithm::dump(std::string const& dirname) const {
 
 void VoroCrustAlgorithm::load_dump(std::string const& dirname) {
     if(not std::filesystem::is_directory(dirname)){
-        std::cout << "ERROR: dump directory does not exist" << std::endl;
-        exit(1);
+        throw std::runtime_error("load_dump: dump directory does not exist");
     }
 
     trees.load_dump(dirname);
@@ -362,8 +365,7 @@ void dumpSeeds(std::filesystem::path const& dirname, std::vector<Seed> const& se
 
 std::vector<Seed> load_dumpSeeds(std::filesystem::path const& dirname){
     if(not std::filesystem::is_directory(dirname)){
-        std::cout << "ERROR: Seeds dump directory does not exist" << std::endl;
-        exit(1); 
+        throw std::runtime_error("Seeds dump directory does not exist");
     }
 
     auto const x = load_dump_vector<double>(dirname / "x.txt");
@@ -375,7 +377,7 @@ std::vector<Seed> load_dumpSeeds(std::filesystem::path const& dirname){
 
     if(y.size() != num_of_seeds || z.size() != num_of_seeds || r.size() != num_of_seeds){
         std::cout << "ERROR: x,y,z,r sizes do not match!" << std::endl;
-        exit(1);
+        throw std::runtime_error("ERROR: x,y,z,r sizes do not match!");
     }
 
     std::vector<Seed> seeds;

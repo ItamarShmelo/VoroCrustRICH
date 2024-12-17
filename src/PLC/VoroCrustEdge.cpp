@@ -36,8 +36,7 @@ double VoroCrustEdge::calcDihedralAngle(){
         for the dihedral angle between two half planes.
     */
     if(faces.size() != 2){
-        std::cout << "ERROR: can't calculate dihedral angle if number of faces " << std::endl;
-        exit(1);
+        throw std::runtime_error("Error: can't calculate dihedral angle if number of faces is not 2");
     }
 
     Vector3D const& b0 = vertex2->vertex - vertex1->vertex;

@@ -109,14 +109,12 @@ void PL_Complex::addFace(std::vector<std::size_t> const &indices)
     //! WARNING: unique needs vector to be sorted so this does nothing actually... 
     if (indices.size() != unsorted_unique<std::size_t>(indices).size())
     {
-        std::cout << "ERROR: Repeated indices in PL_Complex::addFace!" << std::endl;
-        exit(1);
+        throw std::runtime_error("ERROR: Repeated indices in PL_Complex::addFace!");
     }
 
     if (indices.size() != 3)
     {
-        std::cout << "ERROR in PL_Complex::addFace : Face has to be a traingle!" << std::endl;
-        exit(1);
+        throw std::runtime_error("ERROR: Face has to be a traingle!");
     }
 
     std::vector<VoroCrust::Vertex> face_vertices;
@@ -345,8 +343,7 @@ void PL_Complex::orderCrease(Crease &crease){
         }
 
         if(not found){
-            std::cout << "ERROR IN ORDERING THE CREASES" << std::endl;
-            exit(1);
+            throw std::runtime_error("ERROR IN ORDERING THE CREASES");
         }
     }
 
@@ -504,8 +501,7 @@ std::array<double, 6> PL_Complex::getBoundingBox() const {
 
 PL_Complex::Location PL_Complex::determineLocation(Vector3D const& p) const {
     if(centeroids_z.empty()){
-        std::cout << "ERROR: before calling determine location call detectFeatures!!" << std::endl;
-        exit(1);
+        throw std::runtime_error("ERROR: before calling determine location call detectFeatures!!");
     }
     // determine if a point is in or out using the ray casting algorithm
     std::size_t count = 0;

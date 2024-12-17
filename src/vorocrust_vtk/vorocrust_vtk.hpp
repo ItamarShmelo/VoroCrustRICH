@@ -30,7 +30,7 @@ void write_arbitrary_oriented_vectors(std::filesystem::path const& filename,
 
 /*! \brief writes the points in the boundary kd trees in `trees`*/
 void write_vtu_trees(std::string const& filename, 
-                     TreesPtr const trees);
+                     Trees const& trees);
 
 /*! \brief writes `tree.points` and `query` and paints query and the nearest neighbors to it in different colors */
 void write_nearestNeighbor(std::filesystem::path const& filename, 

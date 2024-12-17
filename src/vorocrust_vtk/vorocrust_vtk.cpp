@@ -29,8 +29,7 @@ namespace vorocrust_vtk {
                               PL_ComplexPtr const plc_ptr){
         std::filesystem::path filepath{filename};
         if(filepath.extension() != ".vtu"){
-            std::cout << "file extension for `filename` in `write_vtu_PL_Complex` must be '.vtu'!!!" << std::endl;
-            exit(1);
+            throw std::runtime_error("file extension for `filename` in `write_vtu_PL_Complex` must be '.vtu'!!!");
         }
         auto const& plc = *plc_ptr;
         auto const& vertices = plc.vertices;
@@ -105,8 +104,7 @@ namespace vorocrust_vtk {
     
     void write_vtu_faces(std::filesystem::path const& filename, std::vector<std::vector<Vector3D>> const& faces){
         if(filename.extension() != ".vtu"){
-            std::cout << "file extension for `filename` in `write_vtu_faces` must be '.vtu'!!!" << std::endl;
-            exit(1);
+            throw std::runtime_error("file extension for `filename` in `write_vtu_faces` must be '.vtu'!!!");
         }
 
         std::vector<Vector3D> vertices;
@@ -170,8 +168,7 @@ namespace vorocrust_vtk {
 
         // partly taken from https://stackoverflow.com/questions/59223211/visualize-velocity-field-as-oriented-arrows
         if(filename.extension() != ".vtp"){
-            std::cout << "file extension for `filename` in `write_faces_normals` must be '.vtp'!!!" << std::endl;
-            exit(1);
+            throw std::runtime_error("file extension for `filename` in `write_arbitrary_oriented_vectors` must be '.vtp'!!!");
         }
 
         vtkNew<vtkPolyData> polyData;
@@ -216,13 +213,11 @@ namespace vorocrust_vtk {
     }
 
     void write_vtu_trees(std::string const& filename, 
-                         TreesPtr const trees_ptr){
+                         Trees const& trees){
         
-        Trees const& trees = *trees_ptr;
         std::filesystem::path filepath(filename);            
         if(filepath.extension() != ".vtu"){
-            std::cout << "file extension for `filename` in `write_vtu_trees` must be '.vtu'!!!" << std::endl;
-            exit(1);
+            throw std::runtime_error("filename must end with '.vtu'");
         }
         std::vector<Vector3D> const& coord_points_vertices = trees.VC_kd_sharp_corners.points;
         std::vector<Vector3D> const& coord_points_edges = trees.VC_kd_sharp_edges.points;
@@ -307,8 +302,7 @@ namespace vorocrust_vtk {
                                Vector3D const& query) {
 
         if(filename.extension() != ".vtu"){
-            std::cout << "file extension for `filename` in `write_nearestNeighbor` must be '.vtu'!!!" << std::endl;
-            exit(1);
+            throw std::runtime_error("file extension for `filename` in `write_nearestNeighbor` must be '.vtu'!!!");
         }
         std::vector<Vector3D> const& coord_points = tree.points;
 
@@ -379,8 +373,7 @@ void write_kNearestNeighbors(std::filesystem::path const& filename,
                              int k){
 
     if(filename.extension() != ".vtu"){
-        std::cout << "file extension for `filename` in `write_kNearestNeighbors` must be '.vtu'!!!" << std::endl;
-        exit(1);
+        throw std::runtime_error("file extension for `filename` in `write_kNearestNeighbors` must be '.vtu'!!!");
     }
     std::vector<Vector3D> const& coord_points = tree.points;
 
@@ -452,8 +445,7 @@ void write_radiusSearch(std::filesystem::path const& filename,
                         double const radius){
 
     if(filename.extension() != ".vtu"){
-        std::cout << "file extension for `filename` in `write_kNearestNeighbors` must be '.vtu'!!!" << std::endl;
-        exit(1);
+        throw std::runtime_error("file extension for `filename` in `write_radiusSearch` must be '.vtu'!!!");
     }
 
     std::vector<Vector3D> const& coord_points = tree.points;
@@ -526,8 +518,7 @@ void write_nearestNeighborToSegment(std::filesystem::path const& filename,
                                     std::size_t const num_points_on_segment){
     
     if(filename.extension() != ".vtu"){
-        std::cout << "file extension for `filename` in `write_nearestNeighborToSegment` must be '.vtu'!!!" << std::endl;
-        exit(1);
+        throw std::runtime_error("file extension for `filename` in `write_nearestNeighborToSegment` must be '.vtu'!!!");
     }
 
     std::vector<Vector3D> const& coord_points = tree.points;
@@ -675,10 +666,10 @@ void write_ballTree(std::string const& filename,
     writer->Write();
 }
 
-void write_points(std::filesystem::path const& filename, std::vector<Vector3D> const& point_vectors) {
-    if(filename.extension() != ".vtu"){
-        std::cout << "file extension for `filename` in `write_points` must be '.vtu'!!!" << std::endl;
-        exit(1);
+void write_points(std::string const& filename, std::vector<Vector3D> const& point_vectors) {
+    std::filesystem::path filepath(filename);
+    if(filepath.extension() != ".vtu"){
+        throw std::runtime_error("File extension for `filename` in `write_points` must be '.vtu'!!!");
     }
 
     std::size_t const num_points = point_vectors.size();

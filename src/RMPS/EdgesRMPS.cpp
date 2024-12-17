@@ -16,8 +16,7 @@ EdgesRMPS::EdgesRMPS(double const maxRadius_,
 
 void EdgesRMPS::loadEdges(std::vector<VoroCrust::Edge> const& sharp_edges){
     if(not eligble_edges.empty()){
-        std::cout << "eligble edges is not empty when loading edges" << std::endl;
-        exit(1);
+        throw std::runtime_error("loadEdges: eligble edges is not empty when loading edges");
     }
 
     for(VoroCrust::Edge const& edge : sharp_edges){
@@ -322,10 +321,12 @@ bool EdgesRMPS::doSampling(VoroCrust_KD_Tree_Ball &edges_ball_tree, Trees const&
         }
 
         if(radius < 1e-8){
-            std::cout << "trying to create a ball which is too small" << std::endl;
-            std::cout << "at p = " << p.x << ", " << p.y << ", " << p.z << std::endl;
-            std::cout << "radius = " << radius << std::endl;
-            exit(1); 
+            std::ostringstream s;
+
+            s << "Edges RMPS: trying to create a ball which is too small" << std::endl;
+            s << "at p = " << p.x << ", " << p.y << ", " << p.z << std::endl;
+            s << "radius = " << radius << std::endl;
+            throw std::runtime_error(s.str());
         }
 
         edges_ball_tree.insert(p, edge[1]-edge[0], radius, edge.crease_index, edge.plc_index);

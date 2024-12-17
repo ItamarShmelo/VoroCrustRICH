@@ -106,8 +106,7 @@ void VoroCrust_KD_Tree::nearestNeighborRecursive(Vector3D const& query, NodePtr 
 
 std::vector<std::size_t> VoroCrust_KD_Tree::kNearestNeighbors(Vector3D const& query, std::size_t const k) const {
     if(k > points.size()){
-        std::cout << "Error: kNearestNeighbors, `k` can't be larger then number of points" << std::endl;
-        exit(1);
+        throw std::runtime_error("kNearestNeighbors, `k` can't be larger then number of points");
     }
 
     std::vector<double> minDist(k, std::numeric_limits<double>::max());
@@ -315,18 +314,15 @@ VoroCrust_KD_Tree_Boundary::VoroCrust_KD_Tree_Boundary() : VoroCrust_KD_Tree(), 
 
 VoroCrust_KD_Tree_Boundary::VoroCrust_KD_Tree_Boundary(std::vector<Vector3D> const& points, std::vector<Vector3D> const& vecs, std::vector<std::size_t> const& feature_index_, std::vector<std::size_t> const& plc_index_) : VoroCrust_KD_Tree(points), vectors(vecs), feature_index(feature_index_), plc_index(plc_index_) {
     if (points.size() != vecs.size()){
-        std::cout << "ERROR : points.size() != vecs.size() in initialization of VoroCrust_KD_Tree_Boundary" << std::endl;
-        exit(1);
+        throw std::runtime_error("ERROR : points.size() != vecs.size() in initialization of VoroCrust_KD_Tree_Boundary");
     }
 
     if (points.size() != feature_index.size()){
-        std::cout << "ERROR : points.size() !=  feature_index.size() in initialization of VoroCrust_KD_Tree_Ball" << std::endl;
-        exit(1);
+        throw std::runtime_error("ERROR : points.size() != plc_index.size() in initialization of VoroCrust_KD_Tree_Boundary");
     }
     
     if (points.size() != plc_index.size()){
-        std::cout << "ERROR : points.size() !=  plc_index.size() in initialization of VoroCrust_KD_Tree_Ball" << std::endl;
-        exit(1);
+        throw std::runtime_error("ERROR : points.size() !=  plc_index.size() in initialization of VoroCrust_KD_Tree_Ball");
     }
 }
 
@@ -461,8 +457,7 @@ VoroCrust_KD_Tree_Ball::VoroCrust_KD_Tree_Ball(std::vector<Vector3D> const& poin
                                                                                    ball_radii(radii), 
                                                                                    max_radius(0.0) {
     if (points.size() != ball_radii.size()){
-        std::cout << "ERROR : points.size() !=  ball_redii.size() in initialization of VoroCrust_KD_Tree_Ball" << std::endl;
-        exit(1);
+        throw std::runtime_error("ERROR : points.size() !=  ball_redii.size() in initialization of VoroCrust_KD_Tree_Ball");
     }
 
     max_radius = ball_radii.empty() ? 0.0 : *std::max_element(ball_radii.begin(), ball_radii.end());

@@ -42,8 +42,7 @@ std::vector<BallInfo> SliverDriver::groupOverlappingBalls(BallInfo const& ball_i
     auto const& it = std::find(overlapping_balls.begin(), overlapping_balls.end(), ball_info);
 
     if(it == overlapping_balls.end()){
-        std::cout << "current ball is not in overlapping balls!" << std::endl;
-        exit(1);
+        throw std::runtime_error("current ball is not in overlapping balls!");
     }
 
     // erase the current ball from the overlapping balls
@@ -88,7 +87,7 @@ Ball SliverDriver::getBall(BallInfo const& ball_info, Trees const& trees) const 
     }
 
     std::cout << "ERROR: getBall" << std::endl;
-    exit(1);
+    throw std::runtime_error("ERROR: getBall: invalid dimension");
 }
 
 void SliverDriver::eliminateSliversForBallsInBallTree(Dim const dim, Trees const& trees) {
@@ -221,8 +220,7 @@ void SliverDriver::setRadiusOfBall(double const r_new, BallInfo const& ball_info
         return;
     }
 
-    std::cout << "ERROR: setRadiusOfBall" << std::endl;
-    exit(1);
+    throw std::runtime_error("setRadiusOfBall: invalid dimension");
 }
 
 std::tuple<bool, Vector3D, Vector3D> SliverDriver::calculateIntersectionSeeds(Ball const& ball_1, Ball const& ball_2, Ball const& ball_3) const {
