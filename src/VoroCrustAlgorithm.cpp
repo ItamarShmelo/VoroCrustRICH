@@ -49,7 +49,6 @@ VoroCrustAlgorithm::VoroCrustAlgorithm( PL_Complex const& plc_,
 }
 
 void VoroCrustAlgorithm::run() {
-    //! TODO: make sampling size a user input!
     //! IMPORTANT: sampling size can effect the convergence of the algorithm because the radius is determined using proximity to the sampled points on different features. Make sure that the sampling size is compatible to the size of the smallest polygon in the data. One wants the sampling to be "dense" in the edges and faces.
     trees.loadPLC(*plc, num_of_samples_edges, num_of_samples_faces);    
 
