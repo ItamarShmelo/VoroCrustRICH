@@ -98,5 +98,6 @@ class SliverDriver {
         void setRadiusOfBall(double const r_new, BallInfo const& ball_info);
 
 };
+using SliverDriverPtr = std::shared_ptr<SliverDriver>;
 
 #endif // SLIVER_DRIVER

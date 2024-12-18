@@ -49,7 +49,7 @@ class EdgesRMPS {
         double const sharpTheta;
         double const rejection_probability = 0.1;
 
-        boost::variate_generator<boost::mt19937, boost::uniform_01<>> uni01_gen;
+        boost::variate_generator<boost::mt19937_64, boost::uniform_01<>> uni01_gen;
         
         std::shared_ptr<PL_Complex const> plc;
         std::vector<EligbleEdge> eligble_edges;
@@ -87,5 +87,6 @@ class EdgesRMPS {
         double calculateInitialRadius(Vector3D const& point, std::size_t const edge_index, Trees const& trees) const;
 
 };
+using EdgesRMPSPtr = std::shared_ptr<EdgesRMPS>;
 
 #endif // EDGES_RMPS

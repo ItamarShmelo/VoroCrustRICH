@@ -9,7 +9,7 @@ EdgesRMPS::EdgesRMPS(double const maxRadius_,
                           L_Lipschitz(L_Lipschitz_), 
                           alpha(alpha_), 
                           sharpTheta(sharpTheta_), 
-                          uni01_gen(boost::mt19937(std::time(nullptr)), boost::random::uniform_01<>()), 
+                          uni01_gen(boost::mt19937_64(std::time(nullptr)), boost::random::uniform_01<>()), 
                           plc(plc_), 
                           eligble_edges(), 
                           isDeleted() {}

@@ -1,4 +1,7 @@
 set(RMPS_SRC "SliverDriver.cpp"
+             "CornersRMPS.cpp"
+             "EdgesRMPS.cpp"
+             "FacesRMPS.cpp"
              "../trees/trees.cpp"
              "../PLC/PL_Complex.cpp"
              "../PLC/VoroCrustVertex.cpp"

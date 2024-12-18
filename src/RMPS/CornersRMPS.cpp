@@ -29,7 +29,7 @@ void CornersRMPS::doSampling(VoroCrust_KD_Tree_Ball &corner_ball_tree, Trees con
 
 EligbleCorner CornersRMPS::newSample(){
     // create a random number generator to sample from 0 - (eligble_corners.size()-1)
-    boost::mt19937 rng(std::time(nullptr));
+    boost::mt19937_64 rng(std::time(nullptr));
     boost::random::uniform_int_distribution<> int_distribution(0, eligble_corners.size() - 1);
     boost::variate_generator rand_gen(rng, int_distribution);
 

@@ -11,7 +11,7 @@ using EligbleCorner = VoroCrust::Vertex;
 
 class CornersRMPS {
     public:
-        CornersRMPS(double const maxRadius_, double const L_Lipschitz_, double const sharpTheta, std::shared_ptr<PL_Complex> const& plc_);
+        CornersRMPS(double const maxRadius_, double const L_Lipschitz_, double const sharpTheta, PL_ComplexPtr const& plc_);
         ~CornersRMPS() = default;
 
         //! \brief loads the sharp corners from the plc
@@ -38,6 +38,6 @@ class CornersRMPS {
         double calculateSmoothnessLimitation(EligbleCorner const& corner, Trees const& trees) const;
         
 };
-
+using CornersRMPSPtr = std::shared_ptr<CornersRMPS>;
 
 #endif // CORNER_RMPS
