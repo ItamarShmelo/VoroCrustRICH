@@ -233,9 +233,7 @@ public:
 		return stream;
 	}
 
-#ifdef __INTEL_COMPILER
-#pragma omp declare simd
-#endif
+
 
 	~Vector3D(void) = default;
 
@@ -254,9 +252,7 @@ public:
 \param v Three dimensional vector
 \return Norm of v
 */
-#ifdef __INTEL_COMPILER
-#pragma omp declare simd
-#endif
+
 inline double abs(Vector3D const& v)
 {
 	return std::sqrt(v.x*v.x + v.y*v.y + v.z*v.z);
@@ -334,9 +330,7 @@ inline Vector3D operator/(Vector3D const& v, double d)
 \param v2 3D vector
 \return Scalar product of v1 and v2
 */
-#ifdef __INTEL_COMPILER
-#pragma omp declare simd
-#endif
+
 inline double ScalarProd(Vector3D const& v1, Vector3D const& v2)
 {
 	return v1.x*v2.x + v1.y*v2.y + v1.z*v2.z;
@@ -482,9 +476,7 @@ inline void Split(vector<Vector3D> const & vIn, vector<double> & vX, vector<doub
 \return The assigned value
 */
 template<>
-#ifdef __INTEL_COMPILER
-#pragma omp declare simd
-#endif
+
 inline Vector3D& Vector3D::operator=<Vector3D>(const Vector3D& v)
 {
 	x = v.x;
