@@ -18,12 +18,6 @@ if (NOT VTK_FOUND)
     message(FATAL_ERROR "NO VTK")
 endif()
 
-vtk_module_autoinit(
-    TARGETS ${EXE_NAME}
-    MODULES ${VTK_LIBRARIES}
-)
-
-
 set(VOROCRUST_VTK_SRC "vorocrust_vtk.cpp"
                       "../VoroCrust_kd_tree/VoroCrust_kd_tree.cpp" 
                       "../PLC/PL_Complex.cpp"
