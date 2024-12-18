@@ -48,9 +48,7 @@ public:
 	\param iy y Component
 	\param iz z Component
 	*/
-	#ifdef __INTEL_COMPILER
-	#pragma omp declare simd
-	#endif
+
 	inline Vector3D(double ix, double iy, double iz): x(ix), y(iy), z(iz) {};
 
 	/*! \brief Null constructor
@@ -95,13 +93,18 @@ public:
 		return values[index];
 	}
 
+	inline Vector3D& operator=(Vector3D const& v){
+		x = v.x;
+		y = v.y;
+		z = v.z;
+
+		return *this;
+	}
+
 	/*! \brief Addition
 	\param v Vector to be added
 	\return Reference to sum
 	*/
-	#ifdef __INTEL_COMPILER
-	#pragma omp declare simd
-	#endif
 	inline Vector3D& operator+=(Vector3D const& v)
 	{
 		x += v.x;
@@ -114,9 +117,7 @@ public:
 	\param v Vector to be subtracted
 	\return Difference
 	*/
-	#ifdef __INTEL_COMPILER
-	#pragma omp declare simd
-	#endif
+
 	inline Vector3D& operator-=(Vector3D const& v)
 	{
 		x -= v.x;
@@ -130,9 +131,7 @@ public:
 	\return The assigned value
 	*/
 	template<typename VectorType>
-	#ifdef __INTEL_COMPILER
-	#pragma omp declare simd
-	#endif
+
 	inline Vector3D& operator=(const VectorType& v)
 	{
 		x = v[0];
@@ -145,9 +144,7 @@ public:
 	\param s Scalar
 	\return Reference to the vector multiplied by scalar
 	*/
-	#ifdef __INTEL_COMPILER
-	#pragma omp declare simd
-	#endif
+
 	inline Vector3D& operator*=(double s)
 	{
 		x *= s;
