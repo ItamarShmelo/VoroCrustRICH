@@ -3,90 +3,6 @@
 #include <iostream>
 #include <boost/random.hpp>
 
-VoroCrustAlgorithm::VoroCrustAlgorithm( PL_Complex const& plc_, 
-                                        double const sharpTheta_, 
-                                        double const maxRadius_,
-                                        double const L_Lipschitz_,
-                                        double const alpha_,
-                                        std::size_t const maximal_num_iter_,
-                                        std::size_t const num_of_samples_edges_,
-                                        std::size_t const num_of_samples_faces_): plc(std::make_shared<PL_Complex>(plc_)), 
-                                                              trees(),
-                                                              sharpTheta(sharpTheta_),
-                                                              maxRadius(maxRadius_),
-                                                              L_Lipschitz(L_Lipschitz_),
-                                                              alpha(alpha_),
-                                                              maximal_num_iter(maximal_num_iter_),
-                                                              num_of_samples_edges(num_of_samples_edges_),
-                                                              num_of_samples_faces(num_of_samples_faces_),
-                                                              cornersDriver(maxRadius_, L_Lipschitz_, sharpTheta_, plc),
-                                                              edgesDriver(maxRadius_, L_Lipschitz_, alpha_, sharpTheta_, plc),
-                                                              facesDriver(maxRadius_, L_Lipschitz_, alpha_, sharpTheta_, plc),
-                                                              sliverDriver(L_Lipschitz_) {
-
-    if(sharpTheta > M_PI_2){
-        throw std::runtime_error("ERROR: Sharp Theta > pi/2");
-    }           
-
-    if(L_Lipschitz >= 1){
-        throw std::runtime_error("ERROR: L_Lipschitz >= 1");
-    }
-
-    if(L_Lipschitz <= 0){
-        throw std::runtime_error("ERROR: L_Lipschitz <= 0");
-    }
-
-    //! TODO: Maybe all this need to be in the plc under detect features?
-    if(not plc->checkAllVerticesAreUnique()) {
-        throw std::runtime_error("ERROR: Not all vertices are unique");
-    }
-
-    if(not plc->checkAllVerticesAreOnFace()) {
-        throw std::runtime_error("ERROR: Not all vertices are on a face");
-    }
-
-    plc->detectFeatures(sharpTheta);
-}
-
-void VoroCrustAlgorithm::run() {
-    //! IMPORTANT: sampling size can effect the convergence of the algorithm because the radius is determined using proximity to the sampled points on different features. Make sure that the sampling size is compatible to the size of the smallest polygon in the data. One wants the sampling to be "dense" in the edges and faces.
-    trees.loadPLC(*plc, num_of_samples_edges, num_of_samples_faces);    
-
-    //! TODO: init eligable edges vertices and faces
-    cornersDriver.loadCorners(plc->sharp_corners);
-    cornersDriver.doSampling(trees.ball_kd_vertices, trees);
-    trees.ball_kd_vertices.remakeTree();
-    // sliver elimination loop
-    for(std::size_t iteration = 0; iteration < maximal_num_iter; ++iteration){
-        // enfore lipchitzness on vertices
-        std::cout << "\nCorners Lipchitzness\n--------------\n" << std::endl;
-        enforceLipschitzness(trees.ball_kd_vertices, L_Lipschitz);    
-        
-        do {
-            std::cout << "\nEdgesRMPS\n--------------\n" << std::endl;
-            edgesDriver.loadEdges(plc->sharp_edges);
-            edgesDriver.doSampling(trees.ball_kd_edges, trees);
-            trees.ball_kd_edges.remakeTree();
-        } while(enforceLipschitzness(trees.ball_kd_edges, L_Lipschitz));
-            
-        do {
-            std::cout << "\nFacesRMPS\n--------------\n" << std::endl;
-            facesDriver.loadFaces(plc->faces);
-            facesDriver.doSampling(trees.ball_kd_faces, trees);
-            trees.ball_kd_faces.remakeTree();
-
-        } while(enforceLipschitzness(trees.ball_kd_faces, L_Lipschitz));
-
-        // We can't eliminate slivers and enforce Lipchitzness since that would uncover parts of the PLC
-        if(iteration+1 >= maximal_num_iter) break;
-
-        if(not sliverDriver.eliminateSlivers(trees)) break;
-
-        enforceLipschitzness(trees.ball_kd_edges, L_Lipschitz);
-        enforceLipschitzness(trees.ball_kd_faces, L_Lipschitz);
-    }
-}
-
 bool enforceLipschitzness(VoroCrust_KD_Tree_Ball& ball_tree, double const L_Lipschitz){
     std::size_t const num_of_points = ball_tree.size();
     
@@ -114,10 +30,6 @@ bool enforceLipschitzness(VoroCrust_KD_Tree_Ball& ball_tree, double const L_Lips
     return number_of_balls_shrunk > 0;
 }
 
-std::vector<Seed> VoroCrustAlgorithm::getSeeds() const {
-    return sliverDriver.getSeeds(trees);
-}
-
 VoroCrust_KD_Tree_Ball makeSeedBallTree(std::vector<Seed> const& seeds){
     
     std::size_t const seeds_size = seeds.size();
@@ -138,15 +50,6 @@ VoroCrust_KD_Tree_Ball makeSeedBallTree(std::vector<Seed> const& seeds){
                                   std::vector<std::size_t>(seeds_size, 0), 
                                   std::vector<std::size_t>(seeds_size, 0),
                                   radii);
-}
-
-std::string VoroCrustAlgorithm::repr() const {
-    std::ostringstream s;
-    
-    s << "VoroCrustAlgorithm : \n--------------------------------\n\n";
-    s << "PLC : \n------------\n" << plc->repr() << std::endl;
-
-    return s.str();
 }
 
 std::vector<std::vector<Seed>> determineZoneOfSeeds(std::vector<Seed> const& seeds, std::vector<PL_ComplexPtr> const& zone_plcs) {
@@ -183,47 +86,6 @@ std::vector<std::vector<Seed>> determineZoneOfSeeds(std::vector<Seed> const& see
         }
     }
     return zone_seeds;
-}
-
-void VoroCrustAlgorithm::dump(std::string const& dirname) const {
-    std::filesystem::create_directories(dirname);
-
-    trees.dump(dirname);
-}
-
-void VoroCrustAlgorithm::load_dump(std::string const& dirname) {
-    if(not std::filesystem::is_directory(dirname)){
-        throw std::runtime_error("load_dump: dump directory does not exist");
-    }
-
-    trees.load_dump(dirname);
-}
-
-bool VoroCrustAlgorithm::pointOutSidePLC(PL_Complex const& plc, Vector3D const& p){
-    if(plc.determineLocation(p) != PL_Complex::Location::OUT)
-        return false;
-    bool in_boundary_ball = false;
-    if(not trees.ball_kd_vertices.empty()) in_boundary_ball = in_boundary_ball || trees.ball_kd_vertices.isContainedInBall(p);
-    if(not trees.ball_kd_edges.empty()) in_boundary_ball = in_boundary_ball || trees.ball_kd_edges.isContainedInBall(p);
-    if(not trees.ball_kd_faces.empty()) in_boundary_ball = in_boundary_ball || trees.ball_kd_faces.isContainedInBall(p);
-
-    if(in_boundary_ball)
-        return false;
-    return true;
-}
-
-bool VoroCrustAlgorithm::pointInSidePLC(PL_Complex const& plc, Vector3D const& p){
-    if(plc.determineLocation(p) == PL_Complex::Location::OUT)
-        return false;
-
-    bool in_boundary_ball = false;
-    if(not trees.ball_kd_vertices.empty()) in_boundary_ball = in_boundary_ball || trees.ball_kd_vertices.isContainedInBall(p);
-    if(not trees.ball_kd_edges.empty()) in_boundary_ball = in_boundary_ball || trees.ball_kd_edges.isContainedInBall(p);
-    if(not trees.ball_kd_faces.empty()) in_boundary_ball = in_boundary_ball || trees.ball_kd_faces.isContainedInBall(p);
-
-    if(in_boundary_ball)
-        return false;
-    return true;
 }
 
 std::vector<std::vector<Seed>> randomSampleVolumeSeeds(std::vector<PL_ComplexPtr> const& zones_plcs, std::vector<std::vector<Seed>> const& zones_boundary_seeds, double const maxSize, Trees const& trees, double const L_Lipschitz) {

@@ -11,54 +11,6 @@
 #include <filesystem>
 #include <memory>
 
-
-class VoroCrustAlgorithm {
-    public:
-        std::shared_ptr<PL_Complex> plc;
-        Trees trees;
-
-        VoroCrustAlgorithm( PL_Complex const& plc_,
-                            double const sharpTheta_,
-                            double const maxRadius_,
-                            double const L_Lipschitz_,
-                            double const alpha_,
-                            std::size_t const maximal_num_iter_,
-                            std::size_t const num_of_samples_edges_,
-                            std::size_t const num_of_samples_faces);
-
-        /*! \brief runs the VoroCrust Algorithm*/
-        void run();
-
-        std::vector<Seed> getSeeds() const;
-
-        std::string repr() const;
-
-
-        void dump(std::string const& dirname) const;
-
-        void load_dump(std::string const& dirname);
-
-        bool pointOutSidePLC(PL_Complex const& plc, Vector3D const& p);
-
-        bool pointInSidePLC(PL_Complex const& plc, Vector3D const& p);
-        
-    private:
-        double const sharpTheta;
-        double const maxRadius;
-        double const L_Lipschitz;
-        double const alpha;
-        std::size_t const maximal_num_iter;
-        std::size_t const num_of_samples_edges;
-        std::size_t const num_of_samples_faces;
-
-        CornersRMPS cornersDriver;
-        EdgesRMPS edgesDriver;
-        FacesRMPS facesDriver;
-        SliverDriver sliverDriver;
-
-};
-using VoroCrustAlgorithmPtr = std::shared_ptr<VoroCrustAlgorithm>;
-
 std::vector<std::vector<Seed>> randomSampleVolumeSeeds(std::vector<PL_ComplexPtr> const& zones_plcs, std::vector<std::vector<Seed>> const& zones_boundary_seeds, double const maxSize, Trees const& trees, double const L_Lipschitz);
 
 bool enforceLipschitzness(VoroCrust_KD_Tree_Ball& ball_tree, double const L_Lipschitz);
