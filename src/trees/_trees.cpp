@@ -8,6 +8,7 @@ void bind_trees(pybind11::module& m){
     
     pybind11::class_<Trees, TreesPtr>(m, "Trees")
         .def(pybind11::init<>())
+        .def("loadPLC", &Trees::loadPLC, pybind11::kw_only(), "plc"_a, "Nsample_edges"_a, "Nsample_faces"_a)
         .def_readonly("VC_kd_sharp_corners", &Trees::VC_kd_sharp_corners)
         .def_readonly("VC_kd_sharp_edges", &Trees::VC_kd_sharp_edges)
         .def_readonly("VC_kd_faces", &Trees::VC_kd_faces)

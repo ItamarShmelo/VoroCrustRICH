@@ -49,9 +49,9 @@ Trees::superSampleEdges(std::vector<VoroCrust::Edge> const& edges, std::size_t c
     }
 
     // generate a random number generator
-    boost::mt19937 rng(std::time(nullptr));
+    boost::mt19937_64 rng(std::time(nullptr));
     boost::random::uniform_01<> zeroone;
-    boost::variate_generator<boost::mt19937, boost::uniform_01<>> rand_gen(rng, zeroone);
+    boost::variate_generator<boost::mt19937_64, boost::uniform_01<>> rand_gen(rng, zeroone);
 
     std::vector<double> start_len(edges.size(), 0.0);
 
@@ -104,9 +104,9 @@ Trees::superSampleEdges(std::vector<VoroCrust::Edge> const& edges, std::size_t c
 std::tuple<std::vector<Vector3D>, std::vector<Vector3D>, std::vector<std::size_t>, std::vector<std::size_t>> 
 Trees::superSampleFaces(std::vector<VoroCrust::Face> const& faces, std::size_t const Nsample){
     // generate a random number generator
-    boost::mt19937 rng(std::time(nullptr));
+    boost::mt19937_64 rng(std::time(nullptr));
     boost::random::uniform_01<> zeroone;
-    boost::variate_generator<boost::mt19937, boost::uniform_01<>> rand_gen(rng, zeroone);
+    boost::variate_generator<boost::mt19937_64, boost::uniform_01<>> rand_gen(rng, zeroone);
 
     std::vector<double> start_area(faces.size(), 0.0);
 
