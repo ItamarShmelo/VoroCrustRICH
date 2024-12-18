@@ -57,5 +57,5 @@ public:
     
     std::string repr();
 };
-
+using VoroCrustEdgePtr = std::shared_ptr<VoroCrustEdge>;
 #endif /* VOROCRUST_EDGE */ 

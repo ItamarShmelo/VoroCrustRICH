@@ -42,4 +42,5 @@ class VoroCrustVertex
 
         std::string repr() const;
 };
+using VoroCrustVertexPtr = std::shared_ptr<VoroCrustVertex>;
 #endif /* VOROCRUST_VERTEX_HPP */

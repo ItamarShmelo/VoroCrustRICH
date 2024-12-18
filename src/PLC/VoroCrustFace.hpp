@@ -82,5 +82,5 @@ class VoroCrustFace
         std::string repr() const;
 
 };
-
+using VoroCrustFacePtr = std::shared_ptr<VoroCrustFace>;
 #endif /* VOROCRUST_FACE_HPP */
