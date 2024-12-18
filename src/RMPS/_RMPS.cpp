@@ -6,6 +6,8 @@
 #include "FacesRMPS.hpp"
 #include "SliverDriver.hpp"
 
+void bind_rmps(pybind11::module& m);
+
 void bind_rmps(pybind11::module& m){
     using namespace pybind11::literals;
 

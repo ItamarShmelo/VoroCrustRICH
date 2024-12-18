@@ -3,6 +3,8 @@
 
 #include "VoroCrust_kd_tree.hpp"
 
+void bind_vorocrust_kd_tree(pybind11::module& m);
+
 void bind_vorocrust_kd_tree(pybind11::module& m) {
     using namespace pybind11::literals;
 

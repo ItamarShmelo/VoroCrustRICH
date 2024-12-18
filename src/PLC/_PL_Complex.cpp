@@ -6,6 +6,8 @@
 #include "VoroCrustEdge.hpp"
 #include "VoroCrustFace.hpp"
 
+void bind_pl_complex(pybind11::module& m);
+
 void bind_pl_complex(pybind11::module& m) {
     using namespace pybind11::literals;
 

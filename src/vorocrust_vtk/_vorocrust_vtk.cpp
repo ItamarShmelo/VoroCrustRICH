@@ -4,6 +4,7 @@
 #include "vorocrust_vtk.hpp"
 
 namespace vorocrust_vtk {
+void bind_vorocrust_vtk(pybind11::module& m);
 
 void bind_vorocrust_vtk(pybind11::module& m){
     using namespace pybind11::literals;

@@ -3,6 +3,8 @@
 
 #include "trees.hpp"
 
+void bind_trees(pybind11::module& m);
+
 void bind_trees(pybind11::module& m){
     using namespace pybind11::literals;
     

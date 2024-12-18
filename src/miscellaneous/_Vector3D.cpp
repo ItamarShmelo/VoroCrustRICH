@@ -4,6 +4,8 @@
 
 #include "Vector3D.hpp"
 
+void bind_vector_3d(pybind11::module& m);
+
 void bind_vector_3d(pybind11::module& m) {
     using namespace pybind11::literals;
     using Vector3DPtr = std::shared_ptr<Vector3D>;

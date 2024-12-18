@@ -3,6 +3,8 @@
 
 #include "VoroCrustAlgorithm.hpp"
 
+void bind_vorocrust_algorithm(pybind11::module& m);
+
 void bind_vorocrust_algorithm(pybind11::module& m) {
     using namespace pybind11::literals;
     
