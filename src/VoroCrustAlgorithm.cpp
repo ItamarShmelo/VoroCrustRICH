@@ -312,7 +312,7 @@ std::vector<std::vector<Seed>> randomSampleVolumeSeeds(std::vector<PL_ComplexPtr
             volume_seeds_tree.remakeTree();
         } while(enforceLipschitzness(volume_seeds_tree, L_Lipschitz));
 
-        std::vector<Seed> total_zone_seeds = zones_boundary_seeds[zone_num];
+        std::vector<Seed> total_zone_seeds;
         std::vector<Seed> volume_temp_seeds = getSeedsFromBallTree(volume_seeds_tree);
 
         total_zone_seeds.insert(total_zone_seeds.end(), volume_temp_seeds.begin(), volume_temp_seeds.end());
