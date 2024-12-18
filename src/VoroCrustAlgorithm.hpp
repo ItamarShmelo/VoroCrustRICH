@@ -33,7 +33,6 @@ class VoroCrustAlgorithm {
 
         std::string repr() const;
 
-        std::vector<std::vector<Seed>> randomSampleSeeds(std::vector<PL_Complex> const& zones_plcs, std::vector<std::vector<Seed>> const& zones_boundary_seeds, double const maxSize);
 
         void dump(std::string const& dirname) const;
 
@@ -57,14 +56,12 @@ class VoroCrustAlgorithm {
         FacesRMPS facesDriver;
         SliverDriver sliverDriver;
 
-        /*! \brief enforces the Lipschitzness for a strata ball_tree
-            \return true if some ball shrunk
-        */
-        bool enforceLipschitzness(VoroCrust_KD_Tree_Ball& ball_tree);
-
-        bool sliverElimination();
 };
 using VoroCrustAlgorithmPtr = std::shared_ptr<VoroCrustAlgorithm>;
+
+std::vector<std::vector<Seed>> randomSampleVolumeSeeds(std::vector<PL_ComplexPtr> const& zones_plcs, std::vector<std::vector<Seed>> const& zones_boundary_seeds, double const maxSize, Trees const& trees, double const L_Lipschitz);
+
+bool enforceLipschitzness(VoroCrust_KD_Tree_Ball& ball_tree, double const L_Lipschitz);
 
 VoroCrust_KD_Tree_Ball makeSeedBallTree(std::vector<Seed> const& seeds);
 

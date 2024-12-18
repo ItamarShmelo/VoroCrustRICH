@@ -61,14 +61,14 @@ void VoroCrustAlgorithm::run() {
     for(std::size_t iteration = 0; iteration < maximal_num_iter; ++iteration){
         // enfore lipchitzness on vertices
         std::cout << "\nCorners Lipchitzness\n--------------\n" << std::endl;
-        enforceLipschitzness(trees.ball_kd_vertices);    
+        enforceLipschitzness(trees.ball_kd_vertices, L_Lipschitz);    
         
         do {
             std::cout << "\nEdgesRMPS\n--------------\n" << std::endl;
             edgesDriver.loadEdges(plc->sharp_edges);
             edgesDriver.doSampling(trees.ball_kd_edges, trees);
             trees.ball_kd_edges.remakeTree();
-        } while(enforceLipschitzness(trees.ball_kd_edges));
+        } while(enforceLipschitzness(trees.ball_kd_edges, L_Lipschitz));
             
         do {
             std::cout << "\nFacesRMPS\n--------------\n" << std::endl;
@@ -76,19 +76,19 @@ void VoroCrustAlgorithm::run() {
             facesDriver.doSampling(trees.ball_kd_faces, trees);
             trees.ball_kd_faces.remakeTree();
 
-        } while(enforceLipschitzness(trees.ball_kd_faces));
+        } while(enforceLipschitzness(trees.ball_kd_faces, L_Lipschitz));
 
         // We can't eliminate slivers and enforce Lipchitzness since that would uncover parts of the PLC
         if(iteration+1 >= maximal_num_iter) break;
 
         if(not sliverDriver.eliminateSlivers(trees)) break;
 
-        enforceLipschitzness(trees.ball_kd_edges);
-        enforceLipschitzness(trees.ball_kd_faces);
+        enforceLipschitzness(trees.ball_kd_edges, L_Lipschitz);
+        enforceLipschitzness(trees.ball_kd_faces, L_Lipschitz);
     }
 }
 
-bool VoroCrustAlgorithm::enforceLipschitzness(VoroCrust_KD_Tree_Ball& ball_tree){
+bool enforceLipschitzness(VoroCrust_KD_Tree_Ball& ball_tree, double const L_Lipschitz){
     std::size_t const num_of_points = ball_tree.size();
     
     std::size_t number_of_balls_shrunk = 0;
@@ -227,7 +227,7 @@ bool VoroCrustAlgorithm::pointInSidePLC(PL_Complex const& plc, Vector3D const& p
     return true;
 }
 
-std::vector<std::vector<Seed>> VoroCrustAlgorithm::randomSampleSeeds(std::vector<PL_Complex> const& zones_plcs, std::vector<std::vector<Seed>> const& zones_boundary_seeds, double const maxSize) {
+std::vector<std::vector<Seed>> randomSampleVolumeSeeds(std::vector<PL_ComplexPtr> const& zones_plcs, std::vector<std::vector<Seed>> const& zones_boundary_seeds, double const maxSize, Trees const& trees, double const L_Lipschitz) {
     std::size_t const num_of_zones = zones_plcs.size();
 
     Vector3D const empty_vec(0.0, 0.0, 0.0);
@@ -239,7 +239,7 @@ std::vector<std::vector<Seed>> VoroCrustAlgorithm::randomSampleSeeds(std::vector
     std::vector<std::vector<Seed>> zone_seeds;
 
     for(std::size_t zone_num=0; zone_num<num_of_zones; ++zone_num){
-        PL_Complex const& plc = zones_plcs[zone_num];
+        PL_Complex const& plc = *zones_plcs[zone_num];
 
         auto const& seeds = zones_boundary_seeds[zone_num];
 
@@ -259,7 +259,7 @@ std::vector<std::vector<Seed>> VoroCrustAlgorithm::randomSampleSeeds(std::vector
         VoroCrust_KD_Tree_Ball volume_seeds_tree;
 
         // lightweight dart-throwing
-        boost::random::variate_generator uni01_gen(boost::mt19937(std::time(nullptr)), boost::random::uniform_01<>());
+        boost::random::variate_generator uni01_gen(boost::mt19937_64(std::time(nullptr)), boost::random::uniform_01<>());
 
         std::size_t num_of_samples = 0;
         do {
@@ -311,7 +311,7 @@ std::vector<std::vector<Seed>> VoroCrustAlgorithm::randomSampleSeeds(std::vector
                 miss_counter = 0;
             }
             volume_seeds_tree.remakeTree();
-        } while(enforceLipschitzness(volume_seeds_tree));
+        } while(enforceLipschitzness(volume_seeds_tree, L_Lipschitz));
 
         std::vector<Seed> total_zone_seeds = zones_boundary_seeds[zone_num];
         std::vector<Seed> volume_temp_seeds = getSeedsFromBallTree(volume_seeds_tree);
