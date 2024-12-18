@@ -13,7 +13,8 @@ void bind_vorocrust_kd_tree(pybind11::module& m) {
         .def("makeTree", &VoroCrust_KD_Tree::makeTree, pybind11::kw_only(), "points"_a)
         .def("remakeTree", &VoroCrust_KD_Tree::remakeTree)
         .def("insert", &VoroCrust_KD_Tree::insert, pybind11::kw_only(), "point"_a)
-        .def("empty", &VoroCrust_KD_Tree::empty);
+        .def("empty", &VoroCrust_KD_Tree::empty)
+        .def("size", &VoroCrust_KD_Tree::size);
     
     pybind11::class_<VoroCrust_KD_Tree_Boundary, VoroCrust_KD_Tree_BoundaryPtr, VoroCrust_KD_Tree>(m, "VoroCrust_KD_Tree_Boundary")
         .def(pybind11::init<>())
