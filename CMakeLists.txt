@@ -9,7 +9,6 @@ set(PROJECT_SOURCE_DIR "${PROJECT_SOURCE_DIR}/src")
 
 message("CXX Compiler: " ${CMAKE_CXX_COMPILER})
 message("C Compiler: " ${CMAKE_C_COMPILER})
-message("Fortran Compiler: " ${CMAKE_Fortran_COMPILER})
 message("CXX Standard: " ${CMAKE_CXX_STANDARD})
 message("Build Type: " ${CMAKE_BUILD_TYPE})
 
