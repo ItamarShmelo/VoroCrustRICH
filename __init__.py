@@ -1,4 +1,4 @@
-from cpp_modules._VoroCrustAlgorithm import dumpSeeds, determineZoneOfSeeds, enforceLipschitzness, randomSampleVolumeSeeds
+from cpp_modules._VoroCrustAlgorithm import dumpSeeds, determineSeedsInOut, enforceLipschitzness, randomSampleVolumeSeeds
 from cpp_modules._PL_Complex import PL_Complex, VoroCrustVertex, VoroCrustEdge, VoroCrustFace
 from cpp_modules._Vector3D import Vector3D
 import cpp_modules._vorocrust_vtk as vorocrust_vtk
