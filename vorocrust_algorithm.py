@@ -113,9 +113,9 @@ class VoroCrustAlgorithm:
                 logger.info("Eliminating Slivers")
                 if not self.sliverDriver.eliminateSlivers(trees=self.trees): break
                 logger.info("Enforce Lipschitz Condition on all after sliver elimination")
-                enforceLipschitzness(self.trees.ball_kd_vertices, L_Lipschitz=L_lip)
-                enforceLipschitzness(self.trees.ball_kd_edges, L_Lipschitz=L_lip)
-                enforceLipschitzness(self.trees.ball_kd_faces, L_Lipschitz=L_lip)
+                enforceLipschitzness(ball_tree=self.trees.ball_kd_vertices, L_Lipschitz=self.L_Lipschitz)
+                enforceLipschitzness(ball_tree=self.trees.ball_kd_edges, L_Lipschitz=self.L_Lipschitz)
+                enforceLipschitzness(ball_tree=self.trees.ball_kd_faces, L_Lipschitz=self.L_Lipschitz)
 
     def run(self):
         logger.info(f"Running VoroCrustAlgorithm")
