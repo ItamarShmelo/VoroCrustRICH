@@ -87,7 +87,7 @@ class VoroCrustAlgorithm:
         enforceLipschitzness(ball_tree=self.trees.ball_kd_vertices, L_Lipschitz=self.L_Lipschitz)
 
         for i in range(self.maximal_num_iter):
-            logging.info(f"Iteration {i+1} of {self.maximal_num_iter}")
+            logger.info(f"Iteration {i+1} of {self.maximal_num_iter}")
             
             logger.info("Doing Sharp Edge Ball Sampling")
             do_edge_sampling = True
