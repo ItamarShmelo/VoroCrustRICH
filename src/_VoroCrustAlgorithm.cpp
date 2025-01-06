@@ -14,7 +14,7 @@ void bind_vorocrust_algorithm(pybind11::module& m) {
     
     m.def("enforceLipschitzness", &enforceLipschitzness, pybind11::kw_only(), "ball_tree"_a, "L_Lipschitz"_a);
     
-    m.def("randomSampleVolumeSeeds", &randomSampleVolumeSeeds, pybind11::kw_only(), "zones_plcs"_a, "zones_boundary_seeds"_a, "maxSize"_a, "trees"_a, "L_Lipschitz"_a);
+    m.def("randomSampleVolumeSeeds", &randomSampleVolumeSeeds, pybind11::kw_only(), "plc"_a, "inout_seeds"_a, "maxSize"_a, "trees"_a, "L_Lipschitz"_a);
 }
 
 PYBIND11_MODULE(_VoroCrustAlgorithm, m) {

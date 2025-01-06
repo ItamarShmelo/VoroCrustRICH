@@ -76,41 +76,34 @@ std::pair<std::vector<Seed>, std::vector<Seed>> determineSeedsInOut(std::vector<
     return inout_seeds;
 }
 
-std::vector<std::vector<Seed>> randomSampleVolumeSeeds(std::vector<PL_ComplexPtr> const& zones_plcs, std::vector<std::vector<Seed>> const& zones_boundary_seeds, double const maxSize, Trees const& trees, double const L_Lipschitz) {
-    std::size_t const num_of_zones = zones_plcs.size();
+std::pair<std::vector<Seed>, std::vector<Seed>> randomSampleVolumeSeeds(PL_ComplexPtr const& plc, std::pair<std::vector<Seed>, std::vector<Seed>> const& inout_seeds, double const maxSize, Trees const& trees, double const L_Lipschitz) {
 
     Vector3D const empty_vec(0.0, 0.0, 0.0);
-    // if(num_of_zones != zones_boundary_seeds.size()){
-    //     std::cout << "ERROR: zones_plcs and zones_boundary_seeds size differ! " <<num_of_zones<<" "<< zones_boundary_seeds.size()<<std::endl;
-    //     exit(1);
-    // }
-
-    std::vector<std::vector<Seed>> zone_seeds;
-
-    for(std::size_t zone_num=0; zone_num<num_of_zones; ++zone_num){
-        PL_Complex const& plc = *zones_plcs[zone_num];
-
-        auto const& seeds = zones_boundary_seeds[zone_num];
-
-        if(seeds.empty()){
-            zone_seeds.push_back(seeds);
-
-            continue;
+    
+    if(inout_seeds.first.empty() or inout_seeds.second.empty()){
+        throw std::runtime_error("randomSampleVolumeSeeds: inout_seeds is empty");
         }
 
-        auto const [ll_x, ll_y, ll_z, ur_x, ur_y, ur_z] = plc.getBoundingBox();
+    auto const [ll_x, ll_y, ll_z, ur_x, ur_y, ur_z] = plc->getBoundingBox();
         auto const len_x = ur_x - ll_x;
         auto const len_y = ur_y - ll_y;
         auto const len_z = ur_z - ll_z;
 
-        auto const& zone_seeds_tree = makeSeedBallTree(seeds);
+    auto const& in_seeds_tree = makeSeedBallTree(inout_seeds.first);
+    auto const& out_seeds_tree = makeSeedBallTree(inout_seeds.second);
 
-        VoroCrust_KD_Tree_Ball volume_seeds_tree;
+    VoroCrust_KD_Tree_Ball in_volume_seeds_tree;
+    VoroCrust_KD_Tree_Ball out_volume_seeds_tree;
 
         // lightweight dart-throwing
         boost::random::variate_generator uni01_gen(boost::mt19937_64(std::time(nullptr)), boost::random::uniform_01<>());
 
         std::size_t num_of_samples = 0;
+    PL_Complex::Location location;
+    
+    bool lipschitzness_in_volume  = false;
+    bool lipschitzness_out_volume = false;
+    
         do {
             std::size_t miss_counter = 0;
             while(miss_counter < 1000){
@@ -118,12 +111,9 @@ std::vector<std::vector<Seed>> randomSampleVolumeSeeds(std::vector<PL_ComplexPtr
                                  ll_y + len_y*uni01_gen(),
                                  ll_z + len_z*uni01_gen());
                 
-                if(plc.determineLocation(p) == PL_Complex::Location::OUT){
-                    ++miss_counter;
-                    continue;
-                }
+            location = plc->determineLocation(p);
 
-                bool in_boundary_ball = zone_seeds_tree.isContainedInBall(p) || trees.ball_kd_faces.isContainedInBall(p);
+            bool in_boundary_ball = in_seeds_tree.isContainedInBall(p) || trees.ball_kd_faces.isContainedInBall(p);
 
                 if(not trees.ball_kd_vertices.empty()) in_boundary_ball = in_boundary_ball || trees.ball_kd_vertices.isContainedInBall(p);
                 if(not trees.ball_kd_edges.empty()) in_boundary_ball = in_boundary_ball || trees.ball_kd_edges.isContainedInBall(p);
@@ -133,44 +123,68 @@ std::vector<std::vector<Seed>> randomSampleVolumeSeeds(std::vector<PL_ComplexPtr
                     continue;
                 }
 
-                auto const& [p_s, r_s] = zone_seeds_tree.getBallNearestNeighbor(p);
+            if(location == PL_Complex::Location::IN){
+                auto const& [p_s, r_s] = in_seeds_tree.getBallNearestNeighbor(p);
 
                 double r_volume = std::numeric_limits<double>::max();
-                if(not volume_seeds_tree.empty()){
-                    if(volume_seeds_tree.isContainedInBall(p)){
+                if(not in_volume_seeds_tree.empty()){
+                    if(in_volume_seeds_tree.isContainedInBall(p)){
                         ++miss_counter;
                         continue;
                     }
 
-                    auto const& [p_nearest, r_nearest] = volume_seeds_tree.getBallNearestNeighbor(p);
+                    auto const& [p_nearest, r_nearest] = in_volume_seeds_tree.getBallNearestNeighbor(p);
 
                     r_volume = r_nearest + L_Lipschitz*distance(p, p_nearest);
                 }
 
                 double const r = std::min({maxSize, r_s + L_Lipschitz*distance(p, p_s), r_volume});
 
-                volume_seeds_tree.insert(p, empty_vec, r, 0, 0);
+                in_volume_seeds_tree.insert(p, empty_vec, r, 0, 0);
+            } else {
+                auto const& [p_s, r_s] = out_seeds_tree.getBallNearestNeighbor(p);
+
+                double r_volume = std::numeric_limits<double>::max();
+                if(not out_volume_seeds_tree.empty()){
+                    if(out_volume_seeds_tree.isContainedInBall(p)){
+                        ++miss_counter;
+                        continue;
+                    }
+
+                    auto const& [p_nearest, r_nearest] = out_volume_seeds_tree.getBallNearestNeighbor(p);
+
+                    r_volume = r_nearest + L_Lipschitz*distance(p, p_nearest);
+                }
+
+                double const r = std::min({maxSize, r_s + L_Lipschitz*distance(p, p_s), r_volume});
+
+                out_volume_seeds_tree.insert(p, empty_vec, r, 0, 0);
+            }
+
                 num_of_samples++;
                 
                 if(num_of_samples % 10000 == 0){
                     std::cout << "sample: " << num_of_samples << ", miss_counter: " << miss_counter << std::endl;
-                    volume_seeds_tree.remakeTree();
+                in_volume_seeds_tree.remakeTree();
+                out_volume_seeds_tree.remakeTree();
                 }
 
                 miss_counter = 0;
             }
-            volume_seeds_tree.remakeTree();
-        } while(enforceLipschitzness(volume_seeds_tree, L_Lipschitz));
 
-        std::vector<Seed> total_zone_seeds;
-        std::vector<Seed> volume_temp_seeds = getSeedsFromBallTree(volume_seeds_tree);
+        in_volume_seeds_tree.remakeTree();
+        out_volume_seeds_tree.remakeTree();
 
-        total_zone_seeds.insert(total_zone_seeds.end(), volume_temp_seeds.begin(), volume_temp_seeds.end());
+        lipschitzness_in_volume  = enforceLipschitzness(in_volume_seeds_tree, L_Lipschitz);
+        lipschitzness_out_volume = enforceLipschitzness(out_volume_seeds_tree, L_Lipschitz);
+    } while(lipschitzness_in_volume || lipschitzness_out_volume);
+
+    std::vector<Seed> in_volume_temp_seeds = getSeedsFromBallTree(in_volume_seeds_tree);
+    std::vector<Seed> out_volume_temp_seeds = getSeedsFromBallTree(out_volume_seeds_tree);
         
-        zone_seeds.push_back(total_zone_seeds);
-    }
+    std::pair<std::vector<Seed>, std::vector<Seed>> inout_volume_seeds = std::pair<std::vector<Seed>, std::vector<Seed>>(in_volume_temp_seeds, out_volume_temp_seeds);
 
-    return zone_seeds;
+    return inout_volume_seeds;
 }
 
 std::vector<Seed> getSeedsFromBallTree(VoroCrust_KD_Tree_Ball const& ball_tree){

@@ -11,7 +11,7 @@
 #include <filesystem>
 #include <memory>
 
-std::vector<std::vector<Seed>> randomSampleVolumeSeeds(std::vector<PL_ComplexPtr> const& zones_plcs, std::vector<std::vector<Seed>> const& zones_boundary_seeds, double const maxSize, Trees const& trees, double const L_Lipschitz);
+std::pair<std::vector<Seed>, std::vector<Seed>> randomSampleVolumeSeeds(PL_ComplexPtr const& plc, std::pair<std::vector<Seed>, std::vector<Seed>> const& zones_boundary_seeds, double const maxSize, Trees const& trees, double const L_Lipschitz);
 
 bool enforceLipschitzness(VoroCrust_KD_Tree_Ball& ball_tree, double const L_Lipschitz);
 

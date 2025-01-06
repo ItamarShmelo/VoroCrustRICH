@@ -140,17 +140,20 @@ class VoroCrustAlgorithm:
         logger.info(f"Generated {len(self.outside_seeds)} outside seeds")
 
         logger.info("Generating volume seeds")
-        self.volume_seeds = randomSampleVolumeSeeds(zones_plcs=[self.plc], zones_boundary_seeds=[self.inside_seeds, self.outside_seeds], maxSize=self.maxRadius, trees=self.trees, L_Lipschitz=self.L_Lipschitz)
+        self.volume_in_seeds, self.volume_out_seeds = randomSampleVolumeSeeds(plc=self.plc, inout_seeds=inout_seeds, maxSize=self.maxRadius, trees=self.trees, L_Lipschitz=self.L_Lipschitz)
 
-        logger.info(f"Generated {len(self.volume_seeds[0])} volume seeds")
+        logger.info(f"Generated {len(self.volume_in_seeds)+len(self.volume_out_seeds)} volume seeds")
 
         logger.info(
             "\n" +"-"*30 + 
             f"\nSummary:\n" +
-            f"Total number of seeds: {len(self.inside_seeds) + len(self.outside_seeds) + len(self.volume_seeds[0])}\n" +
-            f"Number of outside Seeds: {len(self.outside_seeds)}\n" +
+            f"Total number of seeds: {len(self.inside_seeds) + len(self.outside_seeds) + len(self.volume_in_seeds) + len(self.volume_out_seeds)}\n" +
+            f"Number of outside Seeds: {len(self.outside_seeds) + len(self.volume_out_seeds)}\n" +
+            f"Number of inside seeds: {len(self.inside_seeds)+len(self.volume_in_seeds)}\n" +
             f"Number of inside boundary seeds: {len(self.inside_seeds)}\n" +
-            f"Number of volume seeds: {len(self.volume_seeds[0])}\n" +
+            f"Number of inside volume seeds: {len(self.volume_in_seeds)}\n" +
+            f"Number of outside boundary seeds: {len(self.outside_seeds)}\n" +
+            f"Number of outside volume seeds: {len(self.volume_out_seeds)}\n" +
             "-"*30
             )
         
@@ -158,19 +161,19 @@ class VoroCrustAlgorithm:
 
     def write_all_seeds_to_output_directory(self, *, output_dir):
         logger.info("Writing all seeds to output directory")
-        os.makedirs(output_dir)
+        os.makedirs(output_dir, exist_ok=True)
 
-        assert self.inside_seeds is not None, "Inside seeds are not generated yet"
+        assert self.inside_seeds is not None and self.outside_seeds is not None, "Boundary seeds are not generated yet"
         write_seeds_to_dir(self.inside_seeds, output_dir=path.join(output_dir, "inside_seeds"))
-
-        assert self.outside_seeds is not None, "Outside seeds are not generated yet"
         write_seeds_to_dir(self.outside_seeds, output_dir=path.join(output_dir, "outside_seeds"))
 
-        assert self.volume_seeds is not None, "Volume seeds are not generated yet"
-        write_seeds_to_dir(self.volume_seeds[0], output_dir=path.join(output_dir, "volume_seeds"))
+
+        assert self.volume_in_seeds is not None and self.volume_out_seeds, "Volume seeds are not generated yet"
+        write_seeds_to_dir(self.volume_in_seeds, output_dir=path.join(output_dir,  "volume_in_seeds"))
+        write_seeds_to_dir(self.volume_out_seeds, output_dir=path.join(output_dir, "volume_out_seeds"))
 
 def write_seeds_to_dir(seeds, output_dir):
-    os.makedirs(output_dir)
+    os.makedirs(output_dir, exist_ok=True)
 
     x = np.zeros(len(seeds), dtype=np.float64)
     y = np.zeros(len(seeds), dtype=np.float64)
