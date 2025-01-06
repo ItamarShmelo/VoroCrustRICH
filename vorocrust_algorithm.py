@@ -133,7 +133,8 @@ class VoroCrustAlgorithm:
         
         logger.info(f"Generated {len(self.boundary_seeds)} boundary seeds")
 
-        self.inside_seeds, self.outside_seeds = determineZoneOfSeeds(seeds=self.boundary_seeds, zone_plcs=[self.plc])
+        inout_seeds = determineSeedsInOut(seeds=self.boundary_seeds, plc=self.plc)
+        self.inside_seeds, self.outside_seeds = inout_seeds
 
         logger.info(f"Generated {len(self.inside_seeds)} inside seeds")
         logger.info(f"Generated {len(self.outside_seeds)} outside seeds")

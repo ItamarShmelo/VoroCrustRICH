@@ -10,7 +10,7 @@ void bind_vorocrust_algorithm(pybind11::module& m) {
     
     m.def("dumpSeeds", &dumpSeeds, pybind11::kw_only(), "dirname"_a, "seeds"_a);
    
-    m.def("determineZoneOfSeeds", &determineZoneOfSeeds, pybind11::kw_only(), "seeds"_a, "zone_plcs"_a);
+    m.def("determineSeedsInOut", &determineSeedsInOut, pybind11::kw_only(), "seeds"_a, "plc"_a);
     
     m.def("enforceLipschitzness", &enforceLipschitzness, pybind11::kw_only(), "ball_tree"_a, "L_Lipschitz"_a);
     

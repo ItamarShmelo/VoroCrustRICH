@@ -52,40 +52,28 @@ VoroCrust_KD_Tree_Ball makeSeedBallTree(std::vector<Seed> const& seeds){
                                   radii);
 }
 
-std::vector<std::vector<Seed>> determineZoneOfSeeds(std::vector<Seed> const& seeds, std::vector<PL_ComplexPtr> const& zone_plcs) {
+std::pair<std::vector<Seed>, std::vector<Seed>> determineSeedsInOut(std::vector<Seed> const& seeds, PL_ComplexPtr const& plc) {
     if(seeds.empty()){
-        throw std::runtime_error("determineZoneOfSeeds: seeds is empty");
+        throw std::runtime_error("determineSeedsInOut: seeds is empty");
     }
 
-    if(zone_plcs.empty()){
-        throw std::runtime_error("determineZoneOfSeeds: zone_plcs is empty");
-    }
+    std::vector<Seed> in_seeds{};
+    std::vector<Seed> out_seeds{};
+    
+    in_seeds.reserve(seeds.size());
+    out_seeds.reserve(seeds.size());
 
-    // the last index is for the outside seeds
-    std::vector<std::vector<Seed>> zone_seeds(zone_plcs.size() + 1, std::vector<Seed>());
-
-    for(auto& zone_seed_vec : zone_seeds){
-        zone_seed_vec.reserve(seeds.size());
-    }
-
-    std::size_t seed_num = 0;
     for(auto const& seed : seeds){
-        if(seed_num % 100000 == 0) std::cout << ++seed_num << std::endl;
-        std::size_t i = 0;
-        for(i=0; i < zone_plcs.size(); ++i){
-            auto const& zone_plc = *zone_plcs[i];
-
-            if(zone_plc.determineLocation(seed.p) == PL_Complex::Location::IN) {
-                zone_seeds[i].push_back(seed);
-                break;
-            }
-        }
-
-        if(i == zone_plcs.size()){
-            zone_seeds[zone_plcs.size()].push_back(seed);
+        if(plc->determineLocation(seed.p) == PL_Complex::Location::IN) {
+            in_seeds.push_back(seed);
+        } else {
+            out_seeds.push_back(seed);
         }
     }
-    return zone_seeds;
+
+    std::pair<std::vector<Seed>, std::vector<Seed>> inout_seeds = std::make_pair(in_seeds, out_seeds);
+
+    return inout_seeds;
 }
 
 std::vector<std::vector<Seed>> randomSampleVolumeSeeds(std::vector<PL_ComplexPtr> const& zones_plcs, std::vector<std::vector<Seed>> const& zones_boundary_seeds, double const maxSize, Trees const& trees, double const L_Lipschitz) {

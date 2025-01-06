@@ -17,7 +17,7 @@ bool enforceLipschitzness(VoroCrust_KD_Tree_Ball& ball_tree, double const L_Lips
 
 VoroCrust_KD_Tree_Ball makeSeedBallTree(std::vector<Seed> const& seeds);
 
-std::vector<std::vector<Seed>> determineZoneOfSeeds(std::vector<Seed> const& seeds, std::vector<PL_ComplexPtr> const& zone_plcs);
+std::pair<std::vector<Seed>, std::vector<Seed>> determineSeedsInOut(std::vector<Seed> const& seeds, PL_ComplexPtr const& plc);
 
 std::vector<Seed> getSeedsFromBallTree(VoroCrust_KD_Tree_Ball const& ball_tree);
 
