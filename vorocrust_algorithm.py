@@ -3,6 +3,7 @@ import os
 from os import path
 import sys
 import logging
+import argparse
 
 from __init__ import *
 
@@ -29,7 +30,10 @@ class VoroCrustAlgorithm:
 
         logger.info(f"Initializing VoroCrustAlgorithm with the following parameters:")
         for key, value in vars(self).items():
-            logger.info(f"{key}: {value}")
+            if key == 'sharpTheta':
+                logger.info(f"{key}: {value} radians")
+            else:
+                logger.info(f"{key}: {value}")
 
         logger.info(f"reading data from {input_dir}")
         
@@ -192,16 +196,37 @@ def write_seeds_to_dir(seeds, output_dir):
     np.savetxt(path.join(output_dir, "r.txt"), r)
 
 if __name__ == "__main__":
-    input_dir = sys.argv[1]
-    dirname = path.basename(input_dir)
-    output_dir = path.join("/home/itamarg/workspace/VoroCrustRICH/output/", sys.argv[2])
-    theta = np.pi * 45./180.
-    maxRadius = 1.0
-    L_lip = 0.3
-    alpha = 0.13
-    max_number_of_iter = 1
-    num_samples_of_edges = int(1e5)
-    num_samples_of_faces = int(1e6)
+    parser = argparse.ArgumentParser(description="Run VoroCrustRICH algorithm")
+
+    parser.add_argument("--input_dir", type=str, help="Input directory containing the 'vertices.txt' and 'faces.txt' files")
+    
+    parser.add_argument("--output_dir", type=str, help="Output directory to store the generated Voronoi seeds")
+
+    parser.add_argument("--theta", type=float, default=45., help="Sharpness angle, in degrees, defining the mesh sharp features (default: 45 degrees)")
+
+    parser.add_argument("--max_radius", type=float, default=1.0, help="Maximum radius of the volume seeds (default: 1.0)")
+
+    parser.add_argument("--L", type=float, default=0.3, help="Lipschitz constant for the ball sampling (default: 0.3)")
+
+    parser.add_argument("--alpha", type=float, default=0.13, help="Deep coverage parameter (default: 0.13)")
+
+    parser.add_argument("--maximal_num_iter", type=int, default=1, help="Maximum number of sliver eliminations (default: 1)")
+
+    parser.add_argument("--num_of_samples_edges", type=int, default=int(1e5), help="Number of edge samples for discrete boundary representation  (default: 1e5)")
+
+    parser.add_argument("--num_of_samples_faces", type=int, default=int(1e6), help="Number of face samples for discrete boundary representation  (default: 1e6)")
+
+    args = parser.parse_args()
+
+    input_dir = args.input_dir
+    output_dir = args.output_dir
+    theta = np.pi * args.theta /180.
+    maxRadius = args.max_radius
+    L_lip = args.L
+    alpha = args.alpha
+    max_number_of_iter = int(args.maximal_num_iter)
+    num_samples_of_edges = int(args.num_of_samples_edges)
+    num_samples_of_faces = int(args.num_of_samples_faces)
 
     alg = VoroCrustAlgorithm(input_dir=input_dir,
                        sharpTheta=theta,
