@@ -72,7 +72,7 @@ Seeds are then generated via trilateration of three spheres
   <img src="./figures/fox_seeds.png" width="49%" />
   <img src="./figures/astroid_seeds.png" width="49%" /> 
 </p>
-<center> <h5> Out Voronoi Seeds, inside there are corresponding In Voronoi Seeds, fox (right), Itokawa astroid (left) </h5> </center>
+<center> <h5> Out Voronoi Seeds, white dots between the spheres, on the other side of the 2D-mesh there are corresponding In Voronoi Seeds, fox (right), Itokawa astroid (left) </h5> </center>
 
 After the generation of the boundary seeds there is generation of the volume Voronoi Seeds.
 
@@ -104,4 +104,5 @@ While I have made every effort to faithfully replicate the algorithm as describe
 The only non-standard packages I used were `pybind11`, `boost` and `vtk`. The most troublesome one was `vtk` and it is only used for the nice graphical output of the algorithm.
 
 ## Credits
-The fox .obj file I took from [PixelMannen](https://clara.io/view/1a03ac6b-d6b5-4c2d-9f1a-c80068311396), the Itokawa astorid I took from [3D Asteroid Catalogue](https://3d-asteroids.space/asteroids/25143-Itokawa)
+Voronoi diagrams were produced using [RICH](https://gitlab.com/eladtan/RICH).
+The fox .obj file I took from [PixelMannen](https://clara.io/view/1a03ac6b-d6b5-4c2d-9f1a-c80068311396), the Itokawa astorid I took from [3D Asteroid Catalogue](https://3d-asteroids.space/asteroids/25143-Itokawa).
