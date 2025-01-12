@@ -101,7 +101,7 @@ While I have made every effort to faithfully replicate the algorithm as describe
 
 ## Requirements
 
-The only non-standard packages I used were `pybind11`, `boost` and `vtk`. The most troublesome one was `vtk` and it is only used for the nice graphical output of the algorithm.
+The only non-standard packages I used were `pybind11`, `boost`, 'openmp' and `vtk`. The most troublesome one was `vtk` and it is only used for the nice graphical output of the algorithm.
 
 ## Credits
 Voronoi diagrams were produced using [RICH](https://gitlab.com/eladtan/RICH).
