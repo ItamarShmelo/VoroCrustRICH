@@ -237,6 +237,17 @@ if __name__ == "__main__":
                        num_of_samples_edges=num_samples_of_edges,
                        num_of_samples_faces=num_samples_of_faces)
 
+
     alg.run()
 
-    alg.write_all_seeds_to_output_directory(output_dir=path.join(output_dir, "seeds"))
+    os.makedirs(output_dir, exist_ok=True)
+    
+    vorocrust_vtk.write_vtu_PL_Complex(filename=path.join(output_dir, "plc.vtu"), plc=alg.plc)
+    vorocrust_vtk.write_vtu_trees(filename=path.join(output_dir, "trees.vtu"), trees=alg.trees)
+    vorocrust_vtk.write_ballTree(filename=path.join(output_dir, "ball_tree_vertices.vtp"), ball_tree=alg.trees.ball_kd_vertices)
+    vorocrust_vtk.write_ballTree(filename=path.join(output_dir, "ball_tree_edge.vtp"), ball_tree=alg.trees.ball_kd_edges)
+    vorocrust_vtk.write_ballTree(filename=path.join(output_dir, "ball_tree_faces.vtp"), ball_tree=alg.trees.ball_kd_faces)
+    vorocrust_vtk.write_points(filename=path.join(output_dir, "out_boundary_seeds.vtu"), points=[seed.p for seed in alg.outside_seeds])
+    vorocrust_vtk.write_points(filename=path.join(output_dir, "in_boundary_seeds.vtu"), points=[seed.p for seed in alg.inside_seeds])
+
+    alg.write_all_seeds_to_output_directory(output_dir=path.join(output_dir, "seeds"),)
