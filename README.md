@@ -102,3 +102,6 @@ While I have made every effort to faithfully replicate the algorithm as describe
 ## Requirements
 
 The only non-standard packages I used were `pybind11`, `boost` and `vtk`. The most troublesome one was `vtk` and it is only used for the nice graphical output of the algorithm.
+
+## Credits
+The fox .obj file I took from [PixelMannen](https://clara.io/view/1a03ac6b-d6b5-4c2d-9f1a-c80068311396), the Itokawa astorid I took from [3D Asteroid Catalogue](https://3d-asteroids.space/asteroids/25143-Itokawa)
