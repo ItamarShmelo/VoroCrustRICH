@@ -21,7 +21,7 @@ And outputs a set of Voronoi seeds, divided into `inside_seeds` and `outside_see
 </p>
 <center> <h5>Output: Boundary or Voronoi Diagram, fox (left), Itokawa astroid (right) </h5> </center>
 
-And fills the volume with a random sampled seeds s.t. the volume seeds do not interfere with the 
+And fills the volume with a random sampled seeds s.t. the volume seeds do not interfere with the boundary 
 
 <p float="center">
   <img src="./figures/fox_volume_mesh.png" width="49%" />
