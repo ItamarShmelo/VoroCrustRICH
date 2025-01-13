@@ -10,7 +10,7 @@ The algorithm gets as input a 2D mesh
   <img src="./figures/fox_plc.png" width="49%" />
   <img src="./figures/astroid_plc.png" width="49%" /> 
 </p>
-<center> <h5>Input 2D Mesh, fox (right), Itokawa astroid (left)</h5> </center>
+<center> <h5>Input 2D Mesh, fox (left), Itokawa astroid (right)</h5> </center>
 
 ## Output
 And outputs a set of Voronoi seeds, divided into `inside_seeds` and `outside_seeds` generating a Voronoi diagram whose boundary between the inside and outside approximates the input mesh to a good degree, preserving the mesh's sharp features. 
@@ -19,7 +19,7 @@ And outputs a set of Voronoi seeds, divided into `inside_seeds` and `outside_see
   <img src="./figures/fox_boundary_mesh.png" width="49%" />
   <img src="./figures/astroid_boundary_mesh.png" width="49%" /> 
 </p>
-<center> <h5>Output: Boundary or Voronoi Diagram, fox (right), Itokawa astroid (left) </h5> </center>
+<center> <h5>Output: Boundary or Voronoi Diagram, fox (left), Itokawa astroid (right) </h5> </center>
 
 And fills the volume with a random sampled seeds s.t. the volume seeds do not interfere with the 
 
@@ -27,7 +27,7 @@ And fills the volume with a random sampled seeds s.t. the volume seeds do not in
   <img src="./figures/fox_volume_mesh.png" width="49%" />
   <img src="./figures/astroid_volume_mesh.png" width="49%" /> 
 </p>
-<center> <h5>Output: Voronoi Diagram, Volume Mesh, fox (right), Itokawa astroid (left) </h5> </center>
+<center> <h5>Output: Voronoi Diagram, Volume Mesh, fox (left), Itokawa astroid (right) </h5> </center>
 
 ## Steps
 
@@ -39,7 +39,7 @@ The first step is the detection of the sharp features and the creation of a disc
   <img src="./figures/fox_trees.png" width="49%" />
   <img src="./figures/astroid_trees.png" width="49%" /> 
 </p>
-<center> <h5> Discrete representation of the features, fox (right), Itokawa astroid (left)</h5> </center>
+<center> <h5> Discrete representation of the features, fox (left), Itokawa astroid (right)</h5> </center>
 <center> In blue the sharp vertices, in yellow the sharp edge sampling and in red the face sampling, fox edge sampling have 1e5 points and face sampling with 1e6, and the Itokawa astroid have 1e5 and 1e7 respectively</center>
 
 ## Ball Sampling
@@ -50,19 +50,19 @@ We then have the sharp vertex, sharp edges and then faces ball sampling, adjusti
   <img src="./figures/fox_vertex_balls.png" width="49%" />
   <img src="./figures/astroid_vertex_balls.png" width="49%" /> 
 </p>
-<center> <h5> After Edge Sampling, fox (right), Itokawa astroid (left) </h5> </center>
+<center> <h5> After Edge Sampling, fox (left), Itokawa astroid (right) </h5> </center>
 
 <p float="center">
   <img src="./figures/fox_edge_balls.png" width="49%" />
   <img src="./figures/astroid_edge_balls.png" width="49%" /> 
 </p>
-<center> <h5> After Edge Sampling, fox (right), Itokawa astroid (left) </h5> </center>
+<center> <h5> After Edge Sampling, fox (left), Itokawa astroid (right) </h5> </center>
 
 <p float="center">
   <img src="./figures/fox_face_balls.png" width="49%" />
   <img src="./figures/astroid_face_balls.png" width="49%" /> 
 </p>
-<center> <h5> After Face Sampling, fox (right), Itokawa astroid (left) </h5> </center>
+<center> <h5> After Face Sampling, fox (left), Itokawa astroid (right) </h5> </center>
 
 ## Generation of Boundary Voronoi Seeds
 
@@ -72,7 +72,7 @@ Seeds are then generated via trilateration of three spheres
   <img src="./figures/fox_seeds.png" width="49%" />
   <img src="./figures/astroid_seeds.png" width="49%" /> 
 </p>
-<center> <h5> Out Voronoi Seeds, white dots between the spheres, on the other side of the 2D-mesh there are corresponding In Voronoi Seeds, fox (right), Itokawa astroid (left) </h5> </center>
+<center> <h5> Out Voronoi Seeds, white dots between the spheres, on the other side of the 2D-mesh there are corresponding In Voronoi Seeds, fox (left), Itokawa astroid (right) </h5> </center>
 
 After the generation of the boundary seeds there is generation of the volume Voronoi Seeds.
 
